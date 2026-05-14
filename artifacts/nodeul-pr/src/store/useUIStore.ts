@@ -1,19 +1,19 @@
 import { create } from 'zustand';
 
 type UIStore = {
-  npcMessage: string | null;
+  npcMessage: string;
   showNPC: boolean;
-  setNPCMessage: (message: string | null) => void;
-  toggleNPC: () => void;
+  setNPCMessage: (message: string) => void;
+  setShowNPC: (show: boolean) => void;
   isCRTEnabled: boolean;
   toggleCRT: () => void;
 };
 
 export const useUIStore = create<UIStore>((set) => ({
-  npcMessage: "안녕하세요! 홍보 신청을 도와드릴게요!",
+  npcMessage: "안녕하세요! 노들섬 홍보 통합 시스템에 오신 것을 환영합니다! 🏝️",
   showNPC: true,
   setNPCMessage: (message) => set({ npcMessage: message }),
-  toggleNPC: () => set((state) => ({ showNPC: !state.showNPC })),
+  setShowNPC: (show) => set({ showNPC: show }),
   isCRTEnabled: true,
   toggleCRT: () => set((state) => ({ isCRTEnabled: !state.isCRTEnabled })),
 }));

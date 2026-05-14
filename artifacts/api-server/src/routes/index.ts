@@ -10,6 +10,7 @@ import schedulesRouter from "./schedules";
 import commentsRouter from "./comments";
 import emailRouter from "./email";
 import adminRouter from "./admin";
+import npcRouter from "./npc";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(schedulesRouter);
 router.use(commentsRouter);
 router.use(emailRouter);
 router.use(adminRouter);
+router.use(npcRouter);
 
 export default router;

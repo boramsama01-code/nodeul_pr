@@ -397,16 +397,18 @@ export const GetEventTimelineResponse = zod.array(GetEventTimelineResponseItem);
 export const ListPromotionZonesResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
-  type: zod.enum([
-    "instagram",
-    "billboard",
-    "website_banner",
-    "signage",
-    "other",
-  ]),
+  type: zod.string(),
   description: zod.string().nullish(),
   isActive: zod.boolean(),
   color: zod.string().nullish(),
+  requiresEndDate: zod.boolean().describe("종료일 입력이 필요한지 여부"),
+  requiresAssetUpload: zod.boolean().describe("홍보물 업로드가 필요한지 여부"),
+  allowMultipleFiles: zod.boolean().describe("여러 파일 동시 업로드 허용 여부"),
+  sortOrder: zod.number(),
+  maxConcurrent: zod
+    .number()
+    .nullish()
+    .describe("같은 날 동시 허용 신청 수 (null=무제한, 1=하루 1개만)"),
 });
 export const ListPromotionZonesResponse = zod.array(
   ListPromotionZonesResponseItem,
@@ -417,15 +419,15 @@ export const ListPromotionZonesResponse = zod.array(
  */
 export const CreatePromotionZoneBody = zod.object({
   name: zod.string(),
-  type: zod.enum([
-    "instagram",
-    "billboard",
-    "website_banner",
-    "signage",
-    "other",
-  ]),
+  type: zod.string(),
   description: zod.string().optional(),
   color: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  requiresEndDate: zod.boolean().optional(),
+  requiresAssetUpload: zod.boolean().optional(),
+  allowMultipleFiles: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+  maxConcurrent: zod.number().nullish(),
 });
 
 /**
@@ -442,6 +444,12 @@ export const CheckZoneAvailabilityResponse = zod.object({
   startDate: zod.string(),
   endDate: zod.string(),
   isAvailable: zod.boolean(),
+  currentCount: zod.number().optional(),
+  maxConcurrent: zod.number().nullish(),
+  message: zod
+    .string()
+    .nullish()
+    .describe("이미 등록된 일정이 있어 등록이 불가합니다."),
   conflicts: zod
     .array(
       zod.object({
@@ -1064,3 +1072,132 @@ export const GetScheduleConflictsResponseItem = zod.object({
 export const GetScheduleConflictsResponse = zod.array(
   GetScheduleConflictsResponseItem,
 );
+
+/**
+ * @summary Get all schedules for a month
+ */
+export const GetAdminCalendarQueryParams = zod.object({
+  month: zod.coerce.string().optional(),
+});
+
+export const GetAdminCalendarResponseItem = zod.object({
+  id: zod.number(),
+  eventId: zod.number(),
+  eventTitle: zod.string(),
+  eventStatus: zod.string(),
+  zoneId: zod.number(),
+  zoneName: zod.string().nullish(),
+  zoneType: zod.string().nullish(),
+  zoneColor: zod.string().nullish(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullish(),
+});
+export const GetAdminCalendarResponse = zod.array(GetAdminCalendarResponseItem);
+
+/**
+ * @summary Get system settings
+ */
+export const GetSystemSettingsResponseItem = zod.object({
+  key: zod.string(),
+  value: zod.string(),
+});
+export const GetSystemSettingsResponse = zod.array(
+  GetSystemSettingsResponseItem,
+);
+
+/**
+ * @summary Set a system setting value
+ */
+export const UpdateSystemSettingParams = zod.object({
+  key: zod.coerce.string(),
+});
+
+export const UpdateSystemSettingBody = zod.object({
+  value: zod.string(),
+});
+
+export const UpdateSystemSettingResponse = zod.object({
+  key: zod.string(),
+  value: zod.string(),
+});
+
+/**
+ * @summary List all users (admin only)
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  id: zod.number(),
+  clerkId: zod.string(),
+  email: zod.string(),
+  name: zod.string().nullish(),
+  role: zod.enum(["user", "admin", "super_admin"]),
+  organizationId: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem);
+
+/**
+ * @summary Update a user's role
+ */
+export const UpdateUserRoleParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const UpdateUserRoleBody = zod.object({
+  role: zod.enum(["user", "admin", "super_admin"]),
+});
+
+export const UpdateUserRoleResponse = zod.object({
+  id: zod.number(),
+  email: zod.string(),
+  role: zod.string(),
+});
+
+/**
+ * @summary Update a promotion zone (admin only)
+ */
+export const UpdatePromotionZoneParams = zod.object({
+  zoneId: zod.coerce.number(),
+});
+
+export const UpdatePromotionZoneBody = zod.object({
+  name: zod.string(),
+  type: zod.string(),
+  description: zod.string().optional(),
+  color: zod.string().optional(),
+  isActive: zod.boolean().optional(),
+  requiresEndDate: zod.boolean().optional(),
+  requiresAssetUpload: zod.boolean().optional(),
+  allowMultipleFiles: zod.boolean().optional(),
+  sortOrder: zod.number().optional(),
+  maxConcurrent: zod.number().nullish(),
+});
+
+export const UpdatePromotionZoneResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.string(),
+  description: zod.string().nullish(),
+  isActive: zod.boolean(),
+  color: zod.string().nullish(),
+  requiresEndDate: zod.boolean().describe("종료일 입력이 필요한지 여부"),
+  requiresAssetUpload: zod.boolean().describe("홍보물 업로드가 필요한지 여부"),
+  allowMultipleFiles: zod.boolean().describe("여러 파일 동시 업로드 허용 여부"),
+  sortOrder: zod.number(),
+  maxConcurrent: zod
+    .number()
+    .nullish()
+    .describe("같은 날 동시 허용 신청 수 (null=무제한, 1=하루 1개만)"),
+});
+
+/**
+ * @summary Delete a promotion zone (admin only)
+ */
+export const DeletePromotionZoneParams = zod.object({
+  zoneId: zod.coerce.number(),
+});
+
+export const DeletePromotionZoneResponse = zod.object({
+  ok: zod.boolean().optional(),
+});

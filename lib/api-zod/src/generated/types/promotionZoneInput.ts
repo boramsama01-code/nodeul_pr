@@ -5,11 +5,16 @@
  * 노들섬 홍보 통합 시스템 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PromotionZoneInputType } from "./promotionZoneInputType";
 
 export interface PromotionZoneInput {
   name: string;
-  type: PromotionZoneInputType;
+  type: string;
   description?: string;
   color?: string;
+  isActive?: boolean;
+  requiresEndDate?: boolean;
+  requiresAssetUpload?: boolean;
+  allowMultipleFiles?: boolean;
+  sortOrder?: number;
+  maxConcurrent?: number | null;
 }

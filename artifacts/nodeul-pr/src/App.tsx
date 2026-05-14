@@ -12,6 +12,8 @@ import SignUpPage from "@/pages/auth/SignUpPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminEventsPage from "@/pages/admin/AdminEventsPage";
+import AdminCalendarPage from "@/pages/admin/AdminCalendarPage";
+import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import EventCreatePage from "@/pages/events/EventCreatePage";
 import EventDetailPage from "@/pages/events/EventDetailPage";
 import NotFound from "@/pages/not-found";
@@ -92,6 +94,8 @@ export default function App() {
               <Route path="/events/:id" component={EventDetailPage} />
               <Route path="/admin" component={AdminDashboardPage} />
               <Route path="/admin/events" component={AdminEventsPage} />
+              <Route path="/admin/calendar" component={AdminCalendarPage} />
+              <Route path="/admin/settings" component={AdminSettingsPage} />
               <Route component={NotFound} />
             </Switch>
           </AppLayout>

@@ -12,5 +12,13 @@ export interface ZoneAvailability {
   startDate: string;
   endDate: string;
   isAvailable: boolean;
+  currentCount?: number;
+  /** @nullable */
+  maxConcurrent?: number | null;
+  /**
+   * 이미 등록된 일정이 있어 등록이 불가합니다.
+   * @nullable
+   */
+  message?: string | null;
   conflicts?: ScheduleConflict[];
 }

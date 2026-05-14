@@ -5,15 +5,26 @@
  * 노들섬 홍보 통합 시스템 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PromotionZoneType } from "./promotionZoneType";
 
 export interface PromotionZone {
   id: number;
   name: string;
-  type: PromotionZoneType;
+  type: string;
   /** @nullable */
   description?: string | null;
   isActive: boolean;
   /** @nullable */
   color?: string | null;
+  /** 종료일 입력이 필요한지 여부 */
+  requiresEndDate: boolean;
+  /** 홍보물 업로드가 필요한지 여부 */
+  requiresAssetUpload: boolean;
+  /** 여러 파일 동시 업로드 허용 여부 */
+  allowMultipleFiles: boolean;
+  sortOrder: number;
+  /**
+   * 같은 날 동시 허용 신청 수 (null=무제한, 1=하루 1개만)
+   * @nullable
+   */
+  maxConcurrent?: number | null;
 }

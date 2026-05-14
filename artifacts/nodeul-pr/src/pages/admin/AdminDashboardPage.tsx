@@ -1,7 +1,7 @@
 import React from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
-import { useGetAdminDashboard, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useGetAdminDashboard, getGetAdminDashboardQueryKey, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { PixelCard } from "@/components/pixel/PixelCard";
 import { PixelBadge } from "@/components/pixel/PixelBadge";
 import { PixelButton } from "@/components/pixel/PixelButton";
@@ -10,18 +10,17 @@ import { useUIStore } from "@/store/useUIStore";
 
 export default function AdminDashboardPage() {
   const { isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { data: me, isLoading: meLoading } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const setNPCMessage = useUIStore(state => state.setNPCMessage);
 
   React.useEffect(() => {
-    setNPCMessage("Admin HUD: Monitor all island activities here.");
+    setNPCMessage("관리자 HUD에 오셨군요! 홍보 신청 현황과 일정을 확인하세요. 궁금한 점을 채팅으로 물어보셔도 됩니다 🐸");
   }, [setNPCMessage]);
 
-  const { data: dashboard, isLoading } = useGetAdminDashboard({ query: { enabled: !!user, queryKey: getGetAdminDashboardQueryKey() } });
+  const { data: dashboard, isLoading } = useGetAdminDashboard({ query: { enabled: !!me, queryKey: getGetAdminDashboardQueryKey() } });
 
-  const role = user?.publicMetadata?.role;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (role !== "admin" && role !== "super_admin") return <Redirect to="/dashboard" />;
+  if (!meLoading && me && me.role !== "admin" && me.role !== "super_admin") return <Redirect to="/dashboard" />;
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">

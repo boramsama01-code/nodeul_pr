@@ -350,44 +350,102 @@ export interface TimelineEntry {
   createdAt: string;
 }
 
-export type PromotionZoneType =
-  (typeof PromotionZoneType)[keyof typeof PromotionZoneType];
-
-export const PromotionZoneType = {
-  instagram: "instagram",
-  billboard: "billboard",
-  website_banner: "website_banner",
-  signage: "signage",
-  other: "other",
-} as const;
-
 export interface PromotionZone {
   id: number;
   name: string;
-  type: PromotionZoneType;
+  type: string;
   /** @nullable */
   description?: string | null;
   isActive: boolean;
   /** @nullable */
   color?: string | null;
+  /** 종료일 입력이 필요한지 여부 */
+  requiresEndDate: boolean;
+  /** 홍보물 업로드가 필요한지 여부 */
+  requiresAssetUpload: boolean;
+  /** 여러 파일 동시 업로드 허용 여부 */
+  allowMultipleFiles: boolean;
+  sortOrder: number;
+  /**
+   * 같은 날 동시 허용 신청 수 (null=무제한, 1=하루 1개만)
+   * @nullable
+   */
+  maxConcurrent?: number | null;
 }
-
-export type PromotionZoneInputType =
-  (typeof PromotionZoneInputType)[keyof typeof PromotionZoneInputType];
-
-export const PromotionZoneInputType = {
-  instagram: "instagram",
-  billboard: "billboard",
-  website_banner: "website_banner",
-  signage: "signage",
-  other: "other",
-} as const;
 
 export interface PromotionZoneInput {
   name: string;
-  type: PromotionZoneInputType;
+  type: string;
   description?: string;
   color?: string;
+  isActive?: boolean;
+  requiresEndDate?: boolean;
+  requiresAssetUpload?: boolean;
+  allowMultipleFiles?: boolean;
+  sortOrder?: number;
+  maxConcurrent?: number | null;
+}
+
+export interface SystemSetting {
+  key: string;
+  value: string;
+}
+
+export interface SystemSettingInput {
+  value: string;
+}
+
+export type AdminUserItemRole =
+  (typeof AdminUserItemRole)[keyof typeof AdminUserItemRole];
+
+export const AdminUserItemRole = {
+  user: "user",
+  admin: "admin",
+  super_admin: "super_admin",
+} as const;
+
+export interface AdminUserItem {
+  id: number;
+  clerkId: string;
+  email: string;
+  /** @nullable */
+  name?: string | null;
+  role: AdminUserItemRole;
+  /** @nullable */
+  organizationId?: number | null;
+  createdAt: string;
+}
+
+export type UserRoleInputRole =
+  (typeof UserRoleInputRole)[keyof typeof UserRoleInputRole];
+
+export const UserRoleInputRole = {
+  user: "user",
+  admin: "admin",
+  super_admin: "super_admin",
+} as const;
+
+export interface UserRoleInput {
+  role: UserRoleInputRole;
+}
+
+export interface CalendarScheduleItem {
+  id: number;
+  eventId: number;
+  eventTitle: string;
+  eventStatus: string;
+  zoneId: number;
+  /** @nullable */
+  zoneName?: string | null;
+  /** @nullable */
+  zoneType?: string | null;
+  /** @nullable */
+  zoneColor?: string | null;
+  startDate: string;
+  endDate: string;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
 }
 
 export interface ScheduleConflict {
@@ -404,6 +462,14 @@ export interface ZoneAvailability {
   startDate: string;
   endDate: string;
   isAvailable: boolean;
+  currentCount?: number;
+  /** @nullable */
+  maxConcurrent?: number | null;
+  /**
+   * 이미 등록된 일정이 있어 등록이 불가합니다.
+   * @nullable
+   */
+  message?: string | null;
   conflicts?: ScheduleConflict[];
 }
 
@@ -587,4 +653,21 @@ export type ListSchedulesParams = {
 export type GetScheduleConflictsParams = {
   startDate?: string;
   endDate?: string;
+};
+
+export type GetAdminCalendarParams = {
+  /**
+   * YYYY-MM format
+   */
+  month?: string;
+};
+
+export type UpdateUserRole200 = {
+  id: number;
+  email: string;
+  role: string;
+};
+
+export type DeletePromotionZone200 = {
+  ok?: boolean;
 };

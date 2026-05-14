@@ -7,3 +7,4 @@ export * from "./assets";
 export * from "./schedules";
 export * from "./comments";
 export * from "./emailLogs";
+export * from "./systemSettings";

@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { db, usersTable, organizationsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { GetMeResponse, UpdateMeBody } from "@workspace/api-zod";
 
 const router = Router();
 
 async function getOrCreateUser(clerkId: string, email: string) {
   let user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
   if (!user) {
-    const [created] = await db.insert(usersTable).values({ clerkId, email, role: "user" }).returning();
+    // Auto-assign super_admin to the very first user in the system
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+    const role = Number(count) === 0 ? "super_admin" : "user";
+    const [created] = await db.insert(usersTable).values({ clerkId, email, role }).returning();
     user = created;
   }
   return user;
@@ -36,6 +38,7 @@ router.get("/users/me", async (req, res) => {
     phone: user.phone ?? null,
     role: user.role,
     organizationId: user.organizationId ?? null,
+    organizationName: org?.name ?? null,
     createdAt: user.createdAt.toISOString(),
   });
 });
@@ -44,13 +47,16 @@ router.patch("/users/me", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const parsed = UpdateMeBody.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error });
+  const auth = getAuth(req);
+  const email = (auth?.sessionClaims?.email as string) ?? "";
+  const user = await getOrCreateUser(userId, email);
 
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
-  if (!user) return res.status(404).json({ error: "User not found" });
+  const { name, phone } = req.body;
+  const updates: Partial<typeof usersTable.$inferInsert> = {};
+  if (name !== undefined) updates.name = name;
+  if (phone !== undefined) updates.phone = phone;
 
-  const [updated] = await db.update(usersTable).set(parsed.data).where(eq(usersTable.id, user.id)).returning();
+  const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, user.id)).returning();
   return res.json({
     id: updated.id,
     clerkId: updated.clerkId,
@@ -59,6 +65,7 @@ router.patch("/users/me", async (req, res) => {
     phone: updated.phone ?? null,
     role: updated.role,
     organizationId: updated.organizationId ?? null,
+    organizationName: null,
     createdAt: updated.createdAt.toISOString(),
   });
 });

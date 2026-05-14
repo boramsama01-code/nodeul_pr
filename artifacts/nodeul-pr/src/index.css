@@ -47,9 +47,9 @@
   --color-highlight: hsl(var(--highlight));
   --color-highlight-foreground: hsl(var(--highlight-foreground));
 
-  --font-sans: var(--app-font-sans);
-  --font-serif: var(--app-font-serif);
-  --font-mono: var(--app-font-mono);
+  --font-sans: "VT323", monospace;
+  --font-serif: "VT323", monospace;
+  --font-mono: "VT323", monospace;
   --font-pixel: "Press Start 2P", monospace;
   --font-pixel-body: "VT323", monospace;
 
@@ -61,194 +61,200 @@
 
 /* LIGHT MODE ONLY - 16-bit Palette */
 :root {
-  /* primary background #f8f0e3 (warm cream) */
-  --background: 42 63% 93%;
-  --foreground: 0 0% 0%;
-
-  /* chunky pixel borders are black */
+  --background: 42 30% 95%;
+  --foreground: 0 0% 8%;
   --border: 0 0% 0%;
-
-  /* cards are white or light cream */
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
+  --card-foreground: 0 0% 8%;
   --card-border: 0 0% 0%;
-
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
+  --popover-foreground: 0 0% 8%;
   --popover-border: 0 0% 0%;
-
-  /* accent #0a6b00 (deep GBC green) */
-  --primary: 114 100% 21%;
+  --primary: 114 70% 22%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 114 100% 15%;
-
-  /* secondary #1a1aff (NES blue) */
-  --secondary: 240 100% 55%;
+  --primary-border: 114 70% 15%;
+  --secondary: 225 80% 45%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 240 100% 45%;
-
-  /* muted #cccccc */
-  --muted: 0 0% 80%;
-  --muted-foreground: 0 0% 30%;
-  --muted-border: 0 0% 50%;
-
-  /* gold #ffd700 */
-  --accent: 51 100% 50%;
-  --accent-foreground: 0 0% 0%;
-  --accent-border: 51 100% 40%;
-
-  /* danger #d00000 (NES red) */
-  --destructive: 0 100% 41%;
+  --secondary-border: 225 80% 35%;
+  --muted: 42 15% 88%;
+  --muted-foreground: 0 0% 35%;
+  --muted-border: 0 0% 60%;
+  --accent: 45 95% 48%;
+  --accent-foreground: 0 0% 8%;
+  --accent-border: 45 95% 35%;
+  --destructive: 0 80% 42%;
   --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 100% 30%;
-
-  /* success #8bac0f (light GBC green) */
-  --success: 85 84% 37%;
-  --success-foreground: 0 0% 0%;
-  --success-border: 85 84% 27%;
-
-  /* highlight #c8ff00 (bright GBC lime) */
+  --destructive-border: 0 80% 30%;
+  --success: 100 55% 32%;
+  --success-foreground: 0 0% 100%;
+  --success-border: 100 55% 22%;
   --highlight: 73 100% 50%;
-  --highlight-foreground: 0 0% 0%;
-
+  --highlight-foreground: 0 0% 8%;
   --input: 0 0% 100%;
-  --ring: 114 100% 21%;
-
-  --app-font-sans: 'VT323', monospace;
-  --app-font-serif: 'VT323', monospace;
-  --app-font-mono: 'VT323', monospace;
+  --ring: 114 70% 22%;
   --radius: 0px;
 }
 
 .dark {
-  /* Force light mode variables even if OS is dark, since brief specifies LIGHT MODE ONLY */
-  --background: 42 63% 93%;
-  --foreground: 0 0% 0%;
+  --background: 42 30% 95%;
+  --foreground: 0 0% 8%;
   --border: 0 0% 0%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
+  --card-foreground: 0 0% 8%;
   --card-border: 0 0% 0%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
+  --popover-foreground: 0 0% 8%;
   --popover-border: 0 0% 0%;
-  --primary: 114 100% 21%;
+  --primary: 114 70% 22%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 114 100% 15%;
-  --secondary: 240 100% 55%;
+  --primary-border: 114 70% 15%;
+  --secondary: 225 80% 45%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 240 100% 45%;
-  --muted: 0 0% 80%;
-  --muted-foreground: 0 0% 30%;
-  --muted-border: 0 0% 50%;
-  --accent: 51 100% 50%;
-  --accent-foreground: 0 0% 0%;
-  --accent-border: 51 100% 40%;
-  --destructive: 0 100% 41%;
+  --secondary-border: 225 80% 35%;
+  --muted: 42 15% 88%;
+  --muted-foreground: 0 0% 35%;
+  --muted-border: 0 0% 60%;
+  --accent: 45 95% 48%;
+  --accent-foreground: 0 0% 8%;
+  --accent-border: 45 95% 35%;
+  --destructive: 0 80% 42%;
   --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 100% 30%;
-  --success: 85 84% 37%;
-  --success-foreground: 0 0% 0%;
-  --success-border: 85 84% 27%;
+  --destructive-border: 0 80% 30%;
+  --success: 100 55% 32%;
+  --success-foreground: 0 0% 100%;
+  --success-border: 100 55% 22%;
   --highlight: 73 100% 50%;
-  --highlight-foreground: 0 0% 0%;
+  --highlight-foreground: 0 0% 8%;
   --input: 0 0% 100%;
-  --ring: 114 100% 21%;
+  --ring: 114 70% 22%;
 }
 
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground text-lg;
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.5;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     image-rendering: pixelated;
+    overflow-x: hidden;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-pixel tracking-tight;
+  /* Korean text always uses VT323 — never Press Start 2P */
+  :lang(ko), .ko {
+    font-family: "VT323", monospace;
+  }
+
+  /* Base input/select styling */
+  input, textarea, select {
+    font-family: "VT323", monospace;
+    font-size: 1.1rem;
   }
 }
 
 @layer utilities {
-  /* Pixel art borders using box-shadow */
+  /* ── Pixel Borders ───────────────────────────────────────────────────────── */
   .pixel-border {
-    box-shadow: 
-      inset -4px -4px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 4px #000;
-    @apply border-4 border-transparent;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 0 #000;
   }
-
   .pixel-border-sm {
-    box-shadow: 
-      inset -2px -2px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 2px #000;
-    @apply border-2 border-transparent;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0 0 #000;
+  }
+  .pixel-border-inset {
+    border: 3px solid #000;
+    box-shadow: inset 2px 2px 0 0 rgba(255,255,255,0.5), inset -2px -2px 0 0 rgba(0,0,0,0.15);
   }
 
-  /* CRT Scanlines */
-  .scanlines {
-    position: relative;
+  /* ── Hover & Press effects ───────────────────────────────────────────────── */
+  .pixel-hover:hover {
+    box-shadow: 6px 6px 0 0 #000;
+    transform: translate(-1px, -1px);
   }
-  .scanlines::after {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-    background-size: 100% 4px;
-    z-index: 50;
-    pointer-events: none;
+  .pixel-hover-sm:hover {
+    box-shadow: 3px 3px 0 0 #000;
+    transform: translate(-1px, -1px);
   }
-
-  .pixel-hover-glow:hover {
-    box-shadow: 
-      inset -4px -4px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 4px #000,
-      0px 0px 15px 4px hsl(var(--primary));
-    transform: scale(1.02);
-  }
-  
-  .pixel-hover-glow-sm:hover {
-    box-shadow: 
-      inset -2px -2px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 2px #000,
-      0px 0px 10px 2px hsl(var(--primary));
-    transform: scale(1.02);
-  }
-
   .pixel-press:active {
-    box-shadow: 
-      inset 4px 4px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 4px #000;
+    box-shadow: 1px 1px 0 0 #000;
+    transform: translate(3px, 3px);
+  }
+  .pixel-press-sm:active {
+    box-shadow: 0px 0px 0 0 #000;
     transform: translate(2px, 2px);
   }
-  
-  .pixel-press-sm:active {
-    box-shadow: 
-      inset 2px 2px 0px 0px rgba(0,0,0,0.2),
-      0px 0px 0px 2px #000;
-    transform: translate(1px, 1px);
+  /* legacy compat aliases */
+  .pixel-hover-glow:hover {
+    box-shadow: 6px 6px 0 0 #000;
+    transform: translate(-1px, -1px);
+  }
+  .pixel-hover-glow-sm:hover {
+    box-shadow: 3px 3px 0 0 #000;
+    transform: translate(-1px, -1px);
   }
 
-  /* Blinking cursor for NPC chat */
+  /* ── CRT Scanlines ───────────────────────────────────────────────────────── */
+  .scanlines { position: relative; }
+  .scanlines::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.04) 3px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── Animations ──────────────────────────────────────────────────────────── */
   @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
-  .animate-blink {
-    animation: blink 1s step-end infinite;
-  }
-  
-  /* Bouncing for pixel loading/idle */
+  .animate-blink { animation: blink 1s step-end infinite; }
+
   @keyframes pixel-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
   }
-  .animate-pixel-bounce {
-    animation: pixel-bounce 1s steps(2, end) infinite;
+  .animate-pixel-bounce { animation: pixel-bounce 0.8s steps(2) infinite; }
+
+  /* ── Typography helpers ──────────────────────────────────────────────────── */
+  /* Use these for page section titles in Korean */
+  .page-title {
+    font-family: "VT323", monospace;
+    font-size: 2.4rem;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    color: hsl(var(--foreground));
+  }
+  .section-label {
+    font-family: "Press Start 2P", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Mobile adjustments ──────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .font-pixel {
+      font-size: 0.6rem;
+    }
+    .page-title {
+      font-size: 1.8rem;
+    }
   }
 }
