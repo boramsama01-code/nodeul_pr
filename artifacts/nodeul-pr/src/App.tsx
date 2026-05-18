@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -36,16 +36,11 @@ if (!clerkPubKey) {
 }
 
 function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <LandingPage />
-      </Show>
-    </>
-  );
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) return <LandingPage />;
+  if (isSignedIn) return <Redirect to="/dashboard" />;
+  return <LandingPage />;
 }
 
 function ClerkQueryClientCacheInvalidator() {

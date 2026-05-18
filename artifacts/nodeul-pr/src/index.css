@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Press+Start+2P&family=VT323:wght@400&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -59,42 +59,42 @@
   --radius-xl: 0px;
 }
 
-/* LIGHT MODE ONLY - Nodeul Island Palette */
+/* LIGHT MODE — Nodeul Island Refined Palette */
 :root {
-  --background: 42 38% 95%;
-  --foreground: 0 0% 8%;
+  --background: 40 30% 96%;
+  --foreground: 220 20% 10%;
   --border: 0 0% 0%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 8%;
+  --card-foreground: 220 20% 10%;
   --card-border: 0 0% 0%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 8%;
+  --popover-foreground: 220 20% 10%;
   --popover-border: 0 0% 0%;
-  /* 노들섬 초록 (자연) */
-  --primary: 108 58% 28%;
+  /* 에메랄드 — 세련된 노들섬 메인 컬러 */
+  --primary: 162 62% 27%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 108 58% 18%;
-  /* 한강 파랑 */
-  --secondary: 207 72% 42%;
+  --primary-border: 162 62% 16%;
+  /* 한강 딥 블루 */
+  --secondary: 210 65% 40%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 207 72% 30%;
-  --muted: 42 20% 88%;
-  --muted-foreground: 0 0% 38%;
-  --muted-border: 0 0% 60%;
-  /* 따뜻한 황금빛 액센트 */
-  --accent: 40 92% 50%;
-  --accent-foreground: 0 0% 8%;
-  --accent-border: 40 92% 36%;
-  --destructive: 0 78% 44%;
+  --secondary-border: 210 65% 28%;
+  --muted: 40 18% 90%;
+  --muted-foreground: 220 10% 42%;
+  --muted-border: 220 8% 70%;
+  /* 골드 액센트 */
+  --accent: 38 88% 48%;
+  --accent-foreground: 220 20% 10%;
+  --accent-border: 38 88% 34%;
+  --destructive: 0 72% 44%;
   --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 78% 30%;
-  --success: 108 52% 34%;
+  --destructive-border: 0 72% 30%;
+  --success: 145 55% 32%;
   --success-foreground: 0 0% 100%;
-  --success-border: 108 52% 22%;
+  --success-border: 145 55% 20%;
   --highlight: 73 100% 50%;
-  --highlight-foreground: 0 0% 8%;
+  --highlight-foreground: 220 20% 10%;
   --input: 0 0% 100%;
-  --ring: 108 58% 28%;
+  --ring: 162 62% 27%;
   --radius: 0px;
 }
 
@@ -139,26 +139,35 @@
   }
 
   body {
-    font-family: "VT323", monospace;
-    font-size: 18px;
-    line-height: 1.5;
+    font-family: "Noto Sans KR", "VT323", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    image-rendering: pixelated;
     overflow-x: hidden;
-    -webkit-font-smoothing: none;
-    font-smooth: never;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Korean text always uses VT323 — never Press Start 2P */
+  /* Korean: use Noto Sans KR for clean rendering */
   :lang(ko), .ko {
-    font-family: "VT323", monospace;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  /* Press Start 2P — only for short decorative English labels */
+  .font-pixel {
+    font-family: "Press Start 2P", monospace !important;
+  }
+
+  /* VT323 — retro English body text */
+  .font-pixel-body {
+    font-family: "VT323", "Noto Sans KR", sans-serif !important;
+    font-size: 1.15em;
   }
 
   /* Base input/select styling */
   input, textarea, select {
-    font-family: "VT323", monospace;
-    font-size: 1.1rem;
+    font-family: "Noto Sans KR", sans-serif;
+    font-size: 1rem;
   }
 }
 
@@ -236,6 +245,11 @@
   .animate-pixel-bounce { animation: pixel-bounce 0.8s steps(2) infinite; }
 
   /* 맹꽁이 둥둥 (idle float) */
+  @keyframes frogFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+
   @keyframes maengkongi-float {
     0%   { transform: translateY(0px) rotate(-1deg); }
     25%  { transform: translateY(-5px) rotate(0deg); }

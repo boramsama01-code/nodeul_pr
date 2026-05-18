@@ -1,6 +1,6 @@
 import React from "react";
 
-type MaengkongiVariant = "normal" | "happy" | "shy" | "thinking" | "waving";
+type MaengkongiVariant = "normal" | "happy" | "shy" | "waving";
 
 interface MaengkongiProps {
   size?: number;
@@ -8,18 +8,18 @@ interface MaengkongiProps {
   dancing?: boolean;
   floating?: boolean;
   className?: string;
-  withMegaphone?: boolean;
-  withSign?: boolean;
 }
 
+/**
+ * 오리지널 맹꽁이 캐릭터 — 초록 두꺼비과 개구리
+ * 눈이 머리 위에 솟아있는 전형적인 개구리 형태
+ */
 export function MaengkongiCharacter({
   size = 80,
   variant = "normal",
   dancing = false,
   floating = true,
   className = "",
-  withMegaphone = false,
-  withSign = false,
 }: MaengkongiProps) {
   const animClass = dancing
     ? "animate-maengkongi-dance"
@@ -30,112 +30,106 @@ export function MaengkongiCharacter({
   return (
     <div
       className={`inline-block select-none ${animClass} ${className}`}
-      style={{ width: size, height: withMegaphone || withSign ? size * 1.3 : size * 1.1 }}
+      style={{ width: size, height: size * 1.05 }}
     >
       <svg
-        viewBox="0 0 110 130"
+        viewBox="0 0 100 105"
         xmlns="http://www.w3.org/2000/svg"
         width={size}
-        height={withMegaphone || withSign ? size * 1.3 : size * 1.1}
+        height={size * 1.05}
         style={{ imageRendering: "pixelated", overflow: "visible" }}
       >
-        {/* ── 옵션: 메가폰 (오른쪽 팔) ─────────── */}
-        {withMegaphone && (
-          <g transform="translate(78, 58)">
-            <polygon points="0,4 20,0 20,14 0,10" fill="#F59E0B" stroke="#1A0A2E" strokeWidth="2"/>
-            <polygon points="20,0 30,-4 30,18 20,14" fill="#FBBF24" stroke="#1A0A2E" strokeWidth="2"/>
-            <circle cx="0" cy="7" r="5" fill="#F59E0B" stroke="#1A0A2E" strokeWidth="2"/>
-          </g>
-        )}
+        {/* ── 몸통 (납작하고 둥근 개구리 체형) ── */}
+        <ellipse cx="50" cy="68" rx="42" ry="32" fill="#4CAF6A" stroke="#1A5C2A" strokeWidth="2.5"/>
 
-        {/* ── 옵션: 홍보 팻말 (왼쪽) ─────────── */}
-        {withSign && (
-          <g transform="translate(-30, 30)">
-            <rect x="0" y="0" width="36" height="28" rx="0" fill="white" stroke="#1A0A2E" strokeWidth="2"/>
-            <rect x="0" y="0" width="36" height="8" fill="#6D28D9" stroke="#1A0A2E" strokeWidth="2"/>
-            <text x="18" y="6" textAnchor="middle" fill="white" fontSize="5" fontFamily="monospace" fontWeight="bold">NODEUL</text>
-            <text x="18" y="20" textAnchor="middle" fill="#1A0A2E" fontSize="4" fontFamily="monospace">홍보중!</text>
-            <rect x="16" y="28" width="4" height="14" fill="#92400E" stroke="#1A0A2E" strokeWidth="1.5"/>
-          </g>
-        )}
+        {/* ── 배 (밝은 크림색) ── */}
+        <ellipse cx="50" cy="72" rx="28" ry="20" fill="#C8E6C0"/>
 
-        {/* ── 몸통 ─────────────────────────────── */}
-        <ellipse cx="55" cy="68" rx="43" ry="39" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="3"/>
+        {/* ── 뒷다리 암시 ── */}
+        <ellipse cx="20" cy="92" rx="14" ry="8" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2"/>
+        <ellipse cx="80" cy="92" rx="14" ry="8" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2"/>
+        {/* 발가락 */}
+        <line x1="10" y1="93" x2="8" y2="100" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="18" y1="96" x2="17" y2="103" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="26" y1="95" x2="26" y2="102" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="74" y1="95" x2="74" y2="102" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="82" y1="96" x2="83" y2="103" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="90" y1="93" x2="92" y2="100" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
 
-        {/* ── 눈 흰자 ──────────────────────────── */}
-        <circle cx="35" cy="50" r="16" fill="white" stroke="#1A0A2E" strokeWidth="2.5"/>
-        <circle cx="75" cy="50" r="16" fill="white" stroke="#1A0A2E" strokeWidth="2.5"/>
-
-        {/* ── 홍채 (보라/바이올렛) ─────────────── */}
-        <circle cx="35" cy="52" r="11" fill="#6D28D9"/>
-        <circle cx="75" cy="52" r="11" fill="#6D28D9"/>
-
-        {/* ── 동공 ─────────────────────────────── */}
-        <circle cx="33.5" cy="53" r="6.5" fill="#0D0020"/>
-        <circle cx="73.5" cy="53" r="6.5" fill="#0D0020"/>
-
-        {/* ── 눈 반짝이 ────────────────────────── */}
-        <circle cx="27" cy="45" r="3.5" fill="white"/>
-        <circle cx="67" cy="45" r="3.5" fill="white"/>
-        <circle cx="36" cy="56" r="1.5" fill="white"/>
-        <circle cx="76" cy="56" r="1.5" fill="white"/>
-
-        {/* ── 눈썹 (살짝 긴장/부끄) ────────────── */}
-        <path d="M 21 32 Q 28 27 35 30" stroke="#1A0A2E" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-        <path d="M 75 30 Q 82 27 89 32" stroke="#1A0A2E" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-
-        {/* ── 볼 홍조 ──────────────────────────── */}
-        <ellipse cx="14" cy="74" rx="12" ry="8" fill="#F472B6" opacity="0.48"/>
-        <ellipse cx="96" cy="74" rx="12" ry="8" fill="#F472B6" opacity="0.48"/>
-        {/* 홍조 점 */}
-        <circle cx="10" cy="72" r="2" fill="#EC4899" opacity="0.4"/>
-        <circle cx="17" cy="79" r="2" fill="#EC4899" opacity="0.4"/>
-        <circle cx="92" cy="72" r="2" fill="#EC4899" opacity="0.4"/>
-        <circle cx="99" cy="79" r="2" fill="#EC4899" opacity="0.4"/>
-
-        {/* ── 입 ───────────────────────────────── */}
-        {variant === "happy" ? (
-          <path d="M 40 84 Q 55 96 70 84" stroke="#1A0A2E" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-        ) : variant === "shy" ? (
-          <ellipse cx="55" cy="84" rx="7" ry="6" fill="#1A0A2E"/>
-        ) : variant === "thinking" ? (
-          <path d="M 43 83 Q 52 88 62 85" stroke="#1A0A2E" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-        ) : (
-          /* normal: slightly open mouth */
-          <ellipse cx="55" cy="84" rx="8" ry="6" fill="#1A0A2E"/>
-        )}
-
-        {/* ── 팔 ───────────────────────────────── */}
+        {/* ── 앞발 ── */}
         {variant === "waving" ? (
           <>
-            <ellipse cx="8" cy="72" rx="9" ry="7" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5"/>
-            {/* 흔드는 팔 */}
-            <ellipse cx="102" cy="55" rx="7" ry="9" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5" transform="rotate(-30, 102, 55)"/>
+            <ellipse cx="6" cy="72" rx="8" ry="6" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2"/>
+            {/* 흔드는 오른쪽 팔 */}
+            <ellipse cx="94" cy="56" rx="7" ry="9" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2" transform="rotate(-25, 94, 56)"/>
           </>
         ) : (
           <>
-            <ellipse cx="8" cy="74" rx="9" ry="7" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5"/>
-            <ellipse cx="102" cy="74" rx="9" ry="7" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5"/>
+            <ellipse cx="6" cy="74" rx="8" ry="6" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2"/>
+            <ellipse cx="94" cy="74" rx="8" ry="6" fill="#3D9954" stroke="#1A5C2A" strokeWidth="2"/>
           </>
         )}
 
-        {/* ── 발 ───────────────────────────────── */}
-        <ellipse cx="33" cy="104" rx="16" ry="10" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5"/>
-        <ellipse cx="77" cy="104" rx="16" ry="10" fill="#F9A8C9" stroke="#1A0A2E" strokeWidth="2.5"/>
-        {/* 발가락 */}
-        <line x1="22" y1="105" x2="20" y2="112" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="30" y1="108" x2="29" y2="115" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="38" y1="106" x2="38" y2="113" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="66" y1="106" x2="66" y2="113" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="74" y1="108" x2="75" y2="115" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="82" y1="105" x2="84" y2="112" stroke="#1A0A2E" strokeWidth="2" strokeLinecap="round"/>
+        {/* ── 눈 받침 (개구리 눈은 머리 위로 솟음) ── */}
+        <ellipse cx="31" cy="40" rx="15" ry="13" fill="#4CAF6A" stroke="#1A5C2A" strokeWidth="2.5"/>
+        <ellipse cx="69" cy="40" rx="15" ry="13" fill="#4CAF6A" stroke="#1A5C2A" strokeWidth="2.5"/>
+
+        {/* ── 눈 흰자 ── */}
+        <ellipse cx="31" cy="38" rx="11" ry="11" fill="white"/>
+        <ellipse cx="69" cy="38" rx="11" ry="11" fill="white"/>
+
+        {/* ── 홍채 (어두운 갈색-녹색) ── */}
+        <ellipse cx="31" cy="39" rx="7.5" ry="8" fill="#2A5A20"/>
+        <ellipse cx="69" cy="39" rx="7.5" ry="8" fill="#2A5A20"/>
+
+        {/* ── 동공 ── */}
+        <ellipse cx="30" cy="40" rx="4.5" ry="5" fill="#0A120A"/>
+        <ellipse cx="68" cy="40" rx="4.5" ry="5" fill="#0A120A"/>
+
+        {/* ── 눈 반짝이 ── */}
+        <circle cx="25" cy="34" r="2.5" fill="white"/>
+        <circle cx="63" cy="34" r="2.5" fill="white"/>
+        <circle cx="32" cy="42" r="1.2" fill="white"/>
+        <circle cx="70" cy="42" r="1.2" fill="white"/>
+
+        {/* ── 콧구멍 (개구리 특징) ── */}
+        <circle cx="45" cy="57" r="2.5" fill="#2A5C2A" opacity="0.55"/>
+        <circle cx="55" cy="57" r="2.5" fill="#2A5C2A" opacity="0.55"/>
+
+        {/* ── 입 (넓은 개구리 입) ── */}
+        {variant === "happy" ? (
+          <>
+            <path d="M 32 74 Q 50 85 68 74" stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+            <path d="M 33 74 Q 50 82 67 74" fill="#1A5C2A" opacity="0.15"/>
+          </>
+        ) : variant === "shy" ? (
+          <path d="M 38 73 Q 50 78 62 73" stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        ) : (
+          /* 기본: 살짝 벌린 넓은 개구리 입 */
+          <>
+            <path d="M 32 72 Q 50 80 68 72" stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+            <ellipse cx="50" cy="74" rx="14" ry="5" fill="#1A5C2A" opacity="0.12"/>
+          </>
+        )}
+
+        {/* ── 등 무늬 (맹꽁이 특유) ── */}
+        <ellipse cx="50" cy="60" rx="6" ry="8" fill="#3D9954" opacity="0.35"/>
+        <ellipse cx="36" cy="65" rx="4" ry="5" fill="#3D9954" opacity="0.25"/>
+        <ellipse cx="64" cy="65" rx="4" ry="5" fill="#3D9954" opacity="0.25"/>
       </svg>
     </div>
   );
 }
 
-/** 채팅창용 작은 맹꽁이 아이콘 */
-export function MaengkongiIcon({ size = 32, dancing = false, className = "" }: { size?: number; dancing?: boolean; className?: string }) {
+export function MaengkongiIcon({
+  size = 32,
+  dancing = false,
+  className = "",
+}: {
+  size?: number;
+  dancing?: boolean;
+  className?: string;
+}) {
   return (
     <MaengkongiCharacter
       size={size}
