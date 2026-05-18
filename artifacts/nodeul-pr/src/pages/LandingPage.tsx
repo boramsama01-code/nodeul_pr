@@ -184,7 +184,6 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col -mt-4 sm:-mt-6">
-
       {/* ── 히어로 ── */}
       <div className="relative w-full overflow-hidden" style={{ background: "linear-gradient(180deg, #A0CFEA 0%, #C4E4D0 100%)" }}>
         <motion.div
@@ -214,13 +213,12 @@ export default function LandingPage() {
           <NodeulScene />
         </div>
       </div>
-
       {/* ── 절차 안내 ── */}
       <div className="bg-white border-t border-black/10 px-4 py-10">
         <div className="max-w-4xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center mb-8">
             <h2 className="text-lg font-bold text-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>홍보 신청 절차</h2>
-            <p className="mt-1 text-sm text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>4단계로 간편하게 노들섬 홍보를 신청하세요.</p>
+            <p className="mt-1 text-sm text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>노들섬에서 진행되는 행사의 홍보는 다음 절차로 진행됩니다 🏝️</p>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
