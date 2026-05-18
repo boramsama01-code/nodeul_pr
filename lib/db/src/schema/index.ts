@@ -8,3 +8,4 @@ export * from "./schedules";
 export * from "./comments";
 export * from "./emailLogs";
 export * from "./systemSettings";
+export * from "./approvalLogs";

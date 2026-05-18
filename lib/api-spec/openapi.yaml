@@ -27,6 +27,8 @@ tags:
     description: Comments and communication log
   - name: emailLogs
     description: Email send history
+  - name: Storage
+    description: Object storage upload and serving endpoints.
   - name: admin
     description: Admin-only endpoints
 paths:
@@ -982,6 +984,37 @@ paths:
                 properties:
                   ok:
                     type: boolean
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 
 components:
   schemas:

@@ -1,111 +1,187 @@
 import React from "react";
 import { useAuth } from "@clerk/react";
-import { Redirect } from "wouter";
-import { useGetAdminDashboard, getGetAdminDashboardQueryKey, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
-import { PixelCard } from "@/components/pixel/PixelCard";
-import { PixelBadge } from "@/components/pixel/PixelBadge";
-import { PixelButton } from "@/components/pixel/PixelButton";
-import { Link } from "wouter";
+import { Redirect, Link } from "wouter";
+import {
+  useGetAdminDashboard, getGetAdminDashboardQueryKey,
+  useGetMe, getGetMeQueryKey,
+} from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "초안",
-  submitted: "제출됨",
-  approved: "승인됨",
-  revision_requested: "수정 요청",
-  rejected: "반려됨",
-  completed: "완료",
+const KR: Record<string, string> = {
+  draft: "초안", submitted: "제출됨", approved: "승인됨",
+  revision_requested: "수정 요청", rejected: "반려됨", completed: "완료",
 };
 
-const STATUS_VARIANTS: Record<string, "primary" | "success" | "alert" | "danger" | "secondary"> = {
-  draft: "secondary",
-  submitted: "primary",
-  approved: "success",
-  revision_requested: "alert",
-  rejected: "danger",
-  completed: "success",
+const STATUS_CLS: Record<string, string> = {
+  draft:              "bg-gray-100 text-gray-500 border-gray-200",
+  submitted:          "bg-blue-50 text-blue-700 border-blue-200",
+  approved:           "bg-emerald-50 text-emerald-700 border-emerald-200",
+  revision_requested: "bg-amber-50 text-amber-700 border-amber-200",
+  rejected:           "bg-red-50 text-red-700 border-red-200",
+  completed:          "bg-gray-100 text-gray-400 border-gray-200",
 };
+
+function StatusPill({ status }: { status: string }) {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${STATUS_CLS[status] ?? "bg-gray-100 text-gray-500 border-gray-200"}`}>
+      {KR[status] ?? status}
+    </span>
+  );
+}
+
+function StatCard({ label, value, sub, urgent }: { label: string; value: number; sub?: string; urgent?: boolean }) {
+  return (
+    <div className={`border rounded-lg p-4 bg-white flex flex-col gap-1 ${urgent && value > 0 ? "border-amber-300 bg-amber-50/40" : "border-black/10"}`}>
+      <span className="text-xs text-muted-foreground font-medium" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{label}</span>
+      <span className={`text-3xl font-black tabular-nums ${urgent && value > 0 ? "text-amber-600" : "text-foreground"}`}>{value}</span>
+      {sub && <span className="text-xs text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{sub}</span>}
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const { isSignedIn } = useAuth();
   const { data: me, isLoading: meLoading } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
-  const setNPCMessage = useUIStore(state => state.setNPCMessage);
+  const setNPCMessage = useUIStore(s => s.setNPCMessage);
 
   React.useEffect(() => {
-    setNPCMessage("관리자 대시보드에 오셨군요! 홍보 신청 현황과 일정을 확인하세요. 궁금한 점을 채팅으로 물어보셔도 됩니다 🐸");
+    setNPCMessage("관리자 대시보드입니다. 승인 대기 건부터 처리해 주세요 🐸");
   }, [setNPCMessage]);
 
-  const { data: dashboard, isLoading } = useGetAdminDashboard({ query: { enabled: !!me, queryKey: getGetAdminDashboardQueryKey() } });
+  const { data: dash, isLoading } = useGetAdminDashboard({
+    query: { enabled: !!me, queryKey: getGetAdminDashboardQueryKey() },
+  });
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (!meLoading && me && me.role !== "admin" && me.role !== "super_admin") return <Redirect to="/dashboard" />;
 
+  const recentEvents = dash?.recentEvents ?? [];
+
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-end border-b-4 border-black pb-4">
+    <div className="max-w-6xl mx-auto space-y-5">
+
+      {/* ── 헤더 ── */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-pixel text-destructive">관리자 대시보드</h1>
-          <p className="font-pixel-body text-xl text-muted-foreground mt-2">노들섬 홍보 통합 관리 시스템</p>
+          <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>관리자 대시보드</h1>
+          <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>노들섬 홍보 통합 관리 시스템</p>
         </div>
-        <div className="flex gap-4">
-          <Link href="/admin/events"><PixelButton variant="secondary">전체 행사</PixelButton></Link>
-          <Link href="/admin/calendar"><PixelButton variant="accent">일정표</PixelButton></Link>
+        <div className="flex gap-2">
+          <Link href="/admin/events">
+            <button className="h-8 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+              전체 행사
+            </button>
+          </Link>
+          <Link href="/admin/calendar">
+            <button className="h-8 px-3 text-xs font-medium border border-primary/40 text-primary rounded bg-primary/5 hover:bg-primary/10 transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+              📅 일정표
+            </button>
+          </Link>
         </div>
       </div>
 
+      {/* ── 스탯 카드 ── */}
       {isLoading ? (
-        <div className="flex justify-center p-12">
-          <div className="animate-pixel-bounce text-4xl">⏳</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="border border-black/10 rounded-lg p-4 bg-white animate-pulse h-20" />
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <PixelCard variant="alert" className="flex flex-col items-center justify-center p-6 space-y-2">
-            <span className="font-pixel-body text-xl">승인 대기</span>
-            <span className="font-pixel text-5xl">{dashboard?.pendingApprovalCount || 0}</span>
-            {(dashboard?.pendingApprovalCount || 0) > 0 && <span className="animate-pulse text-yellow-300 font-pixel mt-2">! 처리 필요 !</span>}
-          </PixelCard>
-
-          <PixelCard className="flex flex-col items-center justify-center p-6 space-y-2 bg-secondary text-secondary-foreground">
-            <span className="font-pixel-body text-xl">신규 신청</span>
-            <span className="font-pixel text-5xl">{dashboard?.newSubmissionsCount || 0}</span>
-          </PixelCard>
-
-          <PixelCard className="flex flex-col items-center justify-center p-6 space-y-2 bg-success text-success-foreground">
-            <span className="font-pixel-body text-xl">오늘 일정</span>
-            <span className="font-pixel text-5xl">{dashboard?.todayScheduleCount || 0}</span>
-          </PixelCard>
-
-          <PixelCard className="flex flex-col items-center justify-center p-6 space-y-2 bg-accent text-accent-foreground">
-            <span className="font-pixel-body text-xl">일정 충돌</span>
-            <span className="font-pixel text-5xl">{dashboard?.conflictCount || 0}</span>
-            {(dashboard?.conflictCount || 0) > 0 && <span className="animate-pulse text-destructive font-pixel mt-2 text-sm">! 주의 !</span>}
-          </PixelCard>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="승인 대기" value={dash?.pendingApprovalCount ?? 0} sub="검토 필요" urgent />
+          <StatCard label="수정 요청" value={dash?.revisionRequestCount ?? (recentEvents.filter(e => e.status === "revision_requested").length)} sub="재제출 대기" urgent />
+          <StatCard label="오늘 일정" value={dash?.todayScheduleCount ?? 0} sub="게시 예정" />
+          <StatCard label="일정 충돌" value={dash?.conflictCount ?? 0} sub="확인 필요" urgent />
         </div>
       )}
 
-      {dashboard?.recentEvents && dashboard.recentEvents.length > 0 && (
-        <PixelCard className="bg-white">
-          <h2 className="text-xl font-pixel mb-6 border-b-4 border-black pb-2">최근 활동</h2>
-          <div className="space-y-4">
-            {dashboard.recentEvents.map(event => (
-              <div key={event.id} className="flex justify-between items-center border-2 border-black p-3 bg-background">
+      {/* ── 최근 행사 테이블 ── */}
+      <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-black/8 bg-gray-50/60">
+          <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>최근 행사</h2>
+          <Link href="/admin/events">
+            <span className="text-xs text-primary hover:underline cursor-pointer" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>전체 보기 →</span>
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>불러오는 중...</div>
+        ) : recentEvents.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>최근 행사가 없습니다.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-black/8 bg-gray-50/40">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>행사명</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>신청 기관</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>상태</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>기간</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>액션</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {recentEvents.map(event => (
+                  <tr key={event.id} className={`hover:bg-muted/30 transition-colors ${event.status === "submitted" ? "bg-blue-50/30" : event.status === "revision_requested" ? "bg-amber-50/20" : ""}`}>
+                    <td className="px-4 py-3">
+                      <Link href={`/events/${event.id}`}>
+                        <span className="font-medium text-foreground hover:text-primary hover:underline cursor-pointer line-clamp-1 text-sm" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                          {event.title}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                      {event.organizationName ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusPill status={event.status} />
+                      {event.status === "submitted" && (
+                        <span className="ml-1.5 text-[0.55rem] font-bold text-blue-600 uppercase tracking-wide align-middle font-pixel">NEW</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell whitespace-nowrap" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                      {event.startDate} — {event.endDate}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/events/${event.id}`}>
+                        <button className={`h-7 px-3 text-xs rounded border transition-colors ${
+                          event.status === "submitted"
+                            ? "bg-primary text-white border-primary hover:bg-primary/85"
+                            : "bg-white text-foreground border-black/15 hover:bg-muted/60"
+                        }`} style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                          {event.status === "submitted" ? "검토" : "보기"}
+                        </button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── 빠른 링크 ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {[
+          { href: "/admin/events?status=submitted",          icon: "📥", label: "미승인 행사 검토",   desc: "제출된 신청 확인" },
+          { href: "/admin/events?status=revision_requested", icon: "✏️", label: "수정 요청 행사",     desc: "재제출 대기 중" },
+          { href: "/admin/calendar",                         icon: "📅", label: "일정 캘린더",       desc: "충돌·게시 일정 확인" },
+        ].map(item => (
+          <Link key={item.href} href={item.href}>
+            <div className="border border-black/10 rounded-lg p-4 bg-white hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">{item.icon}</span>
                 <div>
-                  <h3 className="font-pixel text-sm">{event.title}</h3>
-                  <p className="font-pixel-body text-sm text-muted-foreground">{event.organizationName || "-"}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <PixelBadge variant={STATUS_VARIANTS[event.status] ?? "secondary"}>
-                    {STATUS_LABELS[event.status] || event.status}
-                  </PixelBadge>
-                  <Link href={`/events/${event.id}`}>
-                    <PixelButton size="sm">상세보기</PixelButton>
-                  </Link>
+                  <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{item.label}</p>
+                  <p className="text-xs text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{item.desc}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </PixelCard>
-      )}
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
