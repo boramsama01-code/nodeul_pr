@@ -43,7 +43,7 @@ router.post("/npc/chat", async (req, res) => {
     ];
 
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
+      model: "claude-3-5-haiku-20241022",
       max_tokens: 512,
       system: SYSTEM_PROMPT,
       messages,

@@ -213,8 +213,38 @@ export default function EventDetailPage() {
 
   const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 
+  const latestAdminComment = event.comments
+    ?.filter((c: any) => c.authorRole === "admin" && !c.isAdminOnly)
+    .slice(-1)[0] ?? null;
+
   return (
     <div className="max-w-5xl mx-auto space-y-4">
+      {/* 수정 요청 배너 */}
+      {event.status === "revision_requested" && !isAdmin && (
+        <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold text-amber-800" style={KR}>⚠ 수정 요청</span>
+              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide bg-amber-200 px-1.5 py-0.5 rounded">ACTION REQUIRED</span>
+            </div>
+            {latestAdminComment ? (
+              <p className="text-sm text-amber-900" style={KR}>
+                <span className="font-medium">관리자 코멘트:</span> {latestAdminComment.content}
+              </p>
+            ) : (
+              <p className="text-sm text-amber-700" style={KR}>관리자가 수정을 요청했습니다. 홍보물 탭에서 파일을 재제출해 주세요.</p>
+            )}
+          </div>
+          <button
+            onClick={() => { setActiveTab("assets"); setShowUploadForm(true); setUploadAssetId(null); }}
+            className="h-8 px-4 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors flex-shrink-0"
+            style={KR}
+          >
+            📎 파일 재제출
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-3 pb-4 border-b border-black/8">
         <div>

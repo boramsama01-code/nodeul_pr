@@ -23,14 +23,18 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   };
 
   const navLinks = isSignedIn
-    ? [
-        { href: "/dashboard", label: "내 신청 목록", icon: "📋" },
-        ...(isAdmin ? [
-          { href: "/admin", label: "관리자 대시보드", icon: "👾", admin: true },
-          { href: "/admin/calendar", label: "일정표", icon: "📅", admin: true },
+    ? isAdmin
+      ? [
+          { href: "/admin", label: "대시보드", icon: "👾", admin: true },
+          { href: "/admin/events", label: "행사 목록", icon: "📋", admin: true },
+          { href: "/admin/calendar", label: "캘린더", icon: "📅", admin: true },
           { href: "/admin/settings", label: "설정", icon: "⚙️", admin: true },
-        ] : []),
-      ]
+        ]
+      : [
+          { href: "/dashboard", label: "내 행사 목록", icon: "📋" },
+          { href: "/my-assets", label: "홍보물 제출", icon: "🖼️" },
+          { href: "/calendar", label: "캘린더", icon: "📅" },
+        ]
     : [];
 
   return (

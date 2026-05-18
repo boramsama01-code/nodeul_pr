@@ -17,6 +17,8 @@ import AdminCalendarPage from "@/pages/admin/AdminCalendarPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import EventCreatePage from "@/pages/events/EventCreatePage";
 import EventDetailPage from "@/pages/events/EventDetailPage";
+import UserCalendarPage from "@/pages/UserCalendarPage";
+import MyAssetsPage from "@/pages/MyAssetsPage";
 import NotFound from "@/pages/not-found";
 
 setAuthTokenGetter(async () => {
@@ -64,6 +66,8 @@ export default function App() {
               <Route path="/dashboard" component={DashboardPage} />
               <Route path="/events/new" component={EventCreatePage} />
               <Route path="/events/:id" component={EventDetailPage} />
+              <Route path="/calendar" component={UserCalendarPage} />
+              <Route path="/my-assets" component={MyAssetsPage} />
               <Route path="/admin" component={AdminDashboardPage} />
               <Route path="/admin/events" component={AdminEventsPage} />
               <Route path="/admin/calendar" component={AdminCalendarPage} />
