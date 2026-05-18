@@ -59,9 +59,9 @@
   --radius-xl: 0px;
 }
 
-/* LIGHT MODE ONLY - 16-bit Palette */
+/* LIGHT MODE ONLY - Nodeul Island Palette */
 :root {
-  --background: 42 30% 95%;
+  --background: 42 38% 95%;
   --foreground: 0 0% 8%;
   --border: 0 0% 0%;
   --card: 0 0% 100%;
@@ -70,28 +70,31 @@
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 8%;
   --popover-border: 0 0% 0%;
-  --primary: 114 70% 22%;
+  /* 노들섬 초록 (자연) */
+  --primary: 108 58% 28%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 114 70% 15%;
-  --secondary: 225 80% 45%;
+  --primary-border: 108 58% 18%;
+  /* 한강 파랑 */
+  --secondary: 207 72% 42%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 225 80% 35%;
-  --muted: 42 15% 88%;
-  --muted-foreground: 0 0% 35%;
+  --secondary-border: 207 72% 30%;
+  --muted: 42 20% 88%;
+  --muted-foreground: 0 0% 38%;
   --muted-border: 0 0% 60%;
-  --accent: 45 95% 48%;
+  /* 따뜻한 황금빛 액센트 */
+  --accent: 40 92% 50%;
   --accent-foreground: 0 0% 8%;
-  --accent-border: 45 95% 35%;
-  --destructive: 0 80% 42%;
+  --accent-border: 40 92% 36%;
+  --destructive: 0 78% 44%;
   --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 80% 30%;
-  --success: 100 55% 32%;
+  --destructive-border: 0 78% 30%;
+  --success: 108 52% 34%;
   --success-foreground: 0 0% 100%;
-  --success-border: 100 55% 22%;
+  --success-border: 108 52% 22%;
   --highlight: 73 100% 50%;
   --highlight-foreground: 0 0% 8%;
   --input: 0 0% 100%;
-  --ring: 114 70% 22%;
+  --ring: 108 58% 28%;
   --radius: 0px;
 }
 
