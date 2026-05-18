@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useParams, useLocation } from "wouter";
 import {
@@ -11,34 +11,46 @@ import {
   useGetMe,
   getGetMeQueryKey,
 } from "@workspace/api-client-react";
-import { PixelCard } from "@/components/pixel/PixelCard";
-import { PixelButton } from "@/components/pixel/PixelButton";
-import { PixelBadge } from "@/components/pixel/PixelBadge";
+import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/useUIStore";
 
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 const STATUS_LABELS: Record<string, string> = {
-  draft: "초안",
-  submitted: "제출됨",
-  approved: "승인됨",
-  revision_requested: "수정 요청",
-  rejected: "반려됨",
-  completed: "완료",
+  draft: "초안", submitted: "제출됨", approved: "승인됨",
+  revision_requested: "수정 요청", rejected: "반려됨", completed: "완료",
+};
+const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-zinc-100 text-zinc-600 border-zinc-200",
+  submitted: "bg-blue-50 text-blue-700 border-blue-200",
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  revision_requested: "bg-amber-50 text-amber-700 border-amber-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  completed: "bg-zinc-100 text-zinc-500 border-zinc-200",
 };
 
-const STATUS_VARIANTS: Record<string, "primary" | "success" | "alert" | "danger" | "secondary"> = {
-  draft: "secondary",
-  submitted: "primary",
-  approved: "success",
-  revision_requested: "alert",
-  rejected: "danger",
-  completed: "success",
-};
+function StatusPill({ status }: { status: string }) {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${STATUS_COLORS[status] ?? "bg-zinc-100 text-zinc-500 border-zinc-200"}`}
+      style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+function formatBytes(bytes: number | null) {
+  if (!bytes) return "-";
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1048576).toFixed(1)}MB`;
+}
 
 export default function EventDetailPage() {
   const { isSignedIn } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const isAdmin = me?.role === "admin" || me?.role === "super_admin";
@@ -56,29 +68,66 @@ export default function EventDetailPage() {
   const [prForm, setPRForm] = useState({ zoneId: "", startDate: "", endDate: "", notes: "" });
   const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "schedule" | "comments">("overview");
 
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadAssetId, setUploadAssetId] = useState<number | null>(null);
+  const [uploadMemo, setUploadMemo] = useState("");
+  const [uploadName, setUploadName] = useState("");
+  const [uploadZoneId, setUploadZoneId] = useState("");
+  const [showUploadForm, setShowUploadForm] = useState(false);
+
+  // Email state
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
   React.useEffect(() => {
-    if (event) {
-      setNPCMessage(`퀘스트 "${event.title}"를 확인 중... 상태: ${STATUS_LABELS[event.status] || event.status}`);
-    }
+    if (event) setNPCMessage(`"${event.title}" 행사 상세페이지에요. 상태: ${STATUS_LABELS[event.status] || event.status} 🐸`);
   }, [event]);
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (isLoading) return (
-    <div className="flex justify-center items-center min-h-[60vh]">
-      <div className="text-5xl animate-pixel-bounce">⏳</div>
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
     </div>
   );
   if (!event) return (
     <div className="text-center py-20">
-      <p className="font-pixel text-2xl text-destructive">이벤트를 찾을 수 없습니다.</p>
-      <PixelButton className="mt-8" onClick={() => setLocation("/dashboard")}>← 돌아가기</PixelButton>
+      <p className="text-sm text-zinc-500" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>이벤트를 찾을 수 없습니다.</p>
+      <button onClick={() => setLocation("/dashboard")} className="mt-4 text-xs text-primary underline">← 돌아가기</button>
     </div>
   );
 
   const handleSubmitForReview = async () => {
     await updateEvent.mutateAsync({ id: Number(id), data: { status: "submitted" } });
     refetch();
-    setNPCMessage("검토 요청이 제출되었습니다! 관리자가 확인할 거예요.");
+  };
+
+  const handleAdminStatus = async (status: string) => {
+    await updateEvent.mutateAsync({ id: Number(id), data: { status } });
+    refetch();
+  };
+
+  const handleSendApprovalEmail = async () => {
+    if (!event.contactEmail) return;
+    setEmailSending(true);
+    try {
+      await sendEmail.mutateAsync({
+        eventId: Number(id),
+        data: {
+          emailType: "approval_complete",
+          recipientEmail: event.contactEmail,
+          subject: `[노들섬] ${event.title} 홍보 신청이 승인되었습니다`,
+          body: `안녕하세요,\n\n노들섬 홍보 통합 시스템입니다.\n\n${event.organizationName || "귀 기관"}의 "${event.title}" 행사 홍보 신청이 승인되었습니다.\n\n■ 행사명: ${event.title}\n■ 기간: ${event.startDate} ~ ${event.endDate}\n■ 장소: ${event.venue || "-"}\n\n이제 홍보물을 업로드하시면 최종 검토 후 게시됩니다.\n\n감사합니다.\n노들섬 홍보팀`,
+        },
+      });
+      setEmailSent(true);
+      refetch();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   const handleComment = async (e: React.FormEvent) => {
@@ -92,191 +141,345 @@ export default function EventDetailPage() {
   const handlePRSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createPR.mutateAsync({
-      data: {
-        eventId: Number(id),
-        zoneId: Number(prForm.zoneId),
-        requestedStartDate: prForm.startDate,
-        requestedEndDate: prForm.endDate,
-        notes: prForm.notes || undefined,
-      }
+      data: { eventId: Number(id), zoneId: Number(prForm.zoneId), requestedStartDate: prForm.startDate, requestedEndDate: prForm.endDate, notes: prForm.notes || undefined },
     });
     setShowPRForm(false);
     setPRForm({ zoneId: "", startDate: "", endDate: "", notes: "" });
     refetch();
-    setNPCMessage("홍보 구역 신청이 완료되었습니다!");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const path = `events/${id}/${Date.now()}_${file.name.replace(/\s/g, "_")}`;
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from("nodeul-assets")
+        .upload(path, file, { cacheControl: "3600", upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("nodeul-assets").getPublicUrl(uploadData.path);
+      const fileUrl = urlData.publicUrl;
+      const fileType = file.type || "application/octet-stream";
+
+      if (uploadAssetId) {
+        // New version of existing asset
+        await fetch(`${BASE_URL}/api/assets/${uploadAssetId}/versions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
+        });
+      } else {
+        // New asset
+        await fetch(`${BASE_URL}/api/events/${id}/assets`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ name: uploadName || file.name, zoneId: uploadZoneId ? Number(uploadZoneId) : null, fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
+        });
+      }
+      refetch();
+      setShowUploadForm(false);
+      setUploadMemo("");
+      setUploadName("");
+      setUploadZoneId("");
+      setUploadAssetId(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err: any) {
+      setUploadError(err.message || "업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSelectVersion = async (assetId: number, versionId: number, adminComment?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    await fetch(`${BASE_URL}/api/assets/${assetId}/versions/${versionId}/select`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ adminComment }),
+    });
+    refetch();
   };
 
   const tabs = [
     { id: "overview", label: "개요" },
-    { id: "pr", label: `홍보신청 (${event.promotionRequests?.length ?? 0})` },
-    { id: "assets", label: `홍보물 (${event.assets?.length ?? 0})` },
-    { id: "schedule", label: `일정 (${event.schedules?.length ?? 0})` },
-    { id: "comments", label: `코멘트 (${event.comments?.length ?? 0})` },
+    { id: "pr", label: `홍보신청 ${event.promotionRequests?.length ?? 0}` },
+    { id: "assets", label: `홍보물 ${event.assets?.length ?? 0}` },
+    { id: "schedule", label: `일정 ${event.schedules?.length ?? 0}` },
+    { id: "comments", label: `코멘트 ${event.comments?.length ?? 0}` },
   ];
 
+  const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b-4 border-black pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-3 pb-4 border-b border-black/8">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <PixelButton variant="ghost" size="sm" onClick={() => setLocation(isAdmin ? "/admin/events" : "/dashboard")}>
+          <div className="flex items-center gap-2 mb-1">
+            <button onClick={() => setLocation(isAdmin ? "/admin/events" : "/dashboard")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors" style={KR}>
               ← 목록
-            </PixelButton>
-            <PixelBadge variant={STATUS_VARIANTS[event.status] ?? "secondary"}>
-              {STATUS_LABELS[event.status] || event.status}
-            </PixelBadge>
+            </button>
+            <StatusPill status={event.status} />
+            {event.status === "submitted" && (
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">NEW</span>
+            )}
           </div>
-          <h1 className="text-2xl font-pixel text-primary">{event.title}</h1>
-          <p className="font-pixel-body text-lg text-muted-foreground mt-1">
-            {event.startDate} ~ {event.endDate} {event.venue && `| ${event.venue}`}
+          <h1 className="text-xl font-bold text-foreground" style={KR}>{event.title}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>
+            {event.startDate} ~ {event.endDate}{event.venue ? ` · ${event.venue}` : ""}
+            {event.organizationName ? ` · ${event.organizationName}` : ""}
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {event.status === "draft" && (
-            <PixelButton variant="primary" size="sm" onClick={handleSubmitForReview} disabled={updateEvent.isPending}>
+            <button onClick={handleSubmitForReview} disabled={updateEvent.isPending}
+              className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
               검토 제출
-            </PixelButton>
+            </button>
           )}
           {isAdmin && event.status === "submitted" && (
             <>
-              <PixelButton variant="primary" size="sm" onClick={async () => {
-                await updateEvent.mutateAsync({ id: Number(id), data: { status: "approved" } });
-                refetch();
-              }}>승인</PixelButton>
-              <PixelButton variant="secondary" size="sm" onClick={async () => {
-                await updateEvent.mutateAsync({ id: Number(id), data: { status: "revision_requested" } });
-                refetch();
-              }}>수정 요청</PixelButton>
-              <PixelButton variant="danger" size="sm" onClick={async () => {
-                await updateEvent.mutateAsync({ id: Number(id), data: { status: "rejected" } });
-                refetch();
-              }}>반려</PixelButton>
+              <button onClick={() => handleAdminStatus("approved")} className="h-8 px-3 text-xs font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors" style={KR}>승인</button>
+              <button onClick={() => handleAdminStatus("revision_requested")} className="h-8 px-3 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors" style={KR}>수정 요청</button>
+              <button onClick={() => handleAdminStatus("rejected")} className="h-8 px-3 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 transition-colors" style={KR}>반려</button>
             </>
+          )}
+          {isAdmin && event.status === "approved" && event.contactEmail && (
+            <button onClick={handleSendApprovalEmail} disabled={emailSending || emailSent}
+              className={`h-8 px-3 text-xs font-medium rounded transition-colors ${emailSent ? "bg-zinc-100 text-zinc-400 border border-zinc-200" : "bg-violet-600 text-white hover:bg-violet-700"}`} style={KR}>
+              {emailSending ? "발송 중..." : emailSent ? "✓ 메일 발송됨" : "✉ 승인 완료 메일 발송"}
+            </button>
           )}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 border-4 border-black overflow-x-auto">
+      <div className="flex gap-0 border-b border-black/10 overflow-x-auto">
         {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`px-4 py-2 font-pixel text-xs uppercase whitespace-nowrap border-r-4 border-black last:border-r-0 transition-colors ${activeTab === tab.id ? "bg-primary text-white" : "bg-white hover:bg-muted"}`}
-            onClick={() => setActiveTab(tab.id as any)}
-          >
+          <button key={tab.id}
+            className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            style={KR}
+            onClick={() => setActiveTab(tab.id as any)}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* ── 개요 탭 ── */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PixelCard>
-            <h3 className="font-pixel text-lg mb-4 border-b-4 border-black pb-2">이벤트 정보</h3>
-            <div className="space-y-3 font-pixel-body text-lg">
-              <div><span className="font-bold">단체:</span> {event.organizationName || "-"}</div>
-              <div><span className="font-bold">담당자:</span> {event.contactName || "-"}</div>
-              <div><span className="font-bold">이메일:</span> {event.contactEmail || "-"}</div>
-              <div><span className="font-bold">기간:</span> {event.startDate} ~ {event.endDate}</div>
-              {event.venue && <div><span className="font-bold">장소:</span> {event.venue}</div>}
-              {event.tags && event.tags.length > 0 && (
-                <div><span className="font-bold">태그:</span> {event.tags.join(", ")}</div>
-              )}
-            </div>
-          </PixelCard>
-          {event.description && (
-            <PixelCard>
-              <h3 className="font-pixel text-lg mb-4 border-b-4 border-black pb-2">이벤트 설명</h3>
-              <p className="font-pixel-body text-lg whitespace-pre-wrap">{event.description}</p>
-            </PixelCard>
-          )}
-          {isAdmin && event.adminNote && (
-            <PixelCard variant="alert">
-              <h3 className="font-pixel text-lg mb-4 border-b-4 border-black pb-2">관리자 메모</h3>
-              <p className="font-pixel-body text-lg">{event.adminNote}</p>
-            </PixelCard>
-          )}
-        </div>
-      )}
-
-      {activeTab === "pr" && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-pixel text-xl">홍보 구역 신청</h3>
-            <PixelButton variant="primary" size="sm" onClick={() => setShowPRForm(!showPRForm)}>
-              {showPRForm ? "취소" : "+ 구역 신청"}
-            </PixelButton>
-          </div>
-
-          {showPRForm && (
-            <PixelCard>
-              <form onSubmit={handlePRSubmit} className="space-y-4">
-                <div>
-                  <label className="block font-pixel text-sm mb-2">홍보 구역 *</label>
-                  <select required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={prForm.zoneId} onChange={e => setPRForm(f => ({ ...f, zoneId: e.target.value }))}>
-                    <option value="">구역 선택...</option>
-                    {zones?.map(z => (
-                      <option key={z.id} value={z.id}>{z.name} ({z.type})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-pixel text-sm mb-2">시작일 *</label>
-                    <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg bg-white" value={prForm.startDate} onChange={e => setPRForm(f => ({ ...f, startDate: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="block font-pixel text-sm mb-2">종료일 *</label>
-                    <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg bg-white" value={prForm.endDate} onChange={e => setPRForm(f => ({ ...f, endDate: e.target.value }))} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block font-pixel text-sm mb-2">요청 메모</label>
-                  <textarea className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg bg-white resize-none" rows={2} value={prForm.notes} onChange={e => setPRForm(f => ({ ...f, notes: e.target.value }))} />
-                </div>
-                <PixelButton type="submit" variant="primary" size="md" disabled={createPR.isPending}>
-                  {createPR.isPending ? "신청 중..." : "구역 신청"}
-                </PixelButton>
-              </form>
-            </PixelCard>
-          )}
-
-          {event.promotionRequests?.length === 0 ? (
-            <div className="text-center py-12 font-pixel-body text-muted-foreground text-xl">신청된 홍보 구역이 없습니다.</div>
-          ) : (
-            <div className="space-y-3">
-              {event.promotionRequests?.map(pr => (
-                <div key={pr.id} className="border-4 border-black p-4 bg-white flex justify-between items-start">
-                  <div>
-                    <div className="font-pixel text-sm">{pr.zoneName} <span className="text-muted-foreground">({pr.zoneType})</span></div>
-                    <div className="font-pixel-body text-lg mt-1">{pr.requestedStartDate} ~ {pr.requestedEndDate}</div>
-                    {pr.notes && <div className="font-pixel-body text-sm text-muted-foreground mt-1">{pr.notes}</div>}
-                    {pr.adminComment && <div className="font-pixel-body text-sm text-destructive mt-1 border-l-4 border-destructive pl-2">{pr.adminComment}</div>}
-                  </div>
-                  <PixelBadge variant={STATUS_VARIANTS[pr.status] ?? "secondary"}>{STATUS_LABELS[pr.status] || pr.status}</PixelBadge>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-black/10 rounded-lg p-4 bg-white">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>이벤트 정보</h3>
+            <dl className="space-y-2">
+              {[
+                ["단체", event.organizationName || "-"],
+                ["담당자", event.contactName || "-"],
+                ["이메일", event.contactEmail || "-"],
+                ["기간", `${event.startDate} ~ ${event.endDate}`],
+                ["장소", event.venue || "-"],
+                ["태그", event.tags?.length ? event.tags.join(", ") : "-"],
+              ].map(([label, value]) => (
+                <div key={label} className="flex gap-3 text-sm">
+                  <dt className="text-muted-foreground w-16 flex-shrink-0" style={KR}>{label}</dt>
+                  <dd className="text-foreground" style={KR}>{value}</dd>
                 </div>
               ))}
+            </dl>
+          </div>
+          {event.description && (
+            <div className="border border-black/10 rounded-lg p-4 bg-white">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>설명</h3>
+              <p className="text-sm text-foreground whitespace-pre-wrap" style={KR}>{event.description}</p>
+            </div>
+          )}
+          {isAdmin && event.adminNote && (
+            <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
+              <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2" style={KR}>관리자 메모</h3>
+              <p className="text-sm text-amber-800" style={KR}>{event.adminNote}</p>
+            </div>
+          )}
+          {/* Email logs */}
+          {isAdmin && event.emailLogs && event.emailLogs.length > 0 && (
+            <div className="border border-black/10 rounded-lg p-4 bg-white md:col-span-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>메일 발송 이력</h3>
+              <div className="space-y-1">
+                {event.emailLogs.map(log => (
+                  <div key={log.id} className="flex items-center gap-3 text-xs py-1.5 border-b border-black/5 last:border-0">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${log.status === "sent" ? "bg-emerald-500" : "bg-red-400"}`} />
+                    <span className="text-muted-foreground flex-shrink-0" style={KR}>{log.emailType}</span>
+                    <span className="text-foreground flex-1 truncate" style={KR}>{log.subject}</span>
+                    <span className="text-muted-foreground flex-shrink-0" style={KR}>{log.recipientEmail}</span>
+                    <span className="text-muted-foreground flex-shrink-0">{log.sentAt ? new Date(log.sentAt).toLocaleDateString("ko-KR") : "-"}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
 
+      {/* ── 홍보신청 탭 ── */}
+      {activeTab === "pr" && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={KR}>홍보 구역 신청</h3>
+            <button onClick={() => setShowPRForm(!showPRForm)}
+              className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+              {showPRForm ? "취소" : "+ 구역 신청"}
+            </button>
+          </div>
+          {showPRForm && (
+            <form onSubmit={handlePRSubmit} className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 *</label>
+                <select required className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                  value={prForm.zoneId} onChange={e => setPRForm(f => ({ ...f, zoneId: e.target.value }))}>
+                  <option value="">선택...</option>
+                  {zones?.map(z => <option key={z.id} value={z.id}>{z.name} ({z.type})</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>시작일 *</label>
+                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary"
+                    value={prForm.startDate} onChange={e => setPRForm(f => ({ ...f, startDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>종료일 *</label>
+                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary"
+                    value={prForm.endDate} onChange={e => setPRForm(f => ({ ...f, endDate: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>요청 메모</label>
+                <textarea rows={2} className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
+                  value={prForm.notes} onChange={e => setPRForm(f => ({ ...f, notes: e.target.value }))} />
+              </div>
+              <button type="submit" disabled={createPR.isPending}
+                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
+                {createPR.isPending ? "신청 중..." : "신청"}
+              </button>
+            </form>
+          )}
+          {event.promotionRequests?.length === 0 ? (
+            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>신청된 홍보 구역이 없습니다.</div>
+          ) : (
+            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/8 bg-zinc-50/60">
+                    {["구역", "기간", "상태", "관리자 메모"].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {event.promotionRequests?.map(pr => (
+                    <tr key={pr.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2.5">
+                        <span className="text-sm font-medium" style={KR}>{pr.zoneName}</span>
+                        <span className="text-xs text-muted-foreground ml-1" style={KR}>({pr.zoneType})</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{pr.requestedStartDate} ~ {pr.requestedEndDate}</td>
+                      <td className="px-4 py-2.5"><StatusPill status={pr.status} /></td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[200px] truncate" style={KR}>{pr.adminComment || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 홍보물 탭 ── */}
       {activeTab === "assets" && (
         <div className="space-y-4">
-          <h3 className="font-pixel text-xl">홍보물 관리</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={KR}>홍보물 관리</h3>
+            <button onClick={() => setShowUploadForm(!showUploadForm)}
+              className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+              {showUploadForm ? "취소" : "+ 홍보물 업로드"}
+            </button>
+          </div>
+
+          {showUploadForm && (
+            <div className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground" style={KR}>
+                {uploadAssetId ? `버전 추가 (Asset #${uploadAssetId})` : "새 홍보물 업로드"}
+              </h4>
+              {!uploadAssetId && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보물 이름 *</label>
+                    <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="예: 인스타그램 배너" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역</label>
+                    <select className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={uploadZoneId} onChange={e => setUploadZoneId(e.target.value)}>
+                      <option value="">구역 미지정</option>
+                      {zones?.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>변경 내용 메모</label>
+                <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                  value={uploadMemo} onChange={e => setUploadMemo(e.target.value)} placeholder="어떤 부분을 수정했는지 간단히 적어주세요" />
+              </div>
+              <div
+                className="border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
+                onClick={() => fileInputRef.current?.click()}>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload}
+                  accept="image/*,.pdf,.psd,.ai,.zip,.pptx" />
+                {uploading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-zinc-300 border-t-primary rounded-full animate-spin" />
+                    <span className="text-sm text-muted-foreground" style={KR}>업로드 중...</span>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium" style={KR}>파일을 클릭하여 선택</p>
+                    <p className="text-xs text-muted-foreground mt-1" style={KR}>이미지, PDF, PSD, AI, ZIP, PPTX 지원 · 최대 50MB</p>
+                  </>
+                )}
+              </div>
+              {uploadError && <p className="text-xs text-destructive" style={KR}>{uploadError}</p>}
+            </div>
+          )}
+
           {event.assets?.length === 0 ? (
-            <div className="text-center py-12 font-pixel-body text-muted-foreground text-xl">등록된 홍보물이 없습니다.</div>
+            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>등록된 홍보물이 없습니다.</div>
           ) : (
             <div className="space-y-3">
               {event.assets?.map(asset => (
-                <div key={asset.id} className="border-4 border-black p-4 bg-white flex justify-between items-center">
-                  <div>
-                    <div className="font-pixel text-sm">{asset.name}</div>
-                    <div className="font-pixel-body text-lg text-muted-foreground">v{asset.currentVersion} / {asset.zoneName || "구역 미지정"}</div>
+                <div key={asset.id} className="border border-black/10 rounded-lg bg-white overflow-hidden">
+                  {/* Asset header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold" style={KR}>{asset.name}</span>
+                      {asset.zoneName && <span className="text-xs text-muted-foreground" style={KR}>· {asset.zoneName}</span>}
+                      <StatusPill status={asset.status} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground" style={KR}>v{asset.totalVersions}</span>
+                      <button
+                        onClick={() => { setUploadAssetId(asset.id); setShowUploadForm(true); setUploadName(""); setUploadZoneId(""); }}
+                        className="h-6 px-2 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                        + 버전 추가
+                      </button>
+                    </div>
                   </div>
-                  <PixelBadge variant={STATUS_VARIANTS[asset.status as keyof typeof STATUS_VARIANTS] ?? "secondary"}>{asset.status}</PixelBadge>
+
+                  {/* Version history table - GitHub commit style */}
+                  <AssetVersionTable assetId={asset.id} isAdmin={isAdmin} onSelect={handleSelectVersion} selectedVersionId={asset.selectedVersionId} />
                 </div>
               ))}
             </div>
@@ -284,70 +487,174 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* ── 일정 탭 ── */}
       {activeTab === "schedule" && (
-        <div className="space-y-4">
-          <h3 className="font-pixel text-xl">게시 일정</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold" style={KR}>게시 일정</h3>
           {event.schedules?.length === 0 ? (
-            <div className="text-center py-12 font-pixel-body text-muted-foreground text-xl">등록된 일정이 없습니다.</div>
+            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>등록된 일정이 없습니다.</div>
           ) : (
-            <div className="space-y-3">
-              {event.schedules?.map(sched => (
-                <div key={sched.id} className="border-4 border-black p-4 bg-white flex justify-between items-center" style={{ borderLeftColor: sched.zoneColor || "#000", borderLeftWidth: "8px" }}>
-                  <div>
-                    <div className="font-pixel text-sm">{sched.zoneName} <span className="text-muted-foreground">({sched.zoneType})</span></div>
-                    <div className="font-pixel-body text-lg">{sched.startDate} ~ {sched.endDate}</div>
-                    {sched.notes && <div className="font-pixel-body text-sm text-muted-foreground">{sched.notes}</div>}
-                  </div>
-                  <PixelBadge variant={sched.status === "scheduled" ? "success" : "secondary"}>{sched.status}</PixelBadge>
-                </div>
-              ))}
+            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/8 bg-zinc-50/60">
+                    {["구역", "기간", "상태", "메모"].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {event.schedules?.map(s => (
+                    <tr key={s.id} className="hover:bg-muted/20">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          {s.zoneColor && <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: s.zoneColor }} />}
+                          <span style={KR}>{s.zoneName || "-"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{s.startDate} ~ {s.endDate}</td>
+                      <td className="px-4 py-2.5"><StatusPill status={s.status} /></td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[160px] truncate" style={KR}>{s.notes || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       )}
 
+      {/* ── 코멘트 탭 ── */}
       {activeTab === "comments" && (
-        <div className="space-y-4">
-          <h3 className="font-pixel text-xl">코멘트</h3>
-          <div className="space-y-3">
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold" style={KR}>코멘트</h3>
+          <div className="space-y-2">
             {event.comments?.map(c => (
-              <div key={c.id} className={`border-4 border-black p-4 ${c.isAdminOnly ? "bg-yellow-50 border-yellow-500" : "bg-white"}`}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-pixel text-xs">{c.authorName} <span className="text-muted-foreground">({c.authorRole})</span></span>
+              <div key={c.id} className={`border rounded-lg p-3 ${c.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/10 bg-white"}`}>
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    {c.isAdminOnly && <PixelBadge variant="alert">관리자 전용</PixelBadge>}
-                    <span className="font-pixel-body text-sm text-muted-foreground">{new Date(c.createdAt).toLocaleDateString("ko-KR")}</span>
+                    <span className="text-xs font-semibold" style={KR}>{c.authorName}</span>
+                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-zinc-100 rounded" style={KR}>{c.authorRole}</span>
+                    {c.isAdminOnly && <span className="text-[10px] text-amber-700 px-1.5 py-0.5 bg-amber-100 rounded" style={KR}>관리자 전용</span>}
                   </div>
+                  <span className="text-xs text-muted-foreground" style={KR}>{new Date(c.createdAt).toLocaleDateString("ko-KR")}</span>
                 </div>
-                <p className="font-pixel-body text-lg">{c.content}</p>
+                <p className="text-sm text-foreground" style={KR}>{c.content}</p>
               </div>
             ))}
             {event.comments?.length === 0 && (
-              <div className="text-center py-8 font-pixel-body text-muted-foreground text-xl">코멘트가 없습니다.</div>
+              <div className="text-center py-8 text-sm text-muted-foreground" style={KR}>코멘트가 없습니다.</div>
             )}
           </div>
-          <PixelCard>
-            <form onSubmit={handleComment} className="space-y-3">
-              <textarea
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none"
-                rows={3}
-                placeholder="코멘트를 입력하세요..."
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-              />
+          <form onSubmit={handleComment} className="border border-black/10 rounded-lg p-4 bg-white space-y-2">
+            <textarea rows={3} className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
+              placeholder="코멘트를 입력하세요..." value={comment} onChange={e => setComment(e.target.value)} />
+            <div className="flex items-center justify-between">
               {isAdmin && (
-                <label className="flex items-center gap-2 font-pixel-body text-lg cursor-pointer">
-                  <input type="checkbox" checked={isAdminOnly} onChange={e => setIsAdminOnly(e.target.checked)} className="w-5 h-5" />
-                  관리자 전용 코멘트
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer" style={KR}>
+                  <input type="checkbox" checked={isAdminOnly} onChange={e => setIsAdminOnly(e.target.checked)} className="rounded" />
+                  관리자 전용
                 </label>
               )}
-              <PixelButton type="submit" variant="primary" size="sm" disabled={createComment.isPending || !comment.trim()}>
-                {createComment.isPending ? "전송 중..." : "코멘트 등록"}
-              </PixelButton>
-            </form>
-          </PixelCard>
+              <button type="submit" disabled={createComment.isPending || !comment.trim()}
+                className="h-7 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
+                등록
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
   );
 }
+
+function AssetVersionTable({ assetId, isAdmin, onSelect, selectedVersionId }: {
+  assetId: number;
+  isAdmin: boolean;
+  onSelect: (assetId: number, versionId: number) => void;
+  selectedVersionId: number | null | undefined;
+}) {
+  const [versions, setVersions] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
+
+  React.useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${BASE_URL}/api/assets/${assetId}`, {
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setVersions(data.versions || []);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [assetId, selectedVersionId]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center p-6">
+      <div className="w-4 h-4 border-2 border-zinc-200 border-t-zinc-500 rounded-full animate-spin" />
+    </div>
+  );
+  if (!versions.length) return (
+    <div className="text-center p-6 text-sm text-muted-foreground" style={KR}>버전 없음</div>
+  );
+
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-black/5">
+          <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground w-10" style={KR}>ver</th>
+          <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>파일명</th>
+          <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={KR}>크기</th>
+          <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>변경 내용</th>
+          <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>업로드일</th>
+          <th className="px-4 py-2 text-xs font-semibold text-muted-foreground text-right" style={KR}>액션</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-black/5">
+        {versions.map(v => {
+          const isFinal = v.id === selectedVersionId || v.isSelected;
+          return (
+            <tr key={v.id} className={`hover:bg-muted/20 transition-colors ${isFinal ? "bg-emerald-50/40" : ""}`}>
+              <td className="px-4 py-2.5 text-xs font-mono">
+                <div className="flex items-center gap-1">
+                  {isFinal && <span className="text-emerald-600 text-[10px]">✓</span>}
+                  <span className="text-muted-foreground">v{v.versionNumber}</span>
+                </div>
+              </td>
+              <td className="px-4 py-2.5">
+                <span className="text-sm font-medium" style={KR}>{v.fileName || `파일 v${v.versionNumber}`}</span>
+                {isFinal && <span className="ml-2 text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded" style={KR}>최종 선택</span>}
+              </td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell" style={KR}>{formatBytes(v.fileSize)}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground hidden md:table-cell max-w-[160px] truncate" style={KR}>{v.changeMemo || "-"}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground hidden md:table-cell whitespace-nowrap">{new Date(v.uploadedAt).toLocaleDateString("ko-KR")}</td>
+              <td className="px-4 py-2.5 text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <a href={v.fileUrl} target="_blank" rel="noopener noreferrer"
+                    className="h-6 px-2 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                    보기
+                  </a>
+                  {isAdmin && !isFinal && (
+                    <button onClick={() => onSelect(assetId, v.id)}
+                      className="h-6 px-2 text-xs border border-emerald-300 text-emerald-700 rounded bg-emerald-50 hover:bg-emerald-100 transition-colors" style={KR}>
+                      최종 선택
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+

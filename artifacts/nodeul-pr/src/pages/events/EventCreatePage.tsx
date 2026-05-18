@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useLocation } from "wouter";
 import { useCreateEvent, useListOrganizations, useCreateOrganization, useGetMe } from "@workspace/api-client-react";
-import { PixelCard } from "@/components/pixel/PixelCard";
-import { PixelButton } from "@/components/pixel/PixelButton";
 import { useUIStore } from "@/store/useUIStore";
+
+const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
+
+const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
+const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
 
 export default function EventCreatePage() {
   const { isSignedIn } = useAuth();
@@ -19,26 +22,19 @@ export default function EventCreatePage() {
   const [step, setStep] = useState<"org" | "event">("org");
   const [orgForm, setOrgForm] = useState({ name: "", contactName: "", contactEmail: "", contactPhone: "" });
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-    venue: "",
-    contactName: "",
-    contactEmail: "",
-    tags: "",
+    title: "", description: "", startDate: "", endDate: "",
+    venue: "", contactName: "", contactEmail: "", tags: "",
   });
   const [error, setError] = useState("");
 
   React.useEffect(() => {
     if (me?.organizationId) setStep("event");
-    setNPCMessage("새 행사 홍보를 신청해요! 먼저 단체 정보를 입력하세요 🐸");
+    setNPCMessage("새 행사 홍보를 신청해요! 단체 정보를 입력하세요 🐸");
   }, [me]);
 
   React.useEffect(() => {
     if (orgs && orgs.length > 0 && me?.organizationId) {
       setStep("event");
-      setNPCMessage("단체 정보 확인! 이제 행사 정보를 입력하세요 🐸");
     }
   }, [orgs]);
 
@@ -51,7 +47,7 @@ export default function EventCreatePage() {
       await createOrg.mutateAsync({ data: orgForm });
       setStep("event");
       setNPCMessage("단체 등록 완료! 이제 행사 정보를 입력하세요 🐸");
-    } catch (err: any) {
+    } catch {
       setError("단체 등록에 실패했습니다. 다시 시도해 주세요.");
     }
   };
@@ -71,108 +67,158 @@ export default function EventCreatePage() {
           contactName: form.contactName || undefined,
           contactEmail: form.contactEmail || undefined,
           tags: tags.length ? tags : undefined,
-        }
+        },
       });
       setNPCMessage("행사 신청 완료! 관리자 승인을 기다려 주세요 🐸");
       setLocation(`/events/${ev.id}`);
-    } catch (err: any) {
+    } catch {
       setError("행사 신청에 실패했습니다. 입력 내용을 확인해 주세요.");
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="border-b-4 border-black pb-4">
-        <h1 className="text-3xl font-pixel text-primary">새 행사 홍보 신청</h1>
-        <p className="font-pixel-body text-xl text-muted-foreground mt-2">단체 정보와 행사 정보를 입력해 주세요</p>
+    <div className="max-w-2xl mx-auto space-y-5">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between pb-4 border-b border-black/8">
+        <div>
+          <h1 className="text-xl font-bold text-foreground" style={KR}>새 행사 홍보 신청</h1>
+          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>단체 정보와 행사 정보를 입력해 주세요</p>
+        </div>
+        <button onClick={() => setLocation("/dashboard")}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors" style={KR}>
+          ← 목록
+        </button>
       </div>
 
-      <div className="flex gap-4 font-pixel text-sm">
-        <div className={`px-4 py-2 border-4 border-black ${step === "org" ? "bg-primary text-white" : "bg-success/20"}`}>
+      {/* 단계 표시 */}
+      <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "org" ? "bg-primary text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`} style={KR}>
           {step === "event" ? "✓" : "1"} 단체 정보
         </div>
-        <div className={`px-4 py-2 border-4 border-black ${step === "event" ? "bg-primary text-white" : "bg-muted"}`}>
+        <div className="w-6 h-px bg-black/15" />
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "event" ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400 border border-zinc-200"}`} style={KR}>
           2 행사 정보
         </div>
       </div>
 
+      {/* ── 단체 정보 ── */}
       {step === "org" && (
-        <PixelCard>
-          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">단체 정보 입력</h2>
-          <form onSubmit={handleOrgSubmit} className="space-y-4">
+        <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+            <h2 className="text-sm font-semibold text-foreground" style={KR}>단체 정보 입력</h2>
+            <p className="text-xs text-muted-foreground mt-0.5" style={KR}>처음 신청하시는 경우 단체 정보를 등록해 주세요</p>
+          </div>
+          <form onSubmit={handleOrgSubmit} className="p-4 space-y-4">
             <div>
-              <label className="block font-pixel text-sm mb-2">단체명 / 사업명 *</label>
-              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 서울시 문화재단" />
+              <label className={labelCls} style={KR}>단체명 / 사업명 *</label>
+              <input required className={inputCls} style={KR}
+                value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="예: 서울시 문화재단" />
             </div>
             <div>
-              <label className="block font-pixel text-sm mb-2">담당자 이름 *</label>
-              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactName} onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))} placeholder="홍길동" />
+              <label className={labelCls} style={KR}>담당자 이름 *</label>
+              <input required className={inputCls} style={KR}
+                value={orgForm.contactName} onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))}
+                placeholder="홍길동" />
             </div>
-            <div>
-              <label className="block font-pixel text-sm mb-2">이메일 *</label>
-              <input required type="email" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactEmail} onChange={e => setOrgForm(f => ({ ...f, contactEmail: e.target.value }))} placeholder="contact@example.com" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls} style={KR}>이메일 *</label>
+                <input required type="email" className={inputCls} style={KR}
+                  value={orgForm.contactEmail} onChange={e => setOrgForm(f => ({ ...f, contactEmail: e.target.value }))}
+                  placeholder="contact@example.com" />
+              </div>
+              <div>
+                <label className={labelCls} style={KR}>연락처</label>
+                <input className={inputCls} style={KR}
+                  value={orgForm.contactPhone} onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))}
+                  placeholder="02-1234-5678" />
+              </div>
             </div>
-            <div>
-              <label className="block font-pixel text-sm mb-2">연락처</label>
-              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactPhone} onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="02-1234-5678" />
+            {error && (
+              <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded px-3 py-2" style={KR}>{error}</p>
+            )}
+            <div className="flex justify-end pt-1">
+              <button type="submit" disabled={createOrg.isPending}
+                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
+                {createOrg.isPending ? "등록 중..." : "다음 단계 →"}
+              </button>
             </div>
-            {error && <p className="font-pixel-body text-destructive border-2 border-destructive px-3 py-2">{error}</p>}
-            <PixelButton type="submit" variant="primary" size="md" disabled={createOrg.isPending}>
-              {createOrg.isPending ? "등록 중..." : "다음 단계 →"}
-            </PixelButton>
           </form>
-        </PixelCard>
+        </div>
       )}
 
+      {/* ── 행사 정보 ── */}
       {step === "event" && (
-        <PixelCard>
-          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">행사 정보 입력</h2>
-          <form onSubmit={handleEventSubmit} className="space-y-4">
+        <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+            <h2 className="text-sm font-semibold text-foreground" style={KR}>행사 정보 입력</h2>
+            <p className="text-xs text-muted-foreground mt-0.5" style={KR}>홍보하실 행사의 기본 정보를 입력해 주세요</p>
+          </div>
+          <form onSubmit={handleEventSubmit} className="p-4 space-y-4">
             <div>
-              <label className="block font-pixel text-sm mb-2">행사명 *</label>
-              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="예: 2026 노들섬 버스킹 페스티벌" />
-            </div>
-            <div>
-              <label className="block font-pixel text-sm mb-2">행사 설명</label>
-              <textarea rows={3} className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="행사에 대한 간단한 설명을 입력하세요." />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block font-pixel text-sm mb-2">시작일 *</label>
-                <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block font-pixel text-sm mb-2">종료일 *</label>
-                <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
-              </div>
+              <label className={labelCls} style={KR}>행사명 *</label>
+              <input required className={inputCls} style={KR}
+                value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="예: 2026 노들섬 버스킹 페스티벌" />
             </div>
             <div>
-              <label className="block font-pixel text-sm mb-2">장소</label>
-              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} placeholder="예: 노들섬 라이브하우스" />
+              <label className={labelCls} style={KR}>행사 설명</label>
+              <textarea rows={3} className={`${inputCls} resize-none`} style={KR}
+                value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="행사에 대한 간단한 설명을 입력하세요." />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-pixel text-sm mb-2">담당자 이름</label>
-                <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))} />
+                <label className={labelCls} style={KR}>시작일 *</label>
+                <input required type="date" className={inputCls}
+                  value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
               </div>
               <div>
-                <label className="block font-pixel text-sm mb-2">담당자 이메일</label>
-                <input type="email" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.contactEmail} onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))} />
+                <label className={labelCls} style={KR}>종료일 *</label>
+                <input required type="date" className={inputCls}
+                  value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
               </div>
             </div>
             <div>
-              <label className="block font-pixel text-sm mb-2">태그 (쉼표로 구분)</label>
-              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="음악, 버스킹, 야외" />
+              <label className={labelCls} style={KR}>장소</label>
+              <input className={inputCls} style={KR}
+                value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
+                placeholder="예: 노들섬 라이브하우스" />
             </div>
-            {error && <p className="font-pixel-body text-destructive border-2 border-destructive px-3 py-2">{error}</p>}
-            <div className="flex gap-4 pt-2">
-              <PixelButton type="button" variant="ghost" size="md" onClick={() => setLocation("/dashboard")}>취소</PixelButton>
-              <PixelButton type="submit" variant="primary" size="md" disabled={createEvent.isPending}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls} style={KR}>담당자 이름</label>
+                <input className={inputCls} style={KR}
+                  value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls} style={KR}>담당자 이메일</label>
+                <input type="email" className={inputCls} style={KR}
+                  value={form.contactEmail} onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls} style={KR}>태그 <span className="text-zinc-400">(쉼표로 구분)</span></label>
+              <input className={inputCls} style={KR}
+                value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+                placeholder="음악, 버스킹, 야외" />
+            </div>
+            {error && (
+              <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded px-3 py-2" style={KR}>{error}</p>
+            )}
+            <div className="flex items-center justify-between pt-1">
+              <button type="button" onClick={() => setLocation("/dashboard")}
+                className="h-8 px-3 text-xs text-muted-foreground border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                취소
+              </button>
+              <button type="submit" disabled={createEvent.isPending}
+                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
                 {createEvent.isPending ? "신청 중..." : "신청 완료 →"}
-              </PixelButton>
+              </button>
             </div>
           </form>
-        </PixelCard>
+        </div>
       )}
     </div>
   );

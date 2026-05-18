@@ -13,11 +13,10 @@ const SYSTEM_PROMPT = `당신은 서울 노들섬 홍보 담당 시스템의 AI 
 - 시스템 사용법 안내
 - 노들섬 관련 일반 문의
 
-말투: 친절하고 명확하게, 한국어로 답변합니다. 어르신도 이해하기 쉽게 쉬운 말을 사용하세요.
-한 번에 너무 길게 답변하지 말고 핵심을 간단히 설명하세요.
+말투: 친절하고 명확하게, 한국어로 답변합니다. 쉬운 말을 사용하고 핵심을 간단히 설명하세요.
 이모지를 적절히 사용하여 친근하게 소통하세요.
-답변이 모를 경우 "잘 모르겠어요. 노들섬 담당자(nodeul@sfac.or.kr)에게 문의해 주세요."라고 안내합니다.
-반드시 한국어로만 답변하세요. 빈 답변은 절대 하지 마세요.`;
+모를 경우 "노들섬 담당자(nodeul@sfac.or.kr)에게 문의해 주세요."라고 안내합니다.
+반드시 한국어로만 답변하세요.`;
 
 router.post("/npc/chat", async (req, res) => {
   const { message, history = [] } = req.body as {
@@ -29,31 +28,29 @@ router.post("/npc/chat", async (req, res) => {
     return res.status(400).json({ error: "message is required" });
   }
 
-  let openai: any;
-  try {
-    const mod = await import("@workspace/integrations-openai-ai-server");
-    openai = mod.openai;
-  } catch {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
     return res.json({ reply: "AI 도우미가 현재 준비 중이에요. 잠시 후 다시 시도해 주세요! 🐸" });
   }
 
   try {
-    const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...history.slice(-8),
-      { role: "user", content: message.trim() },
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const anthropic = new Anthropic({ apiKey });
+
+    const messages = [
+      ...history.slice(-8).map((h) => ({ role: h.role as "user" | "assistant", content: h.content })),
+      { role: "user" as const, content: message.trim() },
     ];
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      max_completion_tokens: 512,
+    const response = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      system: SYSTEM_PROMPT,
       messages,
     });
 
-    const raw = completion.choices[0]?.message?.content;
-    const reply = (raw && raw.trim().length > 0)
-      ? raw.trim()
-      : "죄송해요, 잠시 후 다시 질문해 주세요! 🐸";
+    const raw = response.content[0]?.type === "text" ? response.content[0].text : null;
+    const reply = raw?.trim() || "죄송해요, 잠시 후 다시 질문해 주세요! 🐸";
     return res.json({ reply });
   } catch (err: any) {
     req.log?.error({ err }, "NPC chat error");

@@ -9,9 +9,6 @@ import {
   getGetSystemSettingsQueryKey, getListAdminUsersQueryKey, getListPromotionZonesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PixelButton } from "@/components/pixel/PixelButton";
-import { PixelCard } from "@/components/pixel/PixelCard";
-import { PixelBadge } from "@/components/pixel/PixelBadge";
 import { useUIStore } from "@/store/useUIStore";
 
 type Tab = "npc" | "zones" | "users";
@@ -23,30 +20,28 @@ const ZONE_TYPE_OPTIONS = [
   { value: "signage", label: "현장 사이니지" },
   { value: "other", label: "기타" },
 ];
-
 const COLOR_PRESETS = ["#e1306c", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316"];
-
 const emptyZoneForm = {
   name: "", type: "other", description: "", color: "#8b5cf6",
   requiresEndDate: true, requiresAssetUpload: true, allowMultipleFiles: false,
   sortOrder: 0, maxConcurrent: 1 as number | null,
 };
-
 const ROLE_LABELS: Record<string, string> = {
-  user: "일반 사용자",
-  admin: "관리자",
-  super_admin: "슈퍼 관리자",
+  user: "일반 사용자", admin: "관리자", super_admin: "슈퍼 관리자",
 };
+
+const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
+const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
+const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
 
 export default function AdminSettingsPage() {
   const { isSignedIn } = useAuth();
   const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
   const queryClient = useQueryClient();
-
   const [tab, setTab] = useState<Tab>("npc");
 
-  // ─── NPC ─────────────────────────────────────────────────────────────────────
+  // NPC
   const { data: settings = [] } = useGetSystemSettings({ query: { enabled: !!me, queryKey: getGetSystemSettingsQueryKey() } });
   const updateSetting = useUpdateSystemSetting();
   const [npcText, setNpcText] = useState("");
@@ -54,14 +49,13 @@ export default function AdminSettingsPage() {
     const found = settings.find(s => s.key === "npc_greeting");
     if (found) setNpcText(found.value);
   }, [settings]);
-
   const handleSaveNpc = async () => {
     await updateSetting.mutateAsync({ key: "npc_greeting", data: { value: npcText } });
     queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
     setNPCMessage(npcText);
   };
 
-  // ─── Zones ───────────────────────────────────────────────────────────────────
+  // Zones
   const { data: zones = [], isLoading: zonesLoading } = useListPromotionZones({ query: { enabled: !!me, queryKey: getListPromotionZonesQueryKey() } });
   const createZone = useCreatePromotionZone();
   const updateZone = useUpdatePromotionZone();
@@ -76,10 +70,8 @@ export default function AdminSettingsPage() {
     setZoneForm({ name: zone.name, type: zone.type, description: zone.description || "", color: zone.color || "#8b5cf6", requiresEndDate: zone.requiresEndDate, requiresAssetUpload: zone.requiresAssetUpload, allowMultipleFiles: zone.allowMultipleFiles, sortOrder: zone.sortOrder, maxConcurrent: zone.maxConcurrent ?? null });
     setShowZoneForm(true);
   };
-  const handleNewZone = () => { setEditingZoneId(null); setZoneForm(emptyZoneForm); setShowZoneForm(true); };
   const handleZoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setZoneError("");
+    e.preventDefault(); setZoneError("");
     try {
       const payload = { ...zoneForm, maxConcurrent: zoneForm.maxConcurrent === null ? null : Number(zoneForm.maxConcurrent) };
       if (editingZoneId !== null) await updateZone.mutateAsync({ zoneId: editingZoneId, data: payload });
@@ -94,7 +86,7 @@ export default function AdminSettingsPage() {
     queryClient.invalidateQueries({ queryKey: getListPromotionZonesQueryKey() });
   };
 
-  // ─── Users ───────────────────────────────────────────────────────────────────
+  // Users
   const { data: users = [] } = useListAdminUsers({ query: { enabled: tab === "users" && !!me, queryKey: getListAdminUsersQueryKey() } });
   const updateRole = useUpdateUserRole();
   const handleRoleChange = async (userId: number, role: string) => {
@@ -102,242 +94,279 @@ export default function AdminSettingsPage() {
     queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
   };
 
-  // ─── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => { setNPCMessage("⚙️ 시스템 설정 페이지입니다. 홍보 구역, NPC 인사말, 사용자 권한을 관리하세요!"); }, [setNPCMessage]);
 
-  const role = me?.role;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (role && role !== "admin" && role !== "super_admin") return <Redirect to="/dashboard" />;
+  if (me && me.role !== "admin" && me.role !== "super_admin") return <Redirect to="/dashboard" />;
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: "npc", label: "맹꽁이 인사말", icon: "🐸" },
-    { id: "zones", label: "홍보 구역", icon: "🗺️" },
-    { id: "users", label: "사용자 관리", icon: "👥" },
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "npc", label: "맹꽁이 인사말" },
+    { id: "zones", label: "홍보 구역" },
+    { id: "users", label: "사용자 관리" },
   ];
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b-4 border-black pb-3">
+    <div className="max-w-4xl mx-auto space-y-5">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-pixel text-primary">시스템 설정</h1>
-          <p className="font-pixel-body text-lg text-muted-foreground mt-1">홍보 구역, NPC 인사말, 사용자 권한 관리</p>
+          <h1 className="text-xl font-bold text-foreground" style={KR}>시스템 설정</h1>
+          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>홍보 구역 · 맹꽁이 인사말 · 사용자 권한 관리</p>
         </div>
-        <Link href="/admin"><PixelButton variant="ghost" size="sm">← 대시보드</PixelButton></Link>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground" style={KR}>
+            내 권한: <span className={`font-semibold ${me?.role === "super_admin" ? "text-violet-600" : "text-primary"}`}>{ROLE_LABELS[me?.role ?? ""] ?? me?.role}</span>
+          </span>
+          <Link href="/admin">
+            <button className="h-7 px-3 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>← 대시보드</button>
+          </Link>
+        </div>
       </div>
 
-      {/* 관리자 역할 안내 */}
-      <div className="bg-primary/10 border-2 border-primary px-4 py-3 font-pixel-body text-base">
-        <span className="font-bold">내 권한:</span>{" "}
-        <span className={role === "super_admin" ? "text-destructive font-bold" : "text-primary font-bold"}>
-          {ROLE_LABELS[role ?? ""] ?? role}
-        </span>
-        {" "}— 처음 가입한 사용자가 자동으로 슈퍼 관리자가 됩니다. 이후 가입자는 일반 사용자로 시작해요.
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-4 border-black p-1 bg-white">
+      {/* 탭 */}
+      <div className="flex gap-0 border-b border-black/10">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-1 font-pixel text-xs py-2 px-1 border-2 transition-colors ${tab === t.id ? "bg-primary text-white border-primary" : "border-transparent hover:bg-muted"}`}
-          >
-            <span className="hidden sm:inline">{t.icon} </span>{t.label}
-          </button>
+            className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-colors ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            style={KR}>{t.label}</button>
         ))}
       </div>
 
-      {/* ── NPC 인사말 ────────────────────────────────────────────────────────── */}
+      {/* ── NPC 인사말 ── */}
       {tab === "npc" && (
-        <PixelCard>
-          <h2 className="font-pixel text-sm mb-4 border-b-4 border-black pb-2">🐸 맹꽁이 첫 화면 인사말</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block font-pixel text-xs mb-2">인사말 내용</label>
-              <textarea rows={4} className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none"
-                value={npcText} onChange={e => setNpcText(e.target.value)}
-                placeholder="예: 안녕하세요! 노들섬 홍보 담당자 맹꽁이입니다 🐸"
-              />
-              <p className="font-pixel-body text-sm text-muted-foreground mt-1">사이트 첫 화면에서 맹꽁이가 이 메시지로 인사해요.</p>
-            </div>
-            <div className="border-4 border-black p-3 bg-muted/30">
-              <p className="font-pixel text-xs mb-2">미리보기</p>
-              <p className="font-pixel-body text-lg">{npcText || "(인사말 없음)"}</p>
-            </div>
-            <PixelButton variant="primary" onClick={handleSaveNpc} disabled={updateSetting.isPending || !npcText.trim()}>
-              {updateSetting.isPending ? "저장 중..." : "💾 저장"}
-            </PixelButton>
-            {updateSetting.isSuccess && <p className="font-pixel-body text-sm text-green-600 border-2 border-green-600 px-3 py-2">✅ 저장되었습니다!</p>}
+        <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+            <h2 className="text-sm font-semibold text-foreground" style={KR}>🐸 맹꽁이 첫 화면 인사말</h2>
+            <p className="text-xs text-muted-foreground mt-0.5" style={KR}>사이트 첫 화면에서 맹꽁이가 표시하는 메시지입니다.</p>
           </div>
-        </PixelCard>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className={labelCls} style={KR}>인사말 내용</label>
+              <textarea rows={4} className={`${inputCls} resize-none`} style={KR}
+                value={npcText} onChange={e => setNpcText(e.target.value)}
+                placeholder="예: 안녕하세요! 노들섬 홍보 담당자 맹꽁이입니다 🐸" />
+            </div>
+            {npcText && (
+              <div className="border border-black/8 rounded px-3 py-2.5 bg-zinc-50/60">
+                <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-medium" style={KR}>미리보기</p>
+                <p className="text-sm" style={KR}>{npcText}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <button onClick={handleSaveNpc} disabled={updateSetting.isPending || !npcText.trim()}
+                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
+                {updateSetting.isPending ? "저장 중..." : "저장"}
+              </button>
+              {updateSetting.isSuccess && <span className="text-xs text-emerald-600" style={KR}>✓ 저장되었습니다</span>}
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* ── 홍보 구역 ──────────────────────────────────────────────────────────── */}
+      {/* ── 홍보 구역 ── */}
       {tab === "zones" && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="font-pixel-body text-lg text-muted-foreground">총 {zones.length}개 구역</p>
-            <PixelButton variant="primary" size="sm" onClick={handleNewZone}>+ 새 구역</PixelButton>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground" style={KR}>총 {zones.length}개 구역</span>
+            <button onClick={() => { setEditingZoneId(null); setZoneForm(emptyZoneForm); setShowZoneForm(!showZoneForm); }}
+              className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+              {showZoneForm && editingZoneId === null ? "취소" : "+ 새 구역"}
+            </button>
           </div>
+
           {showZoneForm && (
-            <PixelCard className="border-primary">
-              <h3 className="font-pixel text-sm mb-4 border-b-4 border-black pb-2">{editingZoneId !== null ? "구역 편집" : "새 구역 추가"}</h3>
-              <form onSubmit={handleZoneSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-primary/30 rounded-lg bg-white overflow-hidden">
+              <div className="px-4 py-3 border-b border-black/8 bg-primary/5">
+                <h3 className="text-sm font-semibold text-foreground" style={KR}>{editingZoneId !== null ? "구역 편집" : "새 구역 추가"}</h3>
+              </div>
+              <form onSubmit={handleZoneSubmit} className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-pixel text-xs mb-1">구역명 *</label>
-                    <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={zoneForm.name} onChange={e => setZoneForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 노들마당 전광판" />
+                    <label className={labelCls} style={KR}>구역명 *</label>
+                    <input required className={inputCls} style={KR} value={zoneForm.name} onChange={e => setZoneForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 노들마당 전광판" />
                   </div>
                   <div>
-                    <label className="block font-pixel text-xs mb-1">유형 *</label>
-                    <select className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={zoneForm.type} onChange={e => setZoneForm(f => ({ ...f, type: e.target.value }))}>
+                    <label className={labelCls} style={KR}>유형 *</label>
+                    <select className={inputCls} style={KR} value={zoneForm.type} onChange={e => setZoneForm(f => ({ ...f, type: e.target.value }))}>
                       {ZONE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block font-pixel text-xs mb-1">설명</label>
-                  <textarea rows={2} className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none" value={zoneForm.description} onChange={e => setZoneForm(f => ({ ...f, description: e.target.value }))} placeholder="구역 설명" />
+                  <label className={labelCls} style={KR}>설명</label>
+                  <textarea rows={2} className={`${inputCls} resize-none`} style={KR} value={zoneForm.description} onChange={e => setZoneForm(f => ({ ...f, description: e.target.value }))} placeholder="구역 설명" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-pixel text-xs mb-1">색상</label>
-                    <div className="flex gap-2 flex-wrap">
+                    <label className={labelCls} style={KR}>색상</label>
+                    <div className="flex gap-1.5 flex-wrap mt-1">
                       {COLOR_PRESETS.map(c => (
                         <button key={c} type="button" onClick={() => setZoneForm(f => ({ ...f, color: c }))}
-                          className={`w-7 h-7 border-2 ${zoneForm.color === c ? "border-black scale-125" : "border-transparent"} transition-transform`}
+                          className={`w-6 h-6 rounded transition-transform ${zoneForm.color === c ? "ring-2 ring-offset-1 ring-zinc-800 scale-110" : "hover:scale-105"}`}
                           style={{ backgroundColor: c }} />
                       ))}
-                      <input type="color" value={zoneForm.color} onChange={e => setZoneForm(f => ({ ...f, color: e.target.value }))} className="w-7 h-7 border-2 border-black cursor-pointer" />
+                      <input type="color" value={zoneForm.color} onChange={e => setZoneForm(f => ({ ...f, color: e.target.value }))}
+                        className="w-6 h-6 rounded cursor-pointer border border-black/15" />
                     </div>
                   </div>
                   <div>
-                    <label className="block font-pixel text-xs mb-1">정렬 순서</label>
-                    <input type="number" min={0} className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={zoneForm.sortOrder} onChange={e => setZoneForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
+                    <label className={labelCls} style={KR}>정렬 순서</label>
+                    <input type="number" min={0} className={inputCls} value={zoneForm.sortOrder} onChange={e => setZoneForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} />
                   </div>
                 </div>
-                <div className="border-4 border-black p-3 space-y-3 bg-muted/20">
-                  <p className="font-pixel text-xs">구역 동작 설정</p>
+                <div className="border border-black/8 rounded p-3 space-y-2.5 bg-zinc-50/60">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider" style={KR}>동작 설정</p>
                   {[
                     { key: "requiresEndDate", label: "종료일 필요", desc: "체크 해제 시 시작일만 입력" },
-                    { key: "requiresAssetUpload", label: "홍보물 업로드 필요", desc: "체크 해제 시 파일 없이 신청 가능" },
+                    { key: "requiresAssetUpload", label: "홍보물 업로드 필요", desc: "파일 없이 신청 불가" },
                     { key: "allowMultipleFiles", label: "다중 파일 업로드", desc: "여러 파일 동시 업로드 허용" },
                   ].map(item => (
-                    <label key={item.key} className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" className="w-5 h-5 accent-primary"
+                    <label key={item.key} className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="checkbox" className="accent-primary"
                         checked={zoneForm[item.key as keyof typeof zoneForm] as boolean}
                         onChange={e => setZoneForm(f => ({ ...f, [item.key]: e.target.checked }))} />
                       <div>
-                        <p className="font-pixel-body text-base font-bold">{item.label}</p>
-                        <p className="font-pixel-body text-sm text-muted-foreground">{item.desc}</p>
+                        <p className="text-sm font-medium" style={KR}>{item.label}</p>
+                        <p className="text-xs text-muted-foreground" style={KR}>{item.desc}</p>
                       </div>
                     </label>
                   ))}
                   <div>
-                    <p className="font-pixel-body text-base font-bold mb-1">하루 동시 허용 수</p>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <button type="button" onClick={() => setZoneForm(f => ({ ...f, maxConcurrent: null }))} className={`font-pixel-body text-sm px-3 py-1 border-2 border-black ${zoneForm.maxConcurrent === null ? "bg-primary text-white" : "bg-white hover:bg-muted"}`}>무제한</button>
-                      {[1, 2, 3, 5].map(n => (
-                        <button key={n} type="button" onClick={() => setZoneForm(f => ({ ...f, maxConcurrent: n }))} className={`font-pixel-body text-sm px-3 py-1 border-2 border-black ${zoneForm.maxConcurrent === n ? "bg-primary text-white" : "bg-white hover:bg-muted"}`}>{n}개</button>
+                    <p className="text-xs font-medium mb-1.5" style={KR}>하루 동시 허용 수</p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {([null, 1, 2, 3, 5] as (number | null)[]).map(n => (
+                        <button key={String(n)} type="button" onClick={() => setZoneForm(f => ({ ...f, maxConcurrent: n }))}
+                          className={`h-7 px-3 text-xs rounded border transition-colors ${zoneForm.maxConcurrent === n ? "bg-primary text-white border-primary" : "bg-white border-black/15 hover:bg-muted/60"}`} style={KR}>
+                          {n === null ? "무제한" : `${n}개`}
+                        </button>
                       ))}
                     </div>
                   </div>
                 </div>
-                {zoneError && <p className="font-pixel-body text-sm text-destructive border-2 border-destructive px-3 py-2">{zoneError}</p>}
-                <div className="flex gap-3">
-                  <PixelButton type="submit" variant="primary" disabled={createZone.isPending || updateZone.isPending}>
-                    {createZone.isPending || updateZone.isPending ? "저장 중..." : "💾 저장"}
-                  </PixelButton>
-                  <PixelButton type="button" variant="ghost" onClick={() => { setShowZoneForm(false); setEditingZoneId(null); }}>취소</PixelButton>
+                {zoneError && <p className="text-xs text-destructive" style={KR}>{zoneError}</p>}
+                <div className="flex gap-2">
+                  <button type="submit" disabled={createZone.isPending || updateZone.isPending}
+                    className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
+                    {createZone.isPending || updateZone.isPending ? "저장 중..." : "저장"}
+                  </button>
+                  <button type="button" onClick={() => { setShowZoneForm(false); setEditingZoneId(null); }}
+                    className="h-8 px-3 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                    취소
+                  </button>
                 </div>
               </form>
-            </PixelCard>
+            </div>
           )}
+
           {zonesLoading ? (
-            <div className="text-center py-8"><div className="animate-bounce text-3xl">⏳</div></div>
+            <div className="flex items-center justify-center p-8 gap-2">
+              <div className="w-4 h-4 border-2 border-zinc-200 border-t-zinc-500 rounded-full animate-spin" />
+              <span className="text-sm text-muted-foreground" style={KR}>불러오는 중...</span>
+            </div>
           ) : zones.length === 0 ? (
-            <div className="text-center py-12 border-4 border-dashed border-black bg-white">
-              <div className="text-4xl mb-4">🗺️</div>
-              <p className="font-pixel text-sm text-muted-foreground">등록된 홍보 구역이 없습니다.</p>
+            <div className="text-center py-12 border border-dashed border-black/15 rounded-lg bg-white">
+              <p className="text-sm text-muted-foreground" style={KR}>등록된 홍보 구역이 없습니다.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {zones.map(zone => (
-                <div key={zone.id} className="bg-white border-4 border-black p-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="w-4 h-4 border-2 border-black flex-shrink-0" style={{ backgroundColor: zone.color || "#888" }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-pixel text-xs">{zone.name}</span>
-                      {!zone.isActive && <PixelBadge variant="secondary">비활성</PixelBadge>}
-                    </div>
-                    <div className="font-pixel-body text-sm text-muted-foreground mt-1 flex flex-wrap gap-2">
-                      <span>{ZONE_TYPE_OPTIONS.find(o => o.value === zone.type)?.label ?? zone.type}</span>
-                      <span>·</span><span>{zone.requiresEndDate ? "기간 설정" : "날짜만"}</span>
-                      <span>·</span><span>{zone.maxConcurrent === null ? "무제한" : `최대 ${zone.maxConcurrent}개/일`}</span>
-                      {zone.requiresAssetUpload && <><span>·</span><span>업로드 필요</span></>}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <PixelButton size="sm" variant="secondary" onClick={() => handleEditZone(zone)}>편집</PixelButton>
-                    <PixelButton size="sm" variant="ghost" onClick={() => handleDeleteZone(zone.id, zone.name)}>삭제</PixelButton>
-                  </div>
-                </div>
-              ))}
+            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/8 bg-zinc-50/60">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>구역명</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={KR}>유형</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>동시 허용</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>상태</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted-foreground" style={KR}>액션</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {zones.map(zone => (
+                    <tr key={zone.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: zone.color || "#888" }} />
+                          <span className="font-medium" style={KR}>{zone.name}</span>
+                        </div>
+                        {zone.description && <p className="text-xs text-muted-foreground ml-4 mt-0.5 truncate" style={KR}>{zone.description}</p>}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell" style={KR}>
+                        {ZONE_TYPE_OPTIONS.find(o => o.value === zone.type)?.label ?? zone.type}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground hidden md:table-cell" style={KR}>
+                        {zone.maxConcurrent === null ? "무제한" : `${zone.maxConcurrent}개/일`}
+                      </td>
+                      <td className="px-4 py-2.5 hidden md:table-cell">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded border ${zone.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-zinc-100 text-zinc-500 border-zinc-200"}`} style={KR}>
+                          {zone.isActive ? "활성" : "비활성"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button onClick={() => handleEditZone(zone)}
+                            className="h-6 px-2 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>편집</button>
+                          <button onClick={() => handleDeleteZone(zone.id, zone.name)}
+                            className="h-6 px-2 text-xs border border-red-200 text-red-600 rounded bg-red-50 hover:bg-red-100 transition-colors" style={KR}>삭제</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       )}
 
-      {/* ── 사용자 관리 ────────────────────────────────────────────────────────── */}
+      {/* ── 사용자 관리 ── */}
       {tab === "users" && (
         <div className="space-y-3">
-          <p className="font-pixel-body text-lg text-muted-foreground">총 {users.length}명 가입</p>
-          {users.map((u: any) => (
-            <div key={u.id} className="bg-white border-4 border-black p-3">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
-                  {/* 사업명 */}
-                  {u.organizationName && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-pixel text-[0.55rem] text-muted-foreground">단체/사업</span>
-                      <span className="font-pixel-body text-lg font-bold">{u.organizationName}</span>
-                    </div>
-                  )}
-                  {/* 담당자 이름 */}
-                  {(u.name || u.contactName) && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-pixel text-[0.55rem] text-muted-foreground">담당자</span>
-                      <span className="font-pixel-body text-base">{u.name || u.contactName}</span>
-                    </div>
-                  )}
-                  {/* 연락처 */}
-                  {(u.phone || u.contactPhone) && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-pixel text-[0.55rem] text-muted-foreground">연락처</span>
-                      <span className="font-pixel-body text-base">{u.phone || u.contactPhone}</span>
-                    </div>
-                  )}
-                  {/* 이메일 */}
-                  <div className="flex items-center gap-2">
-                    <span className="font-pixel text-[0.55rem] text-muted-foreground">이메일</span>
-                    <span className="font-pixel-body text-base text-muted-foreground truncate">{u.email}</span>
-                  </div>
-                  <div className="font-pixel-body text-sm text-muted-foreground">{u.createdAt.slice(0, 10)} 가입</div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <select
-                    className="border-4 border-black px-2 py-1 font-pixel-body text-base focus:outline-none focus:border-primary bg-white"
-                    value={u.role}
-                    onChange={e => handleRoleChange(u.id, e.target.value)}
-                    disabled={u.id === me?.id}
-                  >
-                    <option value="user">일반 사용자</option>
-                    <option value="admin">관리자</option>
-                    <option value="super_admin">슈퍼 관리자</option>
-                  </select>
-                  {u.id === me?.id && <PixelBadge variant="primary">나</PixelBadge>}
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground" style={KR}>총 {users.length}명 가입</span>
+          </div>
+          <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-black/8 bg-zinc-50/60">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>사용자</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={KR}>이메일</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>가입일</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={KR}>권한</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {(users as any[]).map(u => (
+                  <tr key={u.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div>
+                        {u.organizationName && <p className="text-sm font-medium" style={KR}>{u.organizationName}</p>}
+                        {(u.name || u.contactName) && (
+                          <p className="text-xs text-muted-foreground" style={KR}>{u.name || u.contactName}</p>
+                        )}
+                        {!u.organizationName && !u.name && !u.contactName && (
+                          <p className="text-sm text-muted-foreground" style={KR}>{u.email}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell truncate max-w-[200px]">{u.email}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell whitespace-nowrap">{u.createdAt?.slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <select
+                          className="h-7 px-2 text-xs border border-black/15 rounded bg-white focus:outline-none focus:border-primary transition-colors" style={KR}
+                          value={u.role} onChange={e => handleRoleChange(u.id, e.target.value)}
+                          disabled={u.id === me?.id}>
+                          <option value="user">일반 사용자</option>
+                          <option value="admin">관리자</option>
+                          <option value="super_admin">슈퍼 관리자</option>
+                        </select>
+                        {u.id === me?.id && <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-200" style={KR}>나</span>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
