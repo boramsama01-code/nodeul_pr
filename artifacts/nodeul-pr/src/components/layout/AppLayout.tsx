@@ -40,7 +40,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <div className="max-w-6xl mx-auto px-3 h-14 flex items-center justify-between gap-2">
           <Link href="/">
             <div className="font-pixel text-sm sm:text-base tracking-tight text-primary cursor-pointer hover:text-primary/80 transition-colors whitespace-nowrap">
-              NODEUL PR SYS
+              NODEUL PR SYSTEM
             </div>
           </Link>
 
