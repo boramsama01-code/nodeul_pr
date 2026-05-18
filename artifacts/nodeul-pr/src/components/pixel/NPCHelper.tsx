@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useUIStore } from "@/store/useUIStore";
 import { motion, AnimatePresence } from "framer-motion";
+import maengkongiImg from "/maengkongi.png";
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
@@ -18,17 +19,27 @@ async function sendToNPC(message: string, history: ChatMsg[]): Promise<string> {
   return data.reply;
 }
 
+function MaengkongiCharacter({ dancing = false, size = "md" }: { dancing?: boolean; size?: "sm" | "md" | "lg" }) {
+  const sizeClass = size === "sm" ? "w-8 h-8" : size === "lg" ? "w-16 h-16" : "w-10 h-10";
+  return (
+    <img
+      src={maengkongiImg}
+      alt="맹꽁이"
+      className={`${sizeClass} object-contain ${dancing ? "animate-maengkongi-dance" : "animate-maengkongi-float"}`}
+      style={{ imageRendering: "pixelated" }}
+    />
+  );
+}
+
 export const NPCHelper: React.FC = () => {
   const { npcMessage, showNPC, setShowNPC } = useUIStore();
 
-  // 채팅 히스토리 — 첫 메시지는 시스템 인사말
   const [history, setHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // npcMessage(인사말)가 바뀔 때 히스토리 초기화
   useEffect(() => {
     if (npcMessage) {
       setHistory([{ role: "assistant", content: npcMessage }]);
@@ -47,11 +58,12 @@ export const NPCHelper: React.FC = () => {
     const msg = input.trim();
     if (!msg || loading) return;
     setInput("");
-    const next: ChatMsg[] = [...history, { role: "user", content: msg }];
-    setHistory(next);
+
+    const prevHistory = [...history];
+    setHistory(h => [...h, { role: "user", content: msg }]);
     setLoading(true);
     try {
-      const reply = await sendToNPC(msg, next.slice(-8));
+      const reply = await sendToNPC(msg, prevHistory.slice(-8));
       setHistory(h => [...h, { role: "assistant", content: reply }]);
     } catch {
       setHistory(h => [...h, { role: "assistant", content: "죄송합니다, 잠시 후 다시 시도해 주세요 🐸" }]);
@@ -62,7 +74,6 @@ export const NPCHelper: React.FC = () => {
 
   return (
     <>
-      {/* 열린 상태: 채팅 창 */}
       <AnimatePresence>
         {showNPC && (
           <motion.div
@@ -74,7 +85,7 @@ export const NPCHelper: React.FC = () => {
           >
             {/* Header */}
             <div className="flex items-center gap-2 px-3 py-2 border-b-2 border-black bg-primary text-white">
-              <span className="text-xl">🐸</span>
+              <MaengkongiCharacter dancing={loading} size="sm" />
               <div className="flex-1">
                 <p className="font-pixel text-[0.55rem] leading-none">맹꽁이 AI 상담사</p>
                 <p className="text-xs opacity-80">Nodeul PR Assistant</p>
@@ -96,7 +107,7 @@ export const NPCHelper: React.FC = () => {
                   className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                 >
                   {msg.role === "assistant" && (
-                    <span className="text-lg shrink-0 mt-0.5">🐸</span>
+                    <MaengkongiCharacter size="sm" />
                   )}
                   <div
                     className={`max-w-[85%] px-3 py-2 text-base border-2 border-black shadow-[2px_2px_0_#000] ${
@@ -111,7 +122,7 @@ export const NPCHelper: React.FC = () => {
               ))}
               {loading && (
                 <div className="flex gap-2 items-center">
-                  <span className="text-lg">🐸</span>
+                  <MaengkongiCharacter dancing size="sm" />
                   <div className="bg-white border-2 border-black px-3 py-2 shadow-[2px_2px_0_#000]">
                     <span className="inline-flex gap-1">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -148,7 +159,7 @@ export const NPCHelper: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 닫힌 상태: 개구리 버튼 */}
+      {/* 닫힌 상태: 맹꽁이 버튼 */}
       <AnimatePresence>
         {!showNPC && (
           <motion.button
@@ -157,9 +168,9 @@ export const NPCHelper: React.FC = () => {
             exit={{ opacity: 0, scale: 0.6 }}
             onClick={() => setShowNPC(true)}
             title="맹꽁이 AI 상담사 열기"
-            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-white border-2 border-black shadow-[4px_4px_0_#000] flex items-center justify-center text-3xl hover:shadow-[2px_2px_0_#000] hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+            className="fixed bottom-4 right-4 z-50 w-16 h-16 bg-white border-2 border-black shadow-[4px_4px_0_#000] flex items-center justify-center hover:shadow-[2px_2px_0_#000] hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
           >
-            🐸
+            <MaengkongiCharacter size="lg" />
           </motion.button>
         )}
       </AnimatePresence>

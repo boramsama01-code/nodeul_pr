@@ -32,13 +32,13 @@ export default function EventCreatePage() {
 
   React.useEffect(() => {
     if (me?.organizationId) setStep("event");
-    setNPCMessage("새로운 홍보 퀘스트를 시작해요! 먼저 단체 정보를 입력하세요.");
+    setNPCMessage("새 행사 홍보를 신청해요! 먼저 단체 정보를 입력하세요 🐸");
   }, [me]);
 
   React.useEffect(() => {
     if (orgs && orgs.length > 0 && me?.organizationId) {
       setStep("event");
-      setNPCMessage("좋아요! 이제 이벤트 정보를 입력하세요.");
+      setNPCMessage("단체 정보 확인! 이제 행사 정보를 입력하세요 🐸");
     }
   }, [orgs]);
 
@@ -50,9 +50,9 @@ export default function EventCreatePage() {
     try {
       await createOrg.mutateAsync({ data: orgForm });
       setStep("event");
-      setNPCMessage("단체 등록 완료! 이제 이벤트 정보를 입력하세요.");
+      setNPCMessage("단체 등록 완료! 이제 행사 정보를 입력하세요 🐸");
     } catch (err: any) {
-      setError("단체 등록에 실패했습니다.");
+      setError("단체 등록에 실패했습니다. 다시 시도해 주세요.");
     }
   };
 
@@ -73,36 +73,36 @@ export default function EventCreatePage() {
           tags: tags.length ? tags : undefined,
         }
       });
-      setNPCMessage("퀘스트 등록 완료! 이벤트 상세 페이지로 이동합니다.");
+      setNPCMessage("행사 신청 완료! 관리자 승인을 기다려 주세요 🐸");
       setLocation(`/events/${ev.id}`);
     } catch (err: any) {
-      setError("이벤트 생성에 실패했습니다. 입력 내용을 확인하세요.");
+      setError("행사 신청에 실패했습니다. 입력 내용을 확인해 주세요.");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="border-b-4 border-black pb-4">
-        <h1 className="text-3xl font-pixel text-primary uppercase">New Quest</h1>
-        <p className="font-pixel-body text-xl text-muted-foreground mt-2">새 홍보 이벤트 신청</p>
+        <h1 className="text-3xl font-pixel text-primary">새 행사 홍보 신청</h1>
+        <p className="font-pixel-body text-xl text-muted-foreground mt-2">단체 정보와 행사 정보를 입력해 주세요</p>
       </div>
 
-      {/* Step indicator */}
+      {/* 단계 표시 */}
       <div className="flex gap-4 font-pixel text-sm">
         <div className={`px-4 py-2 border-4 border-black ${step === "org" ? "bg-primary text-white" : "bg-success/20"}`}>
           {step === "event" ? "✓" : "1"} 단체 정보
         </div>
         <div className={`px-4 py-2 border-4 border-black ${step === "event" ? "bg-primary text-white" : "bg-muted"}`}>
-          2 이벤트 정보
+          2 행사 정보
         </div>
       </div>
 
       {step === "org" && (
         <PixelCard>
-          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">단체 등록</h2>
+          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">단체 정보 입력</h2>
           <form onSubmit={handleOrgSubmit} className="space-y-4">
             <div>
-              <label className="block font-pixel text-sm mb-2">단체명 *</label>
+              <label className="block font-pixel text-sm mb-2">단체명 / 사업명 *</label>
               <input
                 required
                 className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
@@ -143,7 +143,7 @@ export default function EventCreatePage() {
             </div>
             {error && <p className="font-pixel-body text-destructive border-2 border-destructive px-3 py-2">{error}</p>}
             <PixelButton type="submit" variant="primary" size="md" disabled={createOrg.isPending}>
-              {createOrg.isPending ? "등록 중..." : "단체 등록 →"}
+              {createOrg.isPending ? "등록 중..." : "다음 단계 →"}
             </PixelButton>
           </form>
         </PixelCard>
@@ -151,10 +151,10 @@ export default function EventCreatePage() {
 
       {step === "event" && (
         <PixelCard>
-          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">이벤트 정보</h2>
+          <h2 className="font-pixel text-xl mb-6 border-b-4 border-black pb-2">행사 정보 입력</h2>
           <form onSubmit={handleEventSubmit} className="space-y-4">
             <div>
-              <label className="block font-pixel text-sm mb-2">이벤트명 *</label>
+              <label className="block font-pixel text-sm mb-2">행사명 *</label>
               <input
                 required
                 className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
@@ -164,13 +164,13 @@ export default function EventCreatePage() {
               />
             </div>
             <div>
-              <label className="block font-pixel text-sm mb-2">이벤트 설명</label>
+              <label className="block font-pixel text-sm mb-2">행사 설명</label>
               <textarea
                 rows={3}
                 className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none"
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="이벤트에 대한 간단한 설명을 입력하세요."
+                placeholder="행사에 대한 간단한 설명을 입력하세요."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -238,7 +238,7 @@ export default function EventCreatePage() {
                 취소
               </PixelButton>
               <PixelButton type="submit" variant="primary" size="md" disabled={createEvent.isPending}>
-                {createEvent.isPending ? "등록 중..." : "퀘스트 시작! →"}
+                {createEvent.isPending ? "신청 중..." : "신청 완료 →"}
               </PixelButton>
             </div>
           </form>

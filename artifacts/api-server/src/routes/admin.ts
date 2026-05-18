@@ -187,15 +187,29 @@ router.get("/admin/users", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
 
-  const users = await db.select().from(usersTable).orderBy(asc(usersTable.createdAt));
-  return res.json(users.map(u => ({
-    id: u.id,
-    clerkId: u.clerkId,
-    email: u.email,
-    name: u.name ?? null,
-    role: u.role,
-    organizationId: u.organizationId ?? null,
-    createdAt: u.createdAt.toISOString(),
+  const { organizationsTable } = await import("@workspace/db");
+  const rows = await db.select({
+    user: usersTable,
+    orgName: organizationsTable.name,
+    orgContactName: organizationsTable.contactName,
+    orgContactPhone: organizationsTable.contactPhone,
+  })
+    .from(usersTable)
+    .leftJoin(organizationsTable, eq(usersTable.organizationId, organizationsTable.id))
+    .orderBy(asc(usersTable.createdAt));
+
+  return res.json(rows.map(r => ({
+    id: r.user.id,
+    clerkId: r.user.clerkId,
+    email: r.user.email,
+    name: r.user.name ?? null,
+    phone: r.user.phone ?? null,
+    role: r.user.role,
+    organizationId: r.user.organizationId ?? null,
+    organizationName: r.orgName ?? null,
+    contactName: r.orgContactName ?? null,
+    contactPhone: r.orgContactPhone ?? null,
+    createdAt: r.user.createdAt.toISOString(),
   })));
 });
 

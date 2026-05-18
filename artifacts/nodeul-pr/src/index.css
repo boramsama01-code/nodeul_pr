@@ -232,6 +232,37 @@
   }
   .animate-pixel-bounce { animation: pixel-bounce 0.8s steps(2) infinite; }
 
+  /* 맹꽁이 둥둥 (idle float) */
+  @keyframes maengkongi-float {
+    0%   { transform: translateY(0px) rotate(-1deg); }
+    25%  { transform: translateY(-5px) rotate(0deg); }
+    50%  { transform: translateY(-8px) rotate(1deg); }
+    75%  { transform: translateY(-4px) rotate(0deg); }
+    100% { transform: translateY(0px) rotate(-1deg); }
+  }
+  .animate-maengkongi-float {
+    animation: maengkongi-float 2.4s ease-in-out infinite;
+  }
+
+  /* 맹꽁이 춤 (when loading/responding) */
+  @keyframes maengkongi-dance {
+    0%   { transform: rotate(-10deg) translateY(0px) scale(1); }
+    20%  { transform: rotate(10deg)  translateY(-4px) scale(1.05); }
+    40%  { transform: rotate(-8deg)  translateY(-6px) scale(1); }
+    60%  { transform: rotate(8deg)   translateY(-3px) scale(1.05); }
+    80%  { transform: rotate(-5deg)  translateY(-5px) scale(1); }
+    100% { transform: rotate(-10deg) translateY(0px) scale(1); }
+  }
+  .animate-maengkongi-dance {
+    animation: maengkongi-dance 0.7s ease-in-out infinite;
+  }
+
+  /* Clerk 소셜 로그인 버튼 숨기기 */
+  .cl-socialButtonsRoot,
+  .cl-dividerRow,
+  .cl-socialButtons,
+  .cl-providerIcon { display: none !important; }
+
   /* ── Typography helpers ──────────────────────────────────────────────────── */
   /* Use these for page section titles in Korean */
   .page-title {

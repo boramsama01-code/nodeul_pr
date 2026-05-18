@@ -24,11 +24,11 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const navLinks = isSignedIn
     ? [
-        { href: "/dashboard", label: "Quest Log", icon: "📜" },
+        { href: "/dashboard", label: "내 신청 목록", icon: "📋" },
         ...(isAdmin ? [
-          { href: "/admin", label: "Admin HUD", icon: "👾", admin: true },
-          { href: "/admin/calendar", label: "Calendar", icon: "📅", admin: true },
-          { href: "/admin/settings", label: "Settings", icon: "⚙️", admin: true },
+          { href: "/admin", label: "관리자 대시보드", icon: "👾", admin: true },
+          { href: "/admin/calendar", label: "일정표", icon: "📅", admin: true },
+          { href: "/admin/settings", label: "설정", icon: "⚙️", admin: true },
         ] : []),
       ]
     : [];
@@ -134,7 +134,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       <footer className="border-t-4 border-black bg-card py-4 mt-auto">
         <div className="max-w-6xl mx-auto px-3 text-center">
           <p className="font-pixel-body text-muted-foreground text-xs sm:text-sm uppercase tracking-widest">
-            © 1998 NODEUL ISLAND PR DIV. ALL RIGHTS RESERVED.
+            © 노들섬 홍보팀. ALL RIGHTS RESERVED.
           </p>
         </div>
       </footer>
