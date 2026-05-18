@@ -1,19 +1,18 @@
 import { Router } from "express";
 import { db, eventsTable, promotionRequestsTable, schedulesTable, commentsTable, promotionZonesTable, usersTable, systemSettingsTable } from "@workspace/db";
 import { eq, sql, desc, asc, and, gte, lte } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
 const router = Router();
 
 async function requireAdmin(req: any, res: any) {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return null; }
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) { res.status(403).json({ error: "Forbidden" }); return null; }
   return user;
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
 router.get("/admin/dashboard", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
@@ -85,7 +84,6 @@ router.get("/admin/dashboard", async (req, res) => {
   });
 });
 
-// ─── Conflicts ─────────────────────────────────────────────────────────────────
 router.get("/admin/conflicts", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
@@ -115,7 +113,6 @@ router.get("/admin/conflicts", async (req, res) => {
   return res.json(conflicts);
 });
 
-// ─── Calendar ──────────────────────────────────────────────────────────────────
 router.get("/admin/calendar", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
@@ -157,9 +154,7 @@ router.get("/admin/calendar", async (req, res) => {
   })));
 });
 
-// ─── System Settings ───────────────────────────────────────────────────────────
 router.get("/admin/settings", async (req, res) => {
-  // Public read for NPC greeting (key: npc_greeting)
   const settings = await db.select().from(systemSettingsTable);
   return res.json(settings.map(s => ({ key: s.key, value: s.value })));
 });
@@ -182,7 +177,6 @@ router.put("/admin/settings/:key", async (req, res) => {
   }
 });
 
-// ─── User Management ───────────────────────────────────────────────────────────
 router.get("/admin/users", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
@@ -200,7 +194,7 @@ router.get("/admin/users", async (req, res) => {
 
   return res.json(rows.map(r => ({
     id: r.user.id,
-    clerkId: r.user.clerkId,
+    supabaseId: r.user.supabaseId,
     email: r.user.email,
     name: r.user.name ?? null,
     phone: r.user.phone ?? null,

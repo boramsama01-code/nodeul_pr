@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { db, promotionRequestsTable, promotionZonesTable, eventsTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreatePromotionRequestBody, UpdatePromotionRequestBody, ApprovePromotionRequestBody } from "@workspace/api-zod";
 
 const router = Router();
 
-async function getUser(clerkId: string) {
-  return db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
+async function getUser(supabaseId: string) {
+  return db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
 }
 
 function formatRequest(pr: typeof promotionRequestsTable.$inferSelect, zoneName?: string | null, zoneType?: string | null) {
@@ -32,10 +32,6 @@ router.get("/promotion-requests", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = await getUser(userId);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-  const status = req.query.status as string | undefined;
-  const eventId = req.query.eventId ? Number(req.query.eventId) : undefined;
-  const zoneId = req.query.zoneId ? Number(req.query.zoneId) : undefined;
 
   const rows = await db.select({ pr: promotionRequestsTable, zoneName: promotionZonesTable.name, zoneType: promotionZonesTable.type })
     .from(promotionRequestsTable)

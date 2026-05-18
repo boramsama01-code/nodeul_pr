@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useParams, useLocation } from "wouter";
 import {
   useGetEvent,
@@ -8,6 +8,8 @@ import {
   useListPromotionZones,
   useUpdateEvent,
   useSendEventEmail,
+  useGetMe,
+  getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { PixelCard } from "@/components/pixel/PixelCard";
 import { PixelButton } from "@/components/pixel/PixelButton";
@@ -34,12 +36,12 @@ const STATUS_VARIANTS: Record<string, "primary" | "success" | "alert" | "danger"
 
 export default function EventDetailPage() {
   const { isSignedIn } = useAuth();
-  const { user } = useUser();
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
-  const role = user?.publicMetadata?.role as string | undefined;
-  const isAdmin = role === "admin" || role === "super_admin";
+
+  const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const isAdmin = me?.role === "admin" || me?.role === "super_admin";
 
   const { data: event, isLoading, refetch } = useGetEvent(Number(id));
   const { data: zones } = useListPromotionZones();
@@ -213,12 +215,7 @@ export default function EventDetailPage() {
               <form onSubmit={handlePRSubmit} className="space-y-4">
                 <div>
                   <label className="block font-pixel text-sm mb-2">홍보 구역 *</label>
-                  <select
-                    required
-                    className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                    value={prForm.zoneId}
-                    onChange={e => setPRForm(f => ({ ...f, zoneId: e.target.value }))}
-                  >
+                  <select required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={prForm.zoneId} onChange={e => setPRForm(f => ({ ...f, zoneId: e.target.value }))}>
                     <option value="">구역 선택...</option>
                     {zones?.map(z => (
                       <option key={z.id} value={z.id}>{z.name} ({z.type})</option>

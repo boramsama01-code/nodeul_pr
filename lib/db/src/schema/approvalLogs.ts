@@ -11,7 +11,7 @@ export const approvalLogsTable = pgTable("approval_logs", {
   eventId: integer("event_id").notNull(),
   fromStatus: text("from_status"),
   toStatus: text("to_status").notNull(),
-  actorClerkId: text("actor_clerk_id"),
+  actorUserId: text("actor_user_id"),
   actorName: text("actor_name"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

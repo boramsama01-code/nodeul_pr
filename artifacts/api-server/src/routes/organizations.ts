@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, organizationsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateOrganizationBody, UpdateOrganizationBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -21,7 +21,7 @@ router.get("/organizations", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   if (!user) return res.status(404).json({ error: "User not found" });
 
   let orgs;
@@ -43,7 +43,7 @@ router.post("/organizations", async (req, res) => {
 
   const [org] = await db.insert(organizationsTable).values(parsed.data).returning();
 
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   if (user && !user.organizationId) {
     await db.update(usersTable).set({ organizationId: org.id }).where(eq(usersTable.id, user.id));
   }

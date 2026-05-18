@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect } from "wouter";
 import { useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
 

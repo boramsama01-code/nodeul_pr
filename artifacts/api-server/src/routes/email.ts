@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, emailLogsTable, eventsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { SendEventEmailBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
 router.post("/events/:eventId/send-email", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) return res.status(403).json({ error: "Forbidden" });
 
   const eventId = Number(req.params.eventId);

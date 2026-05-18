@@ -1,17 +1,16 @@
 import { Router } from "express";
 import { db, usersTable, organizationsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
 const router = Router();
 
-async function getOrCreateUser(clerkId: string, email: string) {
-  let user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
+async function getOrCreateUser(supabaseId: string, email: string) {
+  let user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
   if (!user) {
-    // Auto-assign super_admin to the very first user in the system
     const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
     const role = Number(count) === 0 ? "super_admin" : "user";
-    const [created] = await db.insert(usersTable).values({ clerkId, email, role }).returning();
+    const [created] = await db.insert(usersTable).values({ supabaseId, email, role }).returning();
     user = created;
   }
   return user;
@@ -21,8 +20,7 @@ router.get("/users/me", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const auth = getAuth(req);
-  const email = (auth?.sessionClaims?.email as string) ?? "";
+  const email = (req as any).userEmail ?? "";
   const user = await getOrCreateUser(userId, email);
 
   let org = null;
@@ -32,7 +30,7 @@ router.get("/users/me", async (req, res) => {
 
   return res.json({
     id: user.id,
-    clerkId: user.clerkId,
+    supabaseId: user.supabaseId,
     email: user.email,
     name: user.name ?? null,
     phone: user.phone ?? null,
@@ -47,8 +45,7 @@ router.patch("/users/me", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const auth = getAuth(req);
-  const email = (auth?.sessionClaims?.email as string) ?? "";
+  const email = (req as any).userEmail ?? "";
   const user = await getOrCreateUser(userId, email);
 
   const { name, phone } = req.body;
@@ -59,7 +56,7 @@ router.patch("/users/me", async (req, res) => {
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, user.id)).returning();
   return res.json({
     id: updated.id,
-    clerkId: updated.clerkId,
+    supabaseId: updated.supabaseId,
     email: updated.email,
     name: updated.name ?? null,
     phone: updated.phone ?? null,

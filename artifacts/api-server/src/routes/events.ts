@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { db, eventsTable, organizationsTable, promotionRequestsTable, promotionZonesTable, assetsTable, assetVersionsTable, schedulesTable, commentsTable, emailLogsTable } from "@workspace/db";
 import { eq, and, ilike, desc, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { usersTable } from "@workspace/db";
 
 const router = Router();
 
-async function getUser(clerkId: string) {
-  return db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
+async function getUser(supabaseId: string) {
+  return db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
 }
 
 function formatEvent(ev: typeof eventsTable.$inferSelect, orgName?: string | null) {
@@ -270,7 +270,7 @@ router.get("/events/:id/timeline", async (req, res) => {
   const emails = await db.select().from(emailLogsTable).where(eq(emailLogsTable.eventId, id)).orderBy(desc(emailLogsTable.createdAt));
 
   const timeline = [
-    ...comments.map((c, i) => ({
+    ...comments.map((c) => ({
       id: c.id * 100,
       eventId: c.eventId,
       type: "comment" as const,

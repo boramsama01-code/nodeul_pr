@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, Link } from "wouter";
 import { useGetMe, getGetMeQueryKey, useGetAdminCalendar, getGetAdminCalendarQueryKey } from "@workspace/api-client-react";
 import { PixelButton } from "@/components/pixel/PixelButton";

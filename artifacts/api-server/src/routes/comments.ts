@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, commentsTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateCommentBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
 router.get("/events/:eventId/comments", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const eventId = Number(req.params.eventId);
@@ -33,7 +33,7 @@ router.get("/events/:eventId/comments", async (req, res) => {
 router.post("/events/:eventId/comments", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
 
   const eventId = Number(req.params.eventId);
   const parsed = CreateCommentBody.safeParse(req.body);

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, schedulesTable, eventsTable, promotionZonesTable } from "@workspace/db";
 import { eq, and, gte, lte } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateScheduleBody, UpdateScheduleBody } from "@workspace/api-zod";
 
 const router = Router();

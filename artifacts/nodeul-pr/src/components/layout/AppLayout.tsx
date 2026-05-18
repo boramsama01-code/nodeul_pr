@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, useClerk } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { NPCHelper } from "../pixel/NPCHelper";
 import { Scanlines } from "../pixel/Scanlines";
@@ -8,8 +8,7 @@ import { PixelButton } from "../pixel/PixelButton";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const { isSignedIn, signOut } = useAuth();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -17,8 +16,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const role = me?.role;
   const isAdmin = role === "admin" || role === "super_admin";
 
-  const handleSignOut = () => {
-    signOut({ redirectUrl: "/" });
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation("/");
     setMobileOpen(false);
   };
 
@@ -48,7 +48,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           <nav className="hidden md:flex gap-4 items-center flex-1 justify-end">
             {navLinks.map(l => (
               <Link key={l.href} href={l.href}>
-                <span className={`font-pixel text-xs cursor-pointer hover:underline transition-colors ${l.admin ? "text-destructive" : ""}`}>
+                <span className={`font-pixel text-xs cursor-pointer hover:underline transition-colors ${(l as any).admin ? "text-destructive" : ""}`}>
                   {l.label}
                 </span>
               </Link>
@@ -96,7 +96,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   <Link key={l.href} href={l.href}>
                     <button
                       onClick={() => setMobileOpen(false)}
-                      className={`w-full text-left font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-primary hover:text-white transition-colors ${l.admin ? "text-destructive border-destructive" : ""}`}
+                      className={`w-full text-left font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-primary hover:text-white transition-colors ${(l as any).admin ? "text-destructive border-destructive" : ""}`}
                     >
                       {l.icon} {l.label}
                     </button>

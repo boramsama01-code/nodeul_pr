@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, Link } from "wouter";
 import { useListEvents, getListEventsQueryKey, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";

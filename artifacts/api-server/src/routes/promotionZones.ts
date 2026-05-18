@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, promotionZonesTable, schedulesTable, usersTable } from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
 const router = Router();
 
@@ -24,7 +24,7 @@ function formatZone(z: typeof promotionZonesTable.$inferSelect) {
 async function requireAdmin(req: any, res: any) {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return null; }
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, userId) });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) { res.status(403).json({ error: "Forbidden" }); return null; }
   return user;
 }

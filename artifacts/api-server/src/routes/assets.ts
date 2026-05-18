@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { db, assetsTable, assetVersionsTable, promotionZonesTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateAssetBody, SelectAssetVersionBody } from "@workspace/api-zod";
 
 const router = Router();
 
-async function getUser(clerkId: string) {
-  return db.query.usersTable.findFirst({ where: eq(usersTable.clerkId, clerkId) });
+async function getUser(supabaseId: string) {
+  return db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
 }
 
 function formatVersion(v: typeof assetVersionsTable.$inferSelect) {

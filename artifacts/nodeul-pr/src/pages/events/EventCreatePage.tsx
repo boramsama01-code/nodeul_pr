@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useLocation } from "wouter";
 import { useCreateEvent, useListOrganizations, useCreateOrganization, useGetMe } from "@workspace/api-client-react";
 import { PixelCard } from "@/components/pixel/PixelCard";
@@ -87,7 +87,6 @@ export default function EventCreatePage() {
         <p className="font-pixel-body text-xl text-muted-foreground mt-2">단체 정보와 행사 정보를 입력해 주세요</p>
       </div>
 
-      {/* 단계 표시 */}
       <div className="flex gap-4 font-pixel text-sm">
         <div className={`px-4 py-2 border-4 border-black ${step === "org" ? "bg-primary text-white" : "bg-success/20"}`}>
           {step === "event" ? "✓" : "1"} 단체 정보
@@ -103,43 +102,19 @@ export default function EventCreatePage() {
           <form onSubmit={handleOrgSubmit} className="space-y-4">
             <div>
               <label className="block font-pixel text-sm mb-2">단체명 / 사업명 *</label>
-              <input
-                required
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={orgForm.name}
-                onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="예: 서울시 문화재단"
-              />
+              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 서울시 문화재단" />
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">담당자 이름 *</label>
-              <input
-                required
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={orgForm.contactName}
-                onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))}
-                placeholder="홍길동"
-              />
+              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactName} onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))} placeholder="홍길동" />
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">이메일 *</label>
-              <input
-                required
-                type="email"
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={orgForm.contactEmail}
-                onChange={e => setOrgForm(f => ({ ...f, contactEmail: e.target.value }))}
-                placeholder="contact@example.com"
-              />
+              <input required type="email" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactEmail} onChange={e => setOrgForm(f => ({ ...f, contactEmail: e.target.value }))} placeholder="contact@example.com" />
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">연락처</label>
-              <input
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={orgForm.contactPhone}
-                onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))}
-                placeholder="02-1234-5678"
-              />
+              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={orgForm.contactPhone} onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="02-1234-5678" />
             </div>
             {error && <p className="font-pixel-body text-destructive border-2 border-destructive px-3 py-2">{error}</p>}
             <PixelButton type="submit" variant="primary" size="md" disabled={createOrg.isPending}>
@@ -155,88 +130,43 @@ export default function EventCreatePage() {
           <form onSubmit={handleEventSubmit} className="space-y-4">
             <div>
               <label className="block font-pixel text-sm mb-2">행사명 *</label>
-              <input
-                required
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="예: 2026 노들섬 버스킹 페스티벌"
-              />
+              <input required className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="예: 2026 노들섬 버스킹 페스티벌" />
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">행사 설명</label>
-              <textarea
-                rows={3}
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="행사에 대한 간단한 설명을 입력하세요."
-              />
+              <textarea rows={3} className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white resize-none" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="행사에 대한 간단한 설명을 입력하세요." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block font-pixel text-sm mb-2">시작일 *</label>
-                <input
-                  required
-                  type="date"
-                  className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                  value={form.startDate}
-                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                />
+                <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
               </div>
               <div>
                 <label className="block font-pixel text-sm mb-2">종료일 *</label>
-                <input
-                  required
-                  type="date"
-                  className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                  value={form.endDate}
-                  onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                />
+                <input required type="date" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
               </div>
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">장소</label>
-              <input
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={form.venue}
-                onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
-                placeholder="예: 노들섬 라이브하우스"
-              />
+              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} placeholder="예: 노들섬 라이브하우스" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block font-pixel text-sm mb-2">담당자 이름</label>
-                <input
-                  className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                  value={form.contactName}
-                  onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))}
-                />
+                <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))} />
               </div>
               <div>
                 <label className="block font-pixel text-sm mb-2">담당자 이메일</label>
-                <input
-                  type="email"
-                  className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                  value={form.contactEmail}
-                  onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))}
-                />
+                <input type="email" className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.contactEmail} onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))} />
               </div>
             </div>
             <div>
               <label className="block font-pixel text-sm mb-2">태그 (쉼표로 구분)</label>
-              <input
-                className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white"
-                value={form.tags}
-                onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
-                placeholder="음악, 버스킹, 야외"
-              />
+              <input className="w-full border-4 border-black px-3 py-2 font-pixel-body text-lg focus:outline-none focus:border-primary bg-white" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="음악, 버스킹, 야외" />
             </div>
             {error && <p className="font-pixel-body text-destructive border-2 border-destructive px-3 py-2">{error}</p>}
             <div className="flex gap-4 pt-2">
-              <PixelButton type="button" variant="ghost" size="md" onClick={() => setLocation("/dashboard")}>
-                취소
-              </PixelButton>
+              <PixelButton type="button" variant="ghost" size="md" onClick={() => setLocation("/dashboard")}>취소</PixelButton>
               <PixelButton type="submit" variant="primary" size="md" disabled={createEvent.isPending}>
                 {createEvent.isPending ? "신청 중..." : "신청 완료 →"}
               </PixelButton>

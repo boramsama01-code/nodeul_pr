@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import LandingPage from "@/pages/LandingPage";
@@ -18,46 +19,31 @@ import EventCreatePage from "@/pages/events/EventCreatePage";
 import EventDetailPage from "@/pages/events/EventDetailPage";
 import NotFound from "@/pages/not-found";
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+setAuthTokenGetter(async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+});
+
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-}
 
 function HomeRedirect() {
   const { isSignedIn, isLoaded } = useAuth();
-
   if (!isLoaded) return <LandingPage />;
   if (isSignedIn) return <Redirect to="/dashboard" />;
   return <LandingPage />;
 }
 
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
+function QueryCacheInvalidator() {
+  const { userId } = useAuth();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        queryClient.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClient]);
+    if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      queryClient.clear();
+    }
+    prevUserIdRef.current = userId;
+  }, [userId, queryClient]);
 
   return null;
 }
@@ -65,25 +51,16 @@ function ClerkQueryClientCacheInvalidator() {
 const queryClient = new QueryClient();
 
 export default function App() {
-  const [, setLocation] = useLocation();
-
   return (
     <WouterRouter base={basePath}>
-      <ClerkProvider
-        publishableKey={clerkPubKey}
-        proxyUrl={clerkProxyUrl}
-        signInUrl={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        routerPush={(to) => setLocation(stripBase(to))}
-        routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-      >
+      <AuthProvider>
         <QueryClientProvider client={queryClient}>
-          <ClerkQueryClientCacheInvalidator />
+          <QueryCacheInvalidator />
           <AppLayout>
             <Switch>
               <Route path="/" component={HomeRedirect} />
-              <Route path="/sign-in/*?" component={SignInPage} />
-              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/sign-in" component={SignInPage} />
+              <Route path="/sign-up" component={SignUpPage} />
               <Route path="/dashboard" component={DashboardPage} />
               <Route path="/events/new" component={EventCreatePage} />
               <Route path="/events/:id" component={EventDetailPage} />
@@ -96,7 +73,7 @@ export default function App() {
           </AppLayout>
           <Toaster />
         </QueryClientProvider>
-      </ClerkProvider>
+      </AuthProvider>
     </WouterRouter>
   );
 }

@@ -1,6 +1,4 @@
 import { Router } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
-import { getAuth } from "@clerk/express";
 
 const router = Router();
 
@@ -31,6 +29,14 @@ router.post("/npc/chat", async (req, res) => {
     return res.status(400).json({ error: "message is required" });
   }
 
+  let openai: any;
+  try {
+    const mod = await import("@workspace/integrations-openai-ai-server");
+    openai = mod.openai;
+  } catch {
+    return res.json({ reply: "AI 도우미가 현재 준비 중이에요. 잠시 후 다시 시도해 주세요! 🐸" });
+  }
+
   try {
     const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
       { role: "system", content: SYSTEM_PROMPT },
@@ -39,7 +45,7 @@ router.post("/npc/chat", async (req, res) => {
     ];
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.1",
+      model: "gpt-4.1-mini",
       max_completion_tokens: 512,
       messages,
     });

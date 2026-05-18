@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, Link } from "wouter";
 import {
   useGetMe, getGetMeQueryKey,
