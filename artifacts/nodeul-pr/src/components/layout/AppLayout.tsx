@@ -1,11 +1,127 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
 import { NPCHelper } from "../pixel/NPCHelper";
 import { Scanlines } from "../pixel/Scanlines";
-import { PixelButton } from "../pixel/PixelButton";
 import { AnimatePresence, motion } from "framer-motion";
+
+/* ── 픽셀 아이콘 SVG 컴포넌트 ── */
+function PixelListIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      {/* 클립보드 프레임 */}
+      <rect x="1" y="2" width="12" height="11" fill="currentColor" opacity="0.12"/>
+      <rect x="1" y="2" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="12" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="2" width="1" height="11" fill="currentColor"/>
+      <rect x="12" y="2" width="1" height="11" fill="currentColor"/>
+      {/* 클립 */}
+      <rect x="5" y="0" width="4" height="3" fill="currentColor"/>
+      <rect x="6" y="1" width="2" height="2" fill="white" opacity="0.8"/>
+      {/* 줄 1 */}
+      <rect x="3" y="5" width="1" height="1" fill="currentColor"/>
+      <rect x="5" y="5" width="6" height="1" fill="currentColor"/>
+      {/* 줄 2 */}
+      <rect x="3" y="7" width="1" height="1" fill="currentColor"/>
+      <rect x="5" y="7" width="6" height="1" fill="currentColor"/>
+      {/* 줄 3 */}
+      <rect x="3" y="9" width="1" height="1" fill="currentColor"/>
+      <rect x="5" y="9" width="4" height="1" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function PixelImageIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      {/* 프레임 */}
+      <rect x="1" y="1" width="12" height="9" fill="currentColor" opacity="0.12"/>
+      <rect x="1" y="1" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="9" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="1" width="1" height="9" fill="currentColor"/>
+      <rect x="12" y="1" width="1" height="9" fill="currentColor"/>
+      {/* 태양 */}
+      <rect x="9" y="3" width="2" height="2" fill="currentColor" opacity="0.7"/>
+      {/* 산 */}
+      <rect x="2" y="6" width="4" height="3" fill="currentColor" opacity="0.4"/>
+      <rect x="3" y="5" width="2" height="1" fill="currentColor" opacity="0.55"/>
+      <rect x="6" y="5" width="5" height="4" fill="currentColor" opacity="0.55"/>
+      <rect x="7" y="4" width="3" height="1" fill="currentColor" opacity="0.7"/>
+      <rect x="8" y="3" width="1" height="1" fill="currentColor" opacity="0.85"/>
+      {/* 업로드 화살표 */}
+      <rect x="6" y="11" width="2" height="3" fill="currentColor"/>
+      <rect x="4" y="11" width="2" height="2" fill="currentColor"/>
+      <rect x="8" y="11" width="2" height="2" fill="currentColor"/>
+      <rect x="5" y="10" width="4" height="1" fill="currentColor"/>
+      <rect x="6" y="9" width="2" height="1" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function PixelCalendarIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      {/* 프레임 */}
+      <rect x="1" y="2" width="12" height="11" fill="currentColor" opacity="0.12"/>
+      <rect x="1" y="2" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="12" width="12" height="1" fill="currentColor"/>
+      <rect x="1" y="2" width="1" height="11" fill="currentColor"/>
+      <rect x="12" y="2" width="1" height="11" fill="currentColor"/>
+      {/* 헤더 바 */}
+      <rect x="1" y="2" width="12" height="3" fill="currentColor" opacity="0.8"/>
+      {/* 고리 */}
+      <rect x="4" y="1" width="2" height="3" fill="currentColor"/>
+      <rect x="8" y="1" width="2" height="3" fill="currentColor"/>
+      {/* 날짜 칸 2x3 */}
+      <rect x="2" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+      <rect x="5" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+      <rect x="8" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+      <rect x="2" y="10" width="2" height="2" fill="currentColor" opacity="0.35"/>
+      <rect x="5" y="10" width="2" height="2" fill="currentColor" opacity="0.35"/>
+      <rect x="8" y="10" width="2" height="2" fill="currentColor" opacity="0.35"/>
+    </svg>
+  );
+}
+
+function PixelDashboardIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      <rect x="1" y="1" width="5" height="5" fill="currentColor" opacity="0.8"/>
+      <rect x="8" y="1" width="5" height="5" fill="currentColor" opacity="0.8"/>
+      <rect x="1" y="8" width="5" height="5" fill="currentColor" opacity="0.5"/>
+      <rect x="8" y="8" width="5" height="5" fill="currentColor" opacity="0.5"/>
+    </svg>
+  );
+}
+
+function PixelSettingsIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      <rect x="5" y="1" width="4" height="2" fill="currentColor"/>
+      <rect x="1" y="5" width="2" height="4" fill="currentColor"/>
+      <rect x="11" y="5" width="2" height="4" fill="currentColor"/>
+      <rect x="5" y="11" width="4" height="2" fill="currentColor"/>
+      <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+      <rect x="9" y="3" width="2" height="2" fill="currentColor"/>
+      <rect x="3" y="9" width="2" height="2" fill="currentColor"/>
+      <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
+      <rect x="4" y="4" width="6" height="6" fill="currentColor" opacity="0.5"/>
+      <rect x="5" y="5" width="4" height="4" fill="white" opacity="0.6"/>
+      <rect x="6" y="6" width="2" height="2" fill="currentColor"/>
+    </svg>
+  );
+}
+
+const navIcons: Record<string, React.ReactNode> = {
+  "/dashboard": <PixelListIcon />,
+  "/my-assets": <PixelImageIcon />,
+  "/calendar":  <PixelCalendarIcon />,
+  "/admin":     <PixelDashboardIcon />,
+  "/admin/events":   <PixelListIcon />,
+  "/admin/calendar": <PixelCalendarIcon />,
+  "/admin/settings": <PixelSettingsIcon />,
+};
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSignedIn, signOut } = useAuth();
@@ -16,6 +132,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const role = me?.role;
   const isAdmin = role === "admin" || role === "super_admin";
 
+  const { data: myEvents } = useListEvents(
+    { status: "revision_requested" },
+    { query: { enabled: !!isSignedIn && !isAdmin, queryKey: [...getListEventsQueryKey(), "revision_requested"] } }
+  );
+  const revisionCount = (myEvents as any)?.total ?? (Array.isArray(myEvents) ? myEvents.length : 0);
+
   const handleSignOut = async () => {
     await signOut();
     setLocation("/");
@@ -25,22 +147,24 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const navLinks = isSignedIn
     ? isAdmin
       ? [
-          { href: "/admin", label: "대시보드", icon: "👾", admin: true },
-          { href: "/admin/events", label: "행사 목록", icon: "📋", admin: true },
-          { href: "/admin/calendar", label: "캘린더", icon: "📅", admin: true },
-          { href: "/admin/settings", label: "설정", icon: "⚙️", admin: true },
+          { href: "/admin",          label: "대시보드", admin: true },
+          { href: "/admin/events",   label: "행사 목록", admin: true },
+          { href: "/admin/calendar", label: "캘린더",   admin: true },
+          { href: "/admin/settings", label: "설정",     admin: true },
         ]
       : [
-          { href: "/dashboard", label: "내 행사 목록", icon: "📋" },
-          { href: "/my-assets", label: "홍보물 제출", icon: "🖼️" },
-          { href: "/calendar", label: "캘린더", icon: "📅" },
+          { href: "/dashboard", label: "내 행사 목록", badge: revisionCount > 0 ? revisionCount : 0 },
+          { href: "/my-assets", label: "홍보물 제출" },
+          { href: "/calendar",  label: "캘린더" },
         ]
     : [];
+
+  const isActive = (href: string) => location === href || location.startsWith(href + "/");
 
   return (
     <Scanlines className="flex flex-col min-h-[100dvh] bg-background">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 w-full border-b-4 border-black bg-card">
+      <header className="sticky top-0 z-40 w-full bg-card border-b border-slate-200/80 shadow-sm">
         <div className="max-w-6xl mx-auto px-3 h-14 flex items-center justify-between gap-2">
           <Link href="/">
             <div className="font-pixel text-sm sm:text-base tracking-tight text-primary cursor-pointer hover:text-primary/80 transition-colors whitespace-nowrap">
@@ -49,48 +173,78 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex gap-2 items-center flex-1 justify-end">
-            {navLinks.map(l => (
-              <Link key={l.href} href={l.href}>
-                <span
-                  className={`text-xs font-semibold cursor-pointer px-3 py-1.5 border-2 transition-colors ${
-                    (l as any).admin
-                      ? "border-destructive text-destructive hover:bg-destructive hover:text-white"
-                      : "border-black text-foreground hover:bg-primary hover:text-white hover:border-primary"
-                  }`}
-                  style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
-                >
-                  {l.icon} {l.label}
-                </span>
-              </Link>
-            ))}
+          <nav className="hidden md:flex gap-1.5 items-center flex-1 justify-end">
+            {navLinks.map(l => {
+              const active = isActive(l.href);
+              return (
+                <Link key={l.href} href={l.href}>
+                  <span
+                    className={`relative inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded transition-all ${
+                      (l as any).admin
+                        ? active
+                          ? "bg-destructive/10 text-destructive border border-destructive/30"
+                          : "text-destructive/80 border border-destructive/20 hover:bg-destructive/8 hover:border-destructive/40"
+                        : active
+                          ? "bg-primary text-white border border-primary shadow-sm"
+                          : "text-slate-600 border border-slate-200 hover:bg-primary/8 hover:text-primary hover:border-primary/30"
+                    }`}
+                    style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                  >
+                    <span className={active && !(l as any).admin ? "text-white" : (l as any).admin ? "text-destructive" : "text-primary"}>
+                      {navIcons[l.href]}
+                    </span>
+                    {l.label}
+                    {(l as any).badge > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                        {(l as any).badge}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
+
             {isSignedIn ? (
-              <div className="flex items-center gap-3 border-l-4 border-black pl-3 ml-1">
-                <span className="font-pixel-body text-base font-bold truncate max-w-[140px]">
+              <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3 ml-1">
+                <span className="text-xs font-semibold text-slate-600 truncate max-w-[120px]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
                   {isAdmin
-                    ? <><span className="text-destructive">★</span> {(me as any)?.organizationName || "관리자"}</>
+                    ? <><span className="text-destructive font-bold">★</span> {(me as any)?.organizationName || "관리자"}</>
                     : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0] || "")
                   }
                 </span>
-                <PixelButton variant="ghost" size="sm" onClick={handleSignOut}>로그아웃</PixelButton>
+                <button
+                  onClick={handleSignOut}
+                  className="text-xs font-semibold text-slate-500 border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                  style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                >
+                  로그아웃
+                </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Link href="/sign-in"><PixelButton variant="ghost" size="sm">로그인</PixelButton></Link>
-                <Link href="/sign-up"><PixelButton variant="primary" size="sm">회원가입</PixelButton></Link>
+              <div className="flex gap-2 border-l border-slate-200 pl-3 ml-1">
+                <Link href="/sign-in">
+                  <span className="text-xs font-semibold text-slate-600 border border-slate-200 px-3 py-1.5 rounded cursor-pointer hover:bg-slate-50 transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                    로그인
+                  </span>
+                </Link>
+                <Link href="/sign-up">
+                  <span className="text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded cursor-pointer hover:bg-primary/90 transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                    회원가입
+                  </span>
+                </Link>
               </div>
             )}
           </nav>
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden w-10 h-10 flex flex-col justify-center items-center gap-1.5 border-4 border-black bg-white hover:bg-muted transition-colors"
+            className="md:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5 rounded border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
             onClick={() => setMobileOpen(o => !o)}
             aria-label="메뉴"
           >
-            <span className={`block w-5 h-0.5 bg-black transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block w-5 h-0.5 bg-black transition-all ${mobileOpen ? "opacity-0" : ""}`} />
-            <span className={`block w-5 h-0.5 bg-black transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "opacity-0" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
           </button>
         </div>
 
@@ -102,33 +256,61 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t-4 border-black bg-card"
+              className="md:hidden overflow-hidden border-t border-slate-100 bg-white"
             >
               <div className="flex flex-col p-3 gap-1">
                 {navLinks.map(l => (
                   <Link key={l.href} href={l.href}>
                     <button
                       onClick={() => setMobileOpen(false)}
-                      className={`w-full text-left font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-primary hover:text-white transition-colors ${(l as any).admin ? "text-destructive border-destructive" : ""}`}
+                      className={`w-full text-left text-xs font-semibold px-3 py-2.5 rounded flex items-center gap-2 transition-colors relative ${
+                        (l as any).admin
+                          ? "text-destructive hover:bg-destructive/8 border border-destructive/20"
+                          : isActive(l.href)
+                            ? "bg-primary text-white"
+                            : "text-slate-700 hover:bg-primary/8 hover:text-primary border border-slate-200"
+                      }`}
+                      style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                     >
-                      {l.icon} {l.label}
+                      <span className={isActive(l.href) && !(l as any).admin ? "text-white" : (l as any).admin ? "text-destructive" : "text-primary"}>
+                        {navIcons[l.href]}
+                      </span>
+                      {l.label}
+                      {(l as any).badge > 0 && (
+                        <span className="ml-auto min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                          {(l as any).badge}
+                        </span>
+                      )}
                     </button>
                   </Link>
                 ))}
                 {isSignedIn ? (
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-left font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-destructive hover:text-white transition-colors mt-1"
+                    className="w-full text-left text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors mt-1"
+                    style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                   >
                     🚪 로그아웃 ({isAdmin ? "관리자" : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0])})
                   </button>
                 ) : (
                   <div className="flex gap-2 mt-1">
                     <Link href="/sign-in" className="flex-1">
-                      <button onClick={() => setMobileOpen(false)} className="w-full font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-muted">로그인</button>
+                      <button
+                        onClick={() => setMobileOpen(false)}
+                        className="w-full text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                      >
+                        로그인
+                      </button>
                     </Link>
                     <Link href="/sign-up" className="flex-1">
-                      <button onClick={() => setMobileOpen(false)} className="w-full font-pixel text-xs px-3 py-3 border-2 border-black bg-primary text-white hover:bg-primary/80">회원가입</button>
+                      <button
+                        onClick={() => setMobileOpen(false)}
+                        className="w-full text-xs font-semibold px-3 py-2.5 rounded bg-primary text-white hover:bg-primary/90"
+                        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                      >
+                        회원가입
+                      </button>
                     </Link>
                   </div>
                 )}
@@ -144,9 +326,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       </main>
 
       {/* Footer */}
-      <footer className="border-t-4 border-black bg-card py-4 mt-auto">
+      <footer className="border-t border-slate-100 bg-slate-50/60 py-4 mt-auto">
         <div className="max-w-6xl mx-auto px-3 text-center">
-          <p className="font-pixel-body text-muted-foreground text-xs sm:text-sm uppercase tracking-widest">
+          <p className="font-pixel-body text-slate-400 text-xs sm:text-sm uppercase tracking-widest">
             © 노들섬 홍보팀. ALL RIGHTS RESERVED.
           </p>
         </div>

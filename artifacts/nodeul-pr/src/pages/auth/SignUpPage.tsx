@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { PixelButton } from "@/components/pixel/PixelButton";
+import { PixelFrogLarge } from "@/components/pixel/MaengkongiSpeech";
 import { Link } from "wouter";
 
 export default function SignUpPage() {
@@ -43,8 +44,9 @@ export default function SignUpPage() {
     return (
       <div className="flex min-h-[80vh] items-center justify-center py-12">
         <div className="w-full max-w-sm text-center space-y-5">
-          <div>
-            <div className="text-5xl mb-1">🐸</div>
+          <div className="flex flex-col items-center gap-1">
+            <PixelFrogLarge mood="cheer" />
+            <div className="font-pixel text-[9px] text-emerald-600 uppercase tracking-widest mt-1">QUEST ACCEPTED!</div>
             <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
           </div>
           <div className="bg-white border border-black/15 p-7 shadow-sm text-left space-y-3">
@@ -68,8 +70,9 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center py-12">
       <div className="w-full max-w-sm space-y-5 text-center">
-        <div>
-          <div className="text-5xl mb-1">🐸</div>
+        <div className="flex flex-col items-center gap-1">
+          <PixelFrogLarge mood="normal" />
+          <div className="font-pixel text-[9px] text-primary uppercase tracking-widest mt-1">NEW PLAYER</div>
           <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
         </div>
 

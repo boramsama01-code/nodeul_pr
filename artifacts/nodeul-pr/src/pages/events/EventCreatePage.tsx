@@ -4,6 +4,7 @@ import { Redirect, useLocation } from "wouter";
 import { useCreateEvent, useGetMe } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
+import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
@@ -229,16 +230,23 @@ export default function EventCreatePage() {
   const setM = (key: keyof typeof meta, val: unknown) => setMeta(m => ({ ...m, [key]: val }));
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      <div className="flex items-center justify-between pb-4 border-b border-black/8">
-        <div>
-          <h1 className="text-xl font-bold text-foreground" style={KR}>새 행사 홍보 신청</h1>
-          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>담당자 정보와 행사 정보를 입력해 주세요</p>
+    <div className="max-w-2xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <MissionBanner step="01" title="NEW QUEST — 새 행사 홍보 신청" subtitle="담당자 정보와 행사 정보를 입력해 홍보 여정을 시작하세요" />
         </div>
-        <button onClick={() => setLocation("/dashboard")} className="text-xs text-muted-foreground hover:text-foreground" style={KR}>
+        <button onClick={() => setLocation("/dashboard")} className="ml-3 text-xs text-muted-foreground hover:text-foreground flex-shrink-0" style={KR}>
           ← 목록
         </button>
       </div>
+
+      <MaengkongiSpeech mood={step === "org" ? "normal" : "cheer"} label="맹꽁이">
+        {step === "org"
+          ? "먼저 담당자 정보를 입력해 주세요. 행사 승인 시 이 정보로 연락을 드려요!"
+          : "거의 다 왔어요! 이번엔 행사 정보와 원하는 홍보 구역을 선택해 주세요 🐸"}
+      </MaengkongiSpeech>
+
+      <div className="border-b border-black/8 pb-4"/>
 
       <div className="flex items-center gap-2">
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "org" ? "bg-primary text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`} style={KR}>

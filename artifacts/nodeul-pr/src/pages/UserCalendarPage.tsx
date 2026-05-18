@@ -9,6 +9,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import type { DatesSetArg } from "@fullcalendar/core";
 import "./admin/AdminCalendarPage.css";
+import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
 
 // 15색 조화 팔레트 — 행사 ID 기반 색상 배정
 const EVENT_PALETTE = [
@@ -121,11 +122,23 @@ export default function UserCalendarPage() {
     setDateRange(getMonthRange(d));
   };
 
+  const approvedEventsCount = events.filter(e => e.status === "approved" || e.status === "completed").length;
+
   return (
     <div className="space-y-4">
+      <MissionBanner step="04" title="MAP VIEW — 홍보 일정" subtitle="내 행사 일정과 노들섬 홍보 게시 현황을 한눈에 확인하세요" accent="indigo" />
+
+      <MaengkongiSpeech mood={approvedEventsCount > 0 ? "cheer" : "thinking"} label="맹꽁이">
+        {approvedEventsCount > 0
+          ? `🎉 승인된 행사 ${approvedEventsCount}건이 캘린더에 표시돼 있어요! 홍보가 순조롭게 진행되고 있어요.`
+          : events.length > 0
+            ? "행사가 승인되면 캘린더에 일정이 표시돼요. 담당자 검토를 기다려 주세요 🗓️"
+            : "아직 등록된 행사가 없어요. 행사를 먼저 등록해 주세요!"}
+      </MaengkongiSpeech>
+
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground" style={KR}>홍보 캘린더</h1>
+          <h1 className="text-base font-bold text-foreground" style={KR}>홍보 캘린더</h1>
           <p className="text-xs text-muted-foreground mt-0.5" style={KR}>
             내 행사 일정 + 홍보물 게시 일정
           </p>

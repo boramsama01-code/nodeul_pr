@@ -154,10 +154,10 @@ function NodeulScene() {
 }
 
 const STEPS = [
-  { n: "01", icon: "📝", title: "행사 등록",   desc: "홍보할 행사 정보를 시스템에 등록합니다.",    href: "/dashboard" },
-  { n: "02", icon: "📍", title: "구역 신청",   desc: "전광판·SNS·배너 등 홍보 구역을 선택합니다.", href: "/my-assets" },
-  { n: "03", icon: "📁", title: "홍보물 제출", desc: "이미지·영상을 업로드하고 버전을 관리합니다.", href: "/my-assets" },
-  { n: "04", icon: "✅", title: "승인 & 게시", desc: "관리자 승인 후 노들섬에 홍보가 시작됩니다.",  href: "/calendar" },
+  { n: "01", icon: "📝", title: "행사 등록",   desc: "홍보할 행사 정보를 시스템에 등록합니다.",           href: "/events/new" },
+  { n: "02", icon: "📍", title: "구역 신청",   desc: "행사를 선택한 후 원하는 홍보 구역을 신청합니다.",    href: "/dashboard" },
+  { n: "03", icon: "📁", title: "홍보물 제출", desc: "이미지·영상을 업로드하고 버전을 관리합니다.",        href: "/my-assets" },
+  { n: "04", icon: "✅", title: "승인 & 게시", desc: "관리자 승인 후 노들섬에 홍보가 시작됩니다.",         href: "/calendar" },
 ];
 
 export default function LandingPage() {

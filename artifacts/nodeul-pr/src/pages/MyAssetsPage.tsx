@@ -4,6 +4,7 @@ import { Redirect, Link } from "wouter";
 import { useListEvents, getListEventsQueryKey, useListPromotionZones } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/useUIStore";
+import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "초안", submitted: "제출됨", approved: "승인됨",
@@ -172,12 +173,24 @@ export default function MyAssetsPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4">
+      <MissionBanner step="03" title="ITEM DELIVERY — 홍보물 제출" subtitle="이미지·영상을 업로드하거나 수정 요청된 파일을 재제출하세요" />
+
+      <MaengkongiSpeech mood={revisionEvents.length > 0 ? "alert" : approvedEvents.length > 0 ? "cheer" : "normal"} label="맹꽁이">
+        {revisionEvents.length > 0
+          ? `⚠️ 수정 요청된 행사가 ${revisionEvents.length}건이에요! 해당 행사의 홍보물을 수정해서 재제출해 주세요.`
+          : approvedEvents.length > 0
+            ? `🎉 승인된 행사가 ${approvedEvents.length}건이에요! 홍보물이 정상적으로 접수됐어요.`
+            : events.length === 0
+              ? "아직 신청한 행사가 없어요. 먼저 행사를 등록해 주세요!"
+              : "행사를 선택하고 홍보물을 업로드해 주세요. JPG, PNG, PDF 등 다양한 형식을 지원해요 📁"}
+      </MaengkongiSpeech>
+
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground" style={KR}>홍보물 제출</h1>
+          <h1 className="text-base font-bold text-foreground" style={KR}>행사별 홍보물</h1>
           <p className="text-xs text-muted-foreground mt-0.5" style={KR}>
-            행사별 홍보물 업로드 및 수정 요청 파일 재제출
+            행사를 선택해 홍보물을 업로드하거나 수정 재제출하세요
           </p>
         </div>
         {guideUrl && (
