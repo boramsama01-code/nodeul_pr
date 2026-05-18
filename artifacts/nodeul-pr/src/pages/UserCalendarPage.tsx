@@ -9,7 +9,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import type { DatesSetArg } from "@fullcalendar/core";
 import "./admin/AdminCalendarPage.css";
-import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
+import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 // 15색 조화 팔레트 — 행사 ID 기반 색상 배정
 const EVENT_PALETTE = [
@@ -126,9 +126,11 @@ export default function UserCalendarPage() {
 
   return (
     <div className="space-y-4">
-      <MissionBanner step="04" title="MAP VIEW — 홍보 일정" subtitle="내 행사 일정과 노들섬 홍보 게시 현황을 한눈에 확인하세요" accent="indigo" />
+      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4">
+        <StepGuide currentStep={4} />
+      </div>
 
-      <MaengkongiSpeech mood={approvedEventsCount > 0 ? "cheer" : "thinking"} label="맹꽁이">
+      <MaengkongiSpeech mood={approvedEventsCount > 0 ? "cheer" : "thinking"}>
         {approvedEventsCount > 0
           ? `🎉 승인된 행사 ${approvedEventsCount}건이 캘린더에 표시돼 있어요! 홍보가 순조롭게 진행되고 있어요.`
           : events.length > 0

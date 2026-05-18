@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, Link } from "wouter";
 import { useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
-import { MaengkongiSpeech, QuestProgress, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
+import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "초안",
@@ -21,14 +21,35 @@ const STATUS_CLS: Record<string, string> = {
   rejected:           "bg-red-50 text-red-700 border-red-200",
   completed:          "bg-zinc-100 text-zinc-400 border-zinc-200",
 };
+const STATUS_ICONS: Record<string, string> = {
+  draft: "🔵", submitted: "🟡", approved: "🟢",
+  revision_requested: "🟠", rejected: "🔴", completed: "⚪",
+};
+const STATUS_DESCS: Record<string, string> = {
+  draft: "아직 제출 전",
+  submitted: "관리자 검토 대기 중",
+  approved: "게시 확정",
+  revision_requested: "수정 후 재제출 필요",
+  rejected: "담당자에게 문의 권장",
+  completed: "게시 완료",
+};
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 
 function StatusPill({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${STATUS_CLS[status] ?? "bg-zinc-100 text-zinc-500 border-zinc-200"}`} style={KR}>
-      {STATUS_LABELS[status] ?? status}
-    </span>
+    <div className="relative group inline-flex">
+      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border cursor-default ${STATUS_CLS[status] ?? "bg-zinc-100 text-zinc-500 border-zinc-200"}`} style={KR}>
+        {STATUS_LABELS[status] ?? status}
+      </span>
+      <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-50 pointer-events-none">
+        <div className="bg-slate-800 text-white text-[11px] px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
+          <div className="font-semibold mb-0.5">{STATUS_ICONS[status]} {STATUS_LABELS[status] ?? status}</div>
+          <div className="text-slate-300">{STATUS_DESCS[status]}</div>
+        </div>
+        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800 ml-3" />
+      </div>
+    </div>
   );
 }
 
@@ -71,16 +92,13 @@ export default function DashboardPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       {/* 미션 배너 */}
-      <MissionBanner step="02" title="QUEST LOG — 내 홍보 신청" subtitle="행사별 홍보 진행 현황을 확인하고 다음 단계를 완료하세요" />
-
-      {/* 퀘스트 진행도 */}
-      <div className="bg-white border border-slate-200 rounded-lg px-4 py-3">
-        <div className="text-[9px] font-pixel text-slate-400 uppercase tracking-widest mb-2">PROGRESS</div>
-        <QuestProgress currentStep={questStep} completedSteps={completedQuestSteps} />
+      {/* 홍보 신청 단계 가이드 */}
+      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4">
+        <StepGuide currentStep={questStep} />
       </div>
 
       {/* 맹꽁이 말풍선 */}
-      <MaengkongiSpeech mood={revisionCount > 0 ? "alert" : approvedCount > 0 ? "cheer" : "normal"} label="맹꽁이">
+      <MaengkongiSpeech mood={revisionCount > 0 ? "alert" : approvedCount > 0 ? "cheer" : "normal"}>
         {froggMsg}
       </MaengkongiSpeech>
 
@@ -115,34 +133,12 @@ export default function DashboardPage() {
             <span className="text-sm text-muted-foreground" style={KR}>불러오는 중...</span>
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-12 space-y-4">
-            <div className="flex justify-center">
-              <svg viewBox="0 0 32 32" width="64" height="64" style={{ imageRendering: "pixelated" }}>
-                <rect x="3" y="2" width="8" height="7" fill="#22c55e"/>
-                <rect x="21" y="2" width="8" height="7" fill="#22c55e"/>
-                <rect x="2" y="7" width="28" height="13" fill="#22c55e"/>
-                <rect x="7" y="18" width="18" height="10" fill="#22c55e"/>
-                <rect x="2" y="18" width="6" height="5" fill="#22c55e"/>
-                <rect x="24" y="18" width="6" height="5" fill="#22c55e"/>
-                <rect x="0" y="23" width="9" height="4" fill="#16a34a"/>
-                <rect x="23" y="23" width="9" height="4" fill="#16a34a"/>
-                <rect x="4" y="3" width="5" height="5" fill="#dcfce7"/>
-                <rect x="23" y="3" width="5" height="5" fill="#dcfce7"/>
-                <rect x="6" y="5" width="2" height="2" fill="#1e293b"/>
-                <rect x="24" y="5" width="2" height="2" fill="#1e293b"/>
-                <rect x="9" y="13" width="14" height="5" fill="#86efac"/>
-                <rect x="11" y="15" width="2" height="2" fill="#16a34a"/>
-                <rect x="19" y="15" width="2" height="2" fill="#16a34a"/>
-                <rect x="13" y="16" width="6" height="1" fill="#16a34a"/>
-              </svg>
-            </div>
-            <div className="space-y-1">
-              <p className="font-pixel text-xs text-primary uppercase tracking-widest">READY TO START?</p>
-              <p className="text-sm text-muted-foreground" style={KR}>아직 신청한 행사가 없어요. 첫 번째 퀘스트를 시작해 보세요!</p>
-            </div>
+          <div className="text-center py-14 space-y-3">
+            <div className="text-5xl leading-none select-none">🐸</div>
+            <p className="font-pixel text-xs text-primary uppercase tracking-widest">READY TO START?</p>
             <Link href="/events/new">
               <button className="h-9 px-5 text-xs font-semibold bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
-                🚀 새 행사 신청하기
+                새 행사 신청하기
               </button>
             </Link>
           </div>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { PixelButton } from "@/components/pixel/PixelButton";
-import { PixelFrogLarge } from "@/components/pixel/MaengkongiSpeech";
+import { FrogBadge } from "@/components/pixel/MaengkongiSpeech";
 import { Link } from "wouter";
 
 export default function SignInPage() {
@@ -34,8 +34,7 @@ export default function SignInPage() {
     <div className="flex min-h-[80vh] items-center justify-center py-12">
       <div className="w-full max-w-sm space-y-5 text-center">
         <div className="flex flex-col items-center gap-1">
-          <PixelFrogLarge mood="normal" />
-          <div className="font-pixel text-[9px] text-primary uppercase tracking-widest mt-1">PLAYER LOGIN</div>
+          <FrogBadge label="PLAYER LOGIN" />
           <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
         </div>
 

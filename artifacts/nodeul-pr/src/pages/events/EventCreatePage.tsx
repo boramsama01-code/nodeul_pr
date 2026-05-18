@@ -4,7 +4,7 @@ import { Redirect, useLocation } from "wouter";
 import { useCreateEvent, useGetMe } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
-import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
+import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
@@ -232,15 +232,15 @@ export default function EventCreatePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <MissionBanner step="01" title="NEW QUEST — 새 행사 홍보 신청" subtitle="담당자 정보와 행사 정보를 입력해 홍보 여정을 시작하세요" />
+        <div className="flex-1 bg-white border border-slate-200 rounded-lg px-5 py-4">
+          <StepGuide currentStep={1} />
         </div>
         <button onClick={() => setLocation("/dashboard")} className="ml-3 text-xs text-muted-foreground hover:text-foreground flex-shrink-0" style={KR}>
           ← 목록
         </button>
       </div>
 
-      <MaengkongiSpeech mood={step === "org" ? "normal" : "cheer"} label="맹꽁이">
+      <MaengkongiSpeech mood={step === "org" ? "normal" : "cheer"}>
         {step === "org"
           ? "먼저 담당자 정보를 입력해 주세요. 행사 승인 시 이 정보로 연락을 드려요!"
           : "거의 다 왔어요! 이번엔 행사 정보와 원하는 홍보 구역을 선택해 주세요 🐸"}

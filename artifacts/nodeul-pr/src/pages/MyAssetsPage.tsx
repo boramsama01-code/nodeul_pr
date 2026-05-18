@@ -4,7 +4,7 @@ import { Redirect, Link } from "wouter";
 import { useListEvents, getListEventsQueryKey, useListPromotionZones } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/useUIStore";
-import { MaengkongiSpeech, MissionBanner } from "@/components/pixel/MaengkongiSpeech";
+import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "초안", submitted: "제출됨", approved: "승인됨",
@@ -18,15 +18,36 @@ const STATUS_CLS: Record<string, string> = {
   rejected: "bg-red-50 text-red-700 border-red-200",
   completed: "bg-zinc-100 text-zinc-400 border-zinc-200",
 };
+const STATUS_ICONS: Record<string, string> = {
+  draft: "🔵", submitted: "🟡", approved: "🟢",
+  revision_requested: "🟠", rejected: "🔴", completed: "⚪",
+};
+const STATUS_DESCS: Record<string, string> = {
+  draft: "아직 제출 전",
+  submitted: "관리자 검토 대기 중",
+  approved: "게시 확정",
+  revision_requested: "수정 후 재제출 필요",
+  rejected: "담당자에게 문의 권장",
+  completed: "게시 완료",
+};
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function StatusPill({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${STATUS_CLS[status] ?? "bg-zinc-100 text-zinc-500 border-zinc-200"}`} style={KR}>
-      {STATUS_LABELS[status] ?? status}
-    </span>
+    <div className="relative group inline-flex">
+      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border cursor-default ${STATUS_CLS[status] ?? "bg-zinc-100 text-zinc-500 border-zinc-200"}`} style={KR}>
+        {STATUS_LABELS[status] ?? status}
+      </span>
+      <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-50 pointer-events-none">
+        <div className="bg-slate-800 text-white text-[11px] px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
+          <div className="font-semibold mb-0.5">{STATUS_ICONS[status]} {STATUS_LABELS[status] ?? status}</div>
+          <div className="text-slate-300">{STATUS_DESCS[status]}</div>
+        </div>
+        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800 ml-3" />
+      </div>
+    </div>
   );
 }
 
@@ -174,9 +195,11 @@ export default function MyAssetsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <MissionBanner step="03" title="ITEM DELIVERY — 홍보물 제출" subtitle="이미지·영상을 업로드하거나 수정 요청된 파일을 재제출하세요" />
+      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4">
+        <StepGuide currentStep={3} />
+      </div>
 
-      <MaengkongiSpeech mood={revisionEvents.length > 0 ? "alert" : approvedEvents.length > 0 ? "cheer" : "normal"} label="맹꽁이">
+      <MaengkongiSpeech mood={revisionEvents.length > 0 ? "alert" : approvedEvents.length > 0 ? "cheer" : "normal"}>
         {revisionEvents.length > 0
           ? `⚠️ 수정 요청된 행사가 ${revisionEvents.length}건이에요! 해당 행사의 홍보물을 수정해서 재제출해 주세요.`
           : approvedEvents.length > 0

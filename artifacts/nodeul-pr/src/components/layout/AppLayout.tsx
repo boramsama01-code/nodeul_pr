@@ -329,7 +329,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       <footer className="border-t border-slate-100 bg-slate-50/60 py-4 mt-auto">
         <div className="max-w-6xl mx-auto px-3 text-center">
           <p className="font-pixel-body text-slate-400 text-xs sm:text-sm uppercase tracking-widest">
-            © 노들섬 홍보팀. ALL RIGHTS RESERVED.
+            ©(재)서울문화재단 노들섬운영팀. ALL RIGHTS RESERVED.
           </p>
         </div>
       </footer>
