@@ -4,7 +4,7 @@ import { Redirect, useLocation } from "wouter";
 import { useCreateEvent, useGetMe } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
-import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
+import { BaekroSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
@@ -240,11 +240,11 @@ export default function EventCreatePage() {
         </button>
       </div>
 
-      <MaengkongiSpeech mood={step === "org" ? "normal" : "cheer"}>
+      <BaekroSpeech mood={step === "org" ? "normal" : "cheer"}>
         {step === "org"
           ? "먼저 담당자 정보를 입력해 주세요. 행사 승인 시 이 정보로 연락을 드려요!"
           : "거의 다 왔어요! 이번엔 행사 정보와 원하는 홍보 구역을 선택해 주세요 🐸"}
-      </MaengkongiSpeech>
+      </BaekroSpeech>
 
       <div className="border-b border-black/8 pb-4"/>
 

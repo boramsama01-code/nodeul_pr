@@ -9,7 +9,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import type { DatesSetArg } from "@fullcalendar/core";
 import "./admin/AdminCalendarPage.css";
-import { MaengkongiSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
+import { BaekroSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
 
 // 15색 조화 팔레트 — 행사 ID 기반 색상 배정
 const EVENT_PALETTE = [
@@ -130,13 +130,13 @@ export default function UserCalendarPage() {
         <StepGuide currentStep={4} />
       </div>
 
-      <MaengkongiSpeech mood={approvedEventsCount > 0 ? "cheer" : "thinking"}>
+      <BaekroSpeech mood={approvedEventsCount > 0 ? "cheer" : "thinking"}>
         {approvedEventsCount > 0
           ? `🎉 승인된 행사 ${approvedEventsCount}건이 캘린더에 표시돼 있어요! 홍보가 순조롭게 진행되고 있어요.`
           : events.length > 0
             ? "행사가 승인되면 캘린더에 일정이 표시돼요. 담당자 검토를 기다려 주세요 🗓️"
             : "아직 등록된 행사가 없어요. 행사를 먼저 등록해 주세요!"}
-      </MaengkongiSpeech>
+      </BaekroSpeech>
 
       <div className="flex items-center justify-between">
         <div>

@@ -7,6 +7,31 @@ type ChatMsg = { role: "user" | "assistant"; content: string };
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 const STORAGE_KEY = "maengkongi_chat_history";
 
+/* 맹꽁이 얼굴 인라인 컴포넌트 (NPCHelper 전용) */
+const FROG_W = 480, FROG_H = 835;
+function FrogFace({ width }: { width: number }) {
+  const imgH = Math.round(width * FROG_H / FROG_W);
+  const visH = Math.round(imgH * 0.41);
+  return (
+    <div style={{ width, height: visH, overflow: "hidden", flexShrink: 0 }}>
+      <img src="/mascots/maengkongi.png" alt="맹꽁이"
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block" }} />
+    </div>
+  );
+}
+
+/* 맹꽁이 전신 (플로팅 버튼용) */
+function FrogBodyBtn({ width }: { width: number }) {
+  const imgH = Math.round(width * FROG_H / FROG_W);
+  const visH = Math.round(imgH * 0.415);
+  return (
+    <div style={{ width, height: visH, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+      <img src="/mascots/maengkongi.png" alt="맹꽁이"
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", position: "absolute", bottom: 0 }} />
+    </div>
+  );
+}
+
 async function sendToNPC(message: string, history: ChatMsg[]): Promise<string> {
   const res = await fetch(`${BASE}/api/npc/chat`, {
     method: "POST",
@@ -43,7 +68,6 @@ export const NPCHelper: React.FC = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -57,14 +81,12 @@ export const NPCHelper: React.FC = () => {
     }
   }, []);
 
-  // Save to localStorage whenever history changes
   useEffect(() => {
     if (history.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     }
   }, [history]);
 
-  // Set initial greeting only if no saved history
   useEffect(() => {
     if (npcMessage && !initialized) {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -87,7 +109,6 @@ export const NPCHelper: React.FC = () => {
     const msg = input.trim();
     if (!msg || loading) return;
     setInput("");
-
     const prevHistory = [...history];
     setHistory(h => [...h, { role: "user", content: msg }]);
     setLoading(true);
@@ -95,7 +116,7 @@ export const NPCHelper: React.FC = () => {
       const reply = await sendToNPC(msg, prevHistory.slice(-8));
       setHistory(h => [...h, { role: "assistant", content: reply }]);
     } catch {
-      setHistory(h => [...h, { role: "assistant", content: "죄송합니다, 잠시 후 다시 시도해 주세요 🐸" }]);
+      setHistory(h => [...h, { role: "assistant", content: "죄송합니다, 잠시 후 다시 시도해 주세요." }]);
     } finally {
       setLoading(false);
     }
@@ -124,8 +145,10 @@ export const NPCHelper: React.FC = () => {
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
           >
             {/* Header */}
-            <div className="flex items-center gap-2.5 px-4 py-3 bg-primary text-white">
-              <span className="text-2xl leading-none select-none">🐸</span>
+            <div className="flex items-center gap-2.5 px-4 py-2.5 bg-primary text-white">
+              <div className="flex-shrink-0">
+                <FrogFace width={36} />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[0.6rem] font-semibold opacity-70 uppercase tracking-widest font-pixel">맹꽁이 AI</p>
                 <p className="text-sm font-bold leading-tight" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
@@ -152,12 +175,11 @@ export const NPCHelper: React.FC = () => {
             {/* Message list */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5 max-h-72 min-h-32 bg-slate-50">
               {history.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                >
+                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   {msg.role === "assistant" && (
-                    <span className="text-lg leading-none mt-1 flex-shrink-0 select-none">🐸</span>
+                    <div className="flex-shrink-0 mt-1">
+                      <FrogFace width={26} />
+                    </div>
                   )}
                   <div
                     className={`max-w-[85%] px-3 py-2 text-sm leading-relaxed rounded-lg ${
@@ -173,7 +195,9 @@ export const NPCHelper: React.FC = () => {
               ))}
               {loading && (
                 <div className="flex gap-2 items-center">
-                  <span className="text-lg select-none">🐸</span>
+                  <div className="flex-shrink-0">
+                    <FrogFace width={26} />
+                  </div>
                   <div className="bg-white border border-black/10 px-3 py-2 rounded-lg shadow-sm">
                     <span className="inline-flex gap-1 items-center">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -212,7 +236,7 @@ export const NPCHelper: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 닫힌 상태: 맹꽁이 버튼 */}
+      {/* 닫힌 상태: 맹꽁이 플로팅 버튼 */}
       <AnimatePresence>
         {!showNPC && (
           <motion.button
@@ -221,10 +245,10 @@ export const NPCHelper: React.FC = () => {
             exit={{ opacity: 0, scale: 0.6 }}
             onClick={() => setShowNPC(true)}
             title="맹꽁이 안내 도우미 열기"
-            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 hover:scale-105 transition-all text-2xl"
+            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary rounded-full shadow-lg flex items-end justify-center overflow-hidden hover:bg-primary/90 hover:scale-105 transition-all pb-0.5"
             style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
           >
-            🐸
+            <FrogBodyBtn width={44} />
           </motion.button>
         )}
       </AnimatePresence>
