@@ -32,6 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      // Clean up auth tokens from URL (e.g., after email verification)
+      if (typeof window !== "undefined") {
+        const hash = window.location.hash;
+        const search = window.location.search;
+        if (hash.includes("access_token") || search.includes("access_token")) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
     });
 
     return () => listener.subscription.unsubscribe();

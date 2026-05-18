@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, assetsTable, assetVersionsTable, promotionZonesTable, usersTable } from "@workspace/db";
+import { db, assetsTable, assetVersionsTable, promotionZonesTable, usersTable, eventsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { supabaseAdmin } from "../lib/supabase";
@@ -110,6 +110,13 @@ router.post("/events/:eventId/assets", async (req, res) => {
   const eventId = Number(req.params.eventId);
   const { name, zoneId, fileUrl, fileType, fileName, fileSize, changeMemo } = req.body;
   if (!name || !fileUrl || !fileType) return res.status(400).json({ error: "name, fileUrl, fileType required" });
+
+  // Ownership check
+  const event = await db.query.eventsTable.findFirst({ where: eq(eventsTable.id, eventId) });
+  if (!event) return res.status(404).json({ error: "Event not found" });
+  const assetUser = await getUser(userId);
+  const isAssetAdmin = assetUser?.role === "admin" || assetUser?.role === "super_admin";
+  if (!isAssetAdmin && event.createdBy !== userId) return res.status(403).json({ error: "Forbidden: Not your event" });
 
   const [asset] = await db.insert(assetsTable).values({
     eventId,

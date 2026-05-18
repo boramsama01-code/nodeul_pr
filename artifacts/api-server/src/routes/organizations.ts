@@ -6,13 +6,15 @@ import { CreateOrganizationBody, UpdateOrganizationBody } from "@workspace/api-z
 
 const router = Router();
 
-function formatOrg(org: typeof organizationsTable.$inferSelect) {
+function formatOrg(org: any) {
   return {
     id: org.id,
     name: org.name,
     contactName: org.contactName ?? null,
-    contactEmail: org.contactEmail,
+    contactEmail: org.contactEmail ?? null,
     contactPhone: org.contactPhone ?? null,
+    contactTitle: org.contactTitle ?? null,
+    extensionPhone: org.extensionPhone ?? null,
     createdAt: org.createdAt.toISOString(),
   };
 }

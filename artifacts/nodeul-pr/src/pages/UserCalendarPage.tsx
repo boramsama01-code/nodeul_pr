@@ -1,34 +1,46 @@
 import React, { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect } from "wouter";
-import { useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
+import {
+  useListEvents, getListEventsQueryKey,
+  useListSchedules, getListSchedulesQueryKey,
+} from "@workspace/api-client-react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import type { DatesSetArg } from "@fullcalendar/core";
 import "./admin/AdminCalendarPage.css";
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: "#a1a1aa",
-  submitted: "#3b82f6",
-  approved: "#10b981",
-  revision_requested: "#f59e0b",
-  rejected: "#ef4444",
-  completed: "#6d28d9",
+// 15색 조화 팔레트 — 행사 ID 기반 색상 배정
+const EVENT_PALETTE = [
+  "#5b7cff", "#00b5cc", "#0fba81", "#fca30c", "#f05c7a",
+  "#9b59f7", "#ff7c3f", "#30b870", "#e84393", "#4a90d9",
+  "#26c4b0", "#f0742f", "#7b52f5", "#15bfef", "#db4f6e",
+];
+
+const SCHEDULE_STATUS_KR: Record<string, string> = {
+  scheduled: "예정",
+  in_progress: "진행중",
+  completed: "완료",
+  cancelled: "취소",
 };
 
-const STATUS_KR: Record<string, string> = {
-  draft: "초안",
-  submitted: "제출됨",
-  approved: "승인됨",
-  revision_requested: "수정 요청",
-  rejected: "반려됨",
-  completed: "완료",
-};
+function getEventColor(eventId: number): string {
+  return EVENT_PALETTE[eventId % EVENT_PALETTE.length];
+}
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + days);
   return d.toISOString().split("T")[0];
+}
+
+function getMonthRange(date: Date) {
+  const start = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 2, 0);
+  return {
+    start: start.toISOString().split("T")[0],
+    end: end.toISOString().split("T")[0],
+  };
 }
 
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
@@ -40,25 +52,63 @@ export default function UserCalendarPage() {
   const [monthTitle, setMonthTitle] = useState(
     `${today.getFullYear()}년 ${today.getMonth() + 1}월`
   );
+  const [dateRange, setDateRange] = useState(getMonthRange(today));
 
-  const { data: eventData, isLoading } = useListEvents(
+  const { data: eventData, isLoading: eventsLoading } = useListEvents(
     {},
     { query: { enabled: !!isSignedIn, queryKey: getListEventsQueryKey({}) } }
+  );
+
+  const { data: schedules, isLoading: schedulesLoading } = useListSchedules(
+    { startDate: dateRange.start, endDate: dateRange.end },
+    {
+      query: {
+        enabled: !!isSignedIn,
+        queryKey: getListSchedulesQueryKey({ startDate: dateRange.start, endDate: dateRange.end }),
+      }
+    }
   );
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   const events = eventData?.events ?? [];
+  const isLoading = eventsLoading || schedulesLoading;
 
-  const fcEvents = events.map((e) => ({
-    id: String(e.id),
+  // 이벤트 ID → 색상 맵
+  const eventColorMap = new Map<number, string>();
+  events.forEach(e => { if (!eventColorMap.has(e.id)) eventColorMap.set(e.id, getEventColor(e.id)); });
+
+  // FullCalendar 이벤트 목록 구성
+  const fcEvents = [
+    // 내 행사 블록
+    ...events.map(e => ({
+      id: `ev-${e.id}`,
+      title: e.title,
+      start: e.startDate,
+      end: addDays(e.endDate, 1),
+      backgroundColor: eventColorMap.get(e.id) ?? "#6366f1",
+      borderColor: "transparent",
+      textColor: "#fff",
+      extendedProps: { kind: "event", eventId: e.id },
+    })),
+    // 홍보 일정 블록
+    ...((schedules ?? []).map(s => ({
+      id: `sc-${s.id}`,
+      title: `${s.zoneName ?? s.zoneType ?? "구역"} (${s.eventTitle ?? "행사"})`,
+      start: s.startDate,
+      end: addDays(s.endDate, 1),
+      backgroundColor: s.eventId ? (eventColorMap.get(s.eventId) ?? getEventColor(s.eventId)) : "#64748b",
+      borderColor: "transparent",
+      textColor: "#fff",
+      extendedProps: { kind: "schedule", eventId: s.eventId },
+    }))),
+  ];
+
+  // 범례: 행사별 (status 아닌 행사명 기준)
+  const legendItems = events.map(e => ({
+    id: e.id,
     title: e.title,
-    start: e.startDate,
-    end: addDays(e.endDate, 1),
-    backgroundColor: STATUS_COLORS[e.status] ?? "#a1a1aa",
-    borderColor: "transparent",
-    textColor: "#fff",
-    extendedProps: e,
+    color: eventColorMap.get(e.id) ?? "#6366f1",
   }));
 
   const handlePrev = () => calendarRef.current?.getApi().prev();
@@ -68,17 +118,16 @@ export default function UserCalendarPage() {
   const handleDatesSet = (info: DatesSetArg) => {
     const d = info.view.currentStart;
     setMonthTitle(`${d.getFullYear()}년 ${d.getMonth() + 1}월`);
+    setDateRange(getMonthRange(d));
   };
-
-  const statuses = Array.from(new Set(events.map((e) => e.status).filter(Boolean)));
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground" style={KR}>행사 캘린더</h1>
+          <h1 className="text-xl font-bold text-foreground" style={KR}>홍보 캘린더</h1>
           <p className="text-xs text-muted-foreground mt-0.5" style={KR}>
-            내 행사 일정 보기 전용 (드래그 불가)
+            내 행사 일정 + 홍보물 게시 일정
           </p>
         </div>
       </div>
@@ -96,14 +145,20 @@ export default function UserCalendarPage() {
           </div>
         </div>
 
-        {statuses.length > 0 && (
-          <div className="fc-legend">
-            {statuses.map((s) => (
-              <div key={s} className="fc-legend-item">
-                <span className="fc-legend-dot" style={{ backgroundColor: STATUS_COLORS[s] ?? "#a1a1aa" }} />
-                <span style={KR}>{STATUS_KR[s] ?? s}</span>
+        {legendItems.length > 0 && (
+          <div className="fc-legend" style={{ flexWrap: "wrap", gap: "8px 16px" }}>
+            {legendItems.map(item => (
+              <div key={item.id} className="fc-legend-item">
+                <span className="fc-legend-dot" style={{ backgroundColor: item.color, borderRadius: "2px" }} />
+                <span style={KR}>{item.title}</span>
               </div>
             ))}
+            {(schedules ?? []).length > 0 && (
+              <div className="fc-legend-item" style={{ opacity: 0.6 }}>
+                <span className="fc-legend-dot" style={{ backgroundColor: "#94a3b8", borderRadius: "1px", width: "8px", height: "4px" }} />
+                <span style={KR}>홍보 일정 (색상 = 행사 색상)</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -141,17 +196,20 @@ export default function UserCalendarPage() {
               </span>
             )}
             eventClick={(info) => {
-              const eventId = info.event.id;
-              window.location.href = `${import.meta.env.BASE_URL}events/${eventId}`;
+              const props = info.event.extendedProps as any;
+              if (props.kind === "event" && props.eventId) {
+                window.location.href = `${import.meta.env.BASE_URL}events/${props.eventId}`;
+              }
             }}
           />
         )}
       </div>
 
+      {/* 행사 목록 */}
       {events.length > 0 && (
         <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
           <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60 flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground" style={KR}>전체 행사 목록</span>
+            <span className="text-xs font-semibold text-muted-foreground" style={KR}>행사 목록</span>
             <span className="text-xs text-muted-foreground">{events.length}건</span>
           </div>
           <div className="divide-y divide-black/5">
@@ -162,20 +220,47 @@ export default function UserCalendarPage() {
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors"
               >
                 <span
-                  className="w-2 h-2 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: STATUS_COLORS[e.status] ?? "#a1a1aa" }}
+                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: eventColorMap.get(e.id) }}
                 />
                 <span className="text-sm text-foreground flex-1 truncate" style={KR}>{e.title}</span>
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded border flex-shrink-0"
-                  style={{ ...KR, color: STATUS_COLORS[e.status], borderColor: STATUS_COLORS[e.status] + "40", backgroundColor: STATUS_COLORS[e.status] + "10" }}
-                >
-                  {STATUS_KR[e.status] ?? e.status}
-                </span>
                 <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block" style={KR}>
                   {e.startDate} ~ {e.endDate}
                 </span>
               </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 홍보 일정 목록 */}
+      {(schedules ?? []).length > 0 && (
+        <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground" style={KR}>홍보 게시 일정</span>
+            <span className="text-xs text-muted-foreground">{(schedules ?? []).length}건</span>
+          </div>
+          <div className="divide-y divide-black/5">
+            {(schedules ?? []).map((s) => (
+              <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span
+                  className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: s.eventId ? getEventColor(s.eventId) : "#94a3b8" }}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm text-foreground truncate block" style={KR}>
+                    {s.zoneName ?? s.zoneType ?? "구역"}{s.eventTitle ? ` (${s.eventTitle})` : ""}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap" style={KR}>
+                  {s.startDate} ~ {s.endDate}
+                </span>
+                {s.status && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border text-zinc-500 border-zinc-200 bg-zinc-50 whitespace-nowrap" style={KR}>
+                    {SCHEDULE_STATUS_KR[s.status] ?? s.status}
+                  </span>
+                )}
+              </div>
             ))}
           </div>
         </div>

@@ -68,8 +68,10 @@ export const ListOrganizationsResponse = zod.array(
 export const CreateOrganizationBody = zod.object({
   name: zod.string(),
   contactName: zod.string().optional(),
-  contactEmail: zod.string(),
+  contactEmail: zod.string().optional(),
   contactPhone: zod.string().optional(),
+  contactTitle: zod.string().optional(),
+  extensionPhone: zod.string().optional(),
 });
 
 /**
@@ -100,6 +102,8 @@ export const UpdateOrganizationBody = zod.object({
   contactName: zod.string().optional(),
   contactEmail: zod.string().optional(),
   contactPhone: zod.string().optional(),
+  contactTitle: zod.string().optional(),
+  extensionPhone: zod.string().optional(),
 });
 
 export const UpdateOrganizationResponse = zod.object({
@@ -166,6 +170,7 @@ export const CreateEventBody = zod.object({
   contactName: zod.string().optional(),
   contactEmail: zod.string().optional(),
   tags: zod.array(zod.string()).optional(),
+  metadata: zod.record(zod.unknown()).optional(),
 });
 
 /**
@@ -320,6 +325,7 @@ export const UpdateEventBody = zod.object({
   contactEmail: zod.string().optional(),
   tags: zod.array(zod.string()).optional(),
   adminNote: zod.string().optional(),
+  metadata: zod.record(zod.unknown()).optional(),
   status: zod
     .enum([
       "draft",

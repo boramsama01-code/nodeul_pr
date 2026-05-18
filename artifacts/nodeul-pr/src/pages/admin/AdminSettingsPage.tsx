@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, Link } from "wouter";
 import {
@@ -10,10 +10,11 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/store/useUIStore";
+import { supabase } from "@/lib/supabase";
 
-type Tab = "npc" | "zones" | "users";
+type Tab = "npc" | "zones" | "users" | "pdf";
 
-const ZONE_TYPE_OPTIONS = [
+const DEFAULT_ZONE_TYPES = [
   { value: "instagram", label: "인스타그램" },
   { value: "billboard", label: "야외 전광판" },
   { value: "website_banner", label: "홈페이지 배너" },
@@ -33,6 +34,7 @@ const ROLE_LABELS: Record<string, string> = {
 const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
 const inputCls = "w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors";
 const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function AdminSettingsPage() {
   const { isSignedIn } = useAuth();
@@ -53,6 +55,62 @@ export default function AdminSettingsPage() {
     await updateSetting.mutateAsync({ key: "npc_greeting", data: { value: npcText } });
     queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
     setNPCMessage(npcText);
+  };
+
+  // PDF guide
+  const pdfUrl = settings.find(s => s.key === "zone_guide_pdf")?.value ?? "";
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+  const [pdfSaved, setPdfSaved] = useState(false);
+  const pdfFileRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") { setPdfError("PDF 파일만 업로드 가능합니다."); return; }
+    setPdfUploading(true); setPdfError(""); setPdfSaved(false);
+    try {
+      const path = `guides/zone_guide_${Date.now()}.pdf`;
+      const { data, error } = await supabase.storage.from("nodeul-assets").upload(path, file, { cacheControl: "3600", upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("nodeul-assets").getPublicUrl(data.path);
+      await updateSetting.mutateAsync({ key: "zone_guide_pdf", data: { value: urlData.publicUrl } });
+      queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
+      setPdfSaved(true);
+    } catch (err: any) {
+      setPdfError(err.message || "업로드에 실패했습니다.");
+    } finally {
+      setPdfUploading(false);
+      if (pdfFileRef.current) pdfFileRef.current.value = "";
+    }
+  };
+
+  // Zone types (stored in system_settings as JSON)
+  const zoneTypesRaw = settings.find(s => s.key === "zone_type_options")?.value ?? "";
+  const zoneTypeOptions: { value: string; label: string }[] = (() => {
+    try { return JSON.parse(zoneTypesRaw); } catch { return DEFAULT_ZONE_TYPES; }
+  })();
+  const [newTypeLabel, setNewTypeLabel] = useState("");
+  const [newTypeValue, setNewTypeValue] = useState("");
+  const [zoneTypeError, setZoneTypeError] = useState("");
+
+  const saveZoneTypes = async (types: { value: string; label: string }[]) => {
+    await updateSetting.mutateAsync({ key: "zone_type_options", data: { value: JSON.stringify(types) } });
+    queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
+  };
+
+  const handleAddZoneType = async () => {
+    if (!newTypeLabel.trim()) { setZoneTypeError("유형 이름을 입력해 주세요."); return; }
+    setZoneTypeError("");
+    const val = newTypeValue.trim() || newTypeLabel.trim().toLowerCase().replace(/\s+/g, "_");
+    const updated = [...zoneTypeOptions, { value: val, label: newTypeLabel.trim() }];
+    await saveZoneTypes(updated);
+    setNewTypeLabel(""); setNewTypeValue("");
+  };
+
+  const handleDeleteZoneType = async (val: string) => {
+    if (!confirm(`"${val}" 유형을 삭제하시겠습니까?`)) return;
+    await saveZoneTypes(zoneTypeOptions.filter(t => t.value !== val));
   };
 
   // Zones
@@ -102,16 +160,16 @@ export default function AdminSettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "npc", label: "맹꽁이 인사말" },
     { id: "zones", label: "홍보 구역" },
+    { id: "pdf", label: "가이드 PDF" },
     { id: "users", label: "사용자 관리" },
   ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
-      {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground" style={KR}>시스템 설정</h1>
-          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>홍보 구역 · 맹꽁이 인사말 · 사용자 권한 관리</p>
+          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>홍보 구역 · 맹꽁이 인사말 · 가이드 PDF · 사용자 권한 관리</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground" style={KR}>
@@ -123,7 +181,6 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* 탭 */}
       <div className="flex gap-0 border-b border-black/10">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -163,9 +220,103 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
+      {/* ── 가이드 PDF ── */}
+      {tab === "pdf" && (
+        <div className="space-y-4">
+          <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+            <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+              <h2 className="text-sm font-semibold text-foreground" style={KR}>📄 홍보 가이드 PDF</h2>
+              <p className="text-xs text-muted-foreground mt-0.5" style={KR}>
+                사용자들이 홍보물 신청 전 다운로드할 수 있는 가이드 PDF입니다. 교체 시 기존 링크는 새 파일로 대체됩니다.
+              </p>
+            </div>
+            <div className="p-4 space-y-4">
+              {pdfUrl ? (
+                <div className="border border-emerald-200 bg-emerald-50/40 rounded-lg p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-emerald-800" style={KR}>현재 등록된 가이드 PDF</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 break-all" style={KR}>{pdfUrl}</p>
+                  </div>
+                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                    <button className="h-8 px-3 text-xs font-medium border border-emerald-300 text-emerald-700 rounded bg-white hover:bg-emerald-50 transition-colors flex-shrink-0" style={KR}>
+                      📥 다운로드 확인
+                    </button>
+                  </a>
+                </div>
+              ) : (
+                <div className="border border-dashed border-black/20 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground" style={KR}>등록된 가이드 PDF가 없습니다.</p>
+                </div>
+              )}
+              <div>
+                <label className={labelCls} style={KR}>{pdfUrl ? "PDF 교체" : "PDF 업로드"}</label>
+                <div
+                  className="border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
+                  onClick={() => pdfFileRef.current?.click()}
+                >
+                  <input ref={pdfFileRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} />
+                  {pdfUploading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-zinc-300 border-t-primary rounded-full animate-spin" />
+                      <span className="text-sm text-muted-foreground" style={KR}>업로드 중...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium" style={KR}>📄 클릭하여 PDF 파일 선택</p>
+                      <p className="text-xs text-muted-foreground mt-1" style={KR}>PDF 파일만 업로드 가능 · 최대 50MB</p>
+                    </>
+                  )}
+                </div>
+                {pdfError && <p className="text-xs text-destructive mt-1" style={KR}>{pdfError}</p>}
+                {pdfSaved && <p className="text-xs text-emerald-600 mt-1" style={KR}>✓ PDF가 성공적으로 업로드되었습니다.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 홍보 구역 ── */}
       {tab === "zones" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Zone Type Management */}
+          <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+            <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold" style={KR}>홍보구역 유형 관리</h3>
+                <p className="text-xs text-muted-foreground mt-0.5" style={KR}>구역 추가 시 선택할 수 있는 유형 목록입니다.</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="divide-y divide-black/5">
+                {zoneTypeOptions.map(t => (
+                  <div key={t.value} className="flex items-center justify-between py-2">
+                    <div>
+                      <span className="text-sm font-medium" style={KR}>{t.label}</span>
+                      <span className="ml-2 text-xs text-muted-foreground font-mono">{t.value}</span>
+                    </div>
+                    <button onClick={() => handleDeleteZoneType(t.value)}
+                      className="h-6 px-2 text-xs border border-red-200 text-red-600 rounded bg-red-50 hover:bg-red-100 transition-colors" style={KR}>삭제</button>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-black/8 pt-3">
+                <p className="text-xs font-medium mb-2" style={KR}>새 유형 추가</p>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 border border-black/15 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:border-primary"
+                    style={KR} placeholder="유형 이름 (예: 실내 배너)"
+                    value={newTypeLabel} onChange={e => setNewTypeLabel(e.target.value)} />
+                  <button onClick={handleAddZoneType}
+                    className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
+                    추가
+                  </button>
+                </div>
+                {zoneTypeError && <p className="text-xs text-destructive mt-1" style={KR}>{zoneTypeError}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Zone List */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground" style={KR}>총 {zones.length}개 구역</span>
             <button onClick={() => { setEditingZoneId(null); setZoneForm(emptyZoneForm); setShowZoneForm(!showZoneForm); }}
@@ -188,7 +339,7 @@ export default function AdminSettingsPage() {
                   <div>
                     <label className={labelCls} style={KR}>유형 *</label>
                     <select className={inputCls} style={KR} value={zoneForm.type} onChange={e => setZoneForm(f => ({ ...f, type: e.target.value }))}>
-                      {ZONE_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {zoneTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -290,7 +441,7 @@ export default function AdminSettingsPage() {
                         {zone.description && <p className="text-xs text-muted-foreground ml-4 mt-0.5 truncate" style={KR}>{zone.description}</p>}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell" style={KR}>
-                        {ZONE_TYPE_OPTIONS.find(o => o.value === zone.type)?.label ?? zone.type}
+                        {zoneTypeOptions.find(o => o.value === zone.type)?.label ?? zone.type}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground hidden md:table-cell" style={KR}>
                         {zone.maxConcurrent === null ? "무제한" : `${zone.maxConcurrent}개/일`}

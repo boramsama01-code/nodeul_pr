@@ -42,14 +42,21 @@ export default function SignUpPage() {
   if (success) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center py-12">
-        <div className="w-full max-w-md text-center space-y-4">
-          <div className="bg-white border-4 border-black shadow-[4px_4px_0_#000] p-8">
-            <p className="text-4xl mb-4">📬</p>
-            <h2 className="font-pixel text-lg text-primary mb-2">가입 완료!</h2>
-            <p className="font-pixel-body text-muted-foreground mb-6">
-              이메일 인증 링크를 발송했습니다.<br />이메일을 확인해 주세요.
+        <div className="w-full max-w-sm text-center space-y-5">
+          <div>
+            <div className="text-5xl mb-1">🐸</div>
+            <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
+          </div>
+          <div className="bg-white border border-black/15 p-7 shadow-sm text-left space-y-3">
+            <p className="text-3xl text-center">📬</p>
+            <h2 className="font-pixel text-base text-primary text-center">가입 완료!</h2>
+            <p className="font-pixel-body text-sm text-muted-foreground text-center">
+              이메일 인증 링크를 발송했습니다.<br />메일함을 확인해 주세요.
             </p>
-            <PixelButton variant="primary" size="md" onClick={() => setLocation("/sign-in")}>
+            <p className="font-pixel-body text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded">
+              ⚠️ 메일이 보이지 않으면 <strong>스팸메일함</strong>도 확인해 보세요.
+            </p>
+            <PixelButton variant="primary" size="md" onClick={() => setLocation("/sign-in")} className="w-full">
               로그인 페이지로
             </PixelButton>
           </div>
@@ -60,47 +67,49 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center py-12">
-      <div className="w-full max-w-md space-y-4 text-center">
-        <h1 className="font-pixel text-xl text-primary">노들섬 홍보 시스템</h1>
-        <p className="font-pixel-body text-xl text-muted-foreground">회원가입하고 홍보 신청을 시작하세요 🐸</p>
+      <div className="w-full max-w-sm space-y-5 text-center">
+        <div>
+          <div className="text-5xl mb-1">🐸</div>
+          <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
+        </div>
 
-        <div className="bg-white border-4 border-black shadow-[4px_4px_0_#000] p-6 text-left">
+        <div className="bg-white border border-black/15 p-7 text-left shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block font-pixel text-xs uppercase mb-2">이메일</label>
+              <label className="block font-pixel text-xs uppercase mb-1.5 text-muted-foreground">이메일</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full border-2 border-black px-3 py-2 font-pixel-body text-base focus:outline-none focus:border-primary bg-white"
+                className="w-full border border-black/20 px-3 py-2 font-pixel-body text-sm focus:outline-none focus:border-primary bg-white"
                 placeholder="example@email.com"
               />
             </div>
             <div>
-              <label className="block font-pixel text-xs uppercase mb-2">비밀번호</label>
+              <label className="block font-pixel text-xs uppercase mb-1.5 text-muted-foreground">비밀번호</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border-2 border-black px-3 py-2 font-pixel-body text-base focus:outline-none focus:border-primary bg-white"
+                className="w-full border border-black/20 px-3 py-2 font-pixel-body text-sm focus:outline-none focus:border-primary bg-white"
                 placeholder="6자 이상"
               />
             </div>
             <div>
-              <label className="block font-pixel text-xs uppercase mb-2">비밀번호 확인</label>
+              <label className="block font-pixel text-xs uppercase mb-1.5 text-muted-foreground">비밀번호 확인</label>
               <input
                 type="password"
                 required
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
-                className="w-full border-2 border-black px-3 py-2 font-pixel-body text-base focus:outline-none focus:border-primary bg-white"
+                className="w-full border border-black/20 px-3 py-2 font-pixel-body text-sm focus:outline-none focus:border-primary bg-white"
                 placeholder="••••••••"
               />
             </div>
             {error && (
-              <p className="font-pixel-body text-sm text-destructive border-2 border-destructive px-3 py-2 bg-destructive/5">
+              <p className="font-pixel-body text-xs text-destructive border border-destructive/30 px-3 py-2 bg-red-50">
                 {error}
               </p>
             )}
@@ -108,7 +117,7 @@ export default function SignUpPage() {
               {loading ? "처리 중..." : "회원가입"}
             </PixelButton>
           </form>
-          <p className="mt-4 text-center font-pixel-body text-sm text-muted-foreground">
+          <p className="mt-4 text-center font-pixel-body text-xs text-muted-foreground">
             이미 계정이 있으신가요?{" "}
             <Link href="/sign-in">
               <span className="text-primary underline cursor-pointer hover:text-primary/80">로그인</span>

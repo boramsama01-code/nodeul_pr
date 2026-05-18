@@ -165,8 +165,8 @@ export default function AdminDashboardPage() {
       {/* ── 빠른 링크 ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
-          { href: "/admin/events?status=submitted",          icon: "📥", label: "미승인 행사 검토",   desc: "제출된 신청 확인" },
-          { href: "/admin/events?status=revision_requested", icon: "✏️", label: "수정 요청 행사",     desc: "재제출 대기 중" },
+          { href: "/admin/pending",   icon: "📥", label: "미승인 행사 검토", desc: "제출된 신청 확인" },
+          { href: "/admin/revision", icon: "✏️", label: "수정 요청 행사",   desc: "재제출 대기 중" },
           { href: "/admin/calendar",                         icon: "📅", label: "일정 캘린더",       desc: "충돌·게시 일정 확인" },
         ].map(item => (
           <Link key={item.href} href={item.href}>

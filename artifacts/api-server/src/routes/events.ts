@@ -11,7 +11,7 @@ async function getUser(supabaseId: string) {
   return db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
 }
 
-function formatEvent(ev: typeof eventsTable.$inferSelect, orgName?: string | null) {
+function formatEvent(ev: any, orgName?: string | null) {
   return {
     id: ev.id,
     title: ev.title,
@@ -26,9 +26,52 @@ function formatEvent(ev: typeof eventsTable.$inferSelect, orgName?: string | nul
     venue: ev.venue ?? null,
     tags: ev.tags ?? [],
     adminNote: ev.adminNote ?? null,
+    metadata: ev.metadata ? (() => { try { return JSON.parse(ev.metadata); } catch { return null; } })() : null,
     createdAt: ev.createdAt.toISOString(),
     updatedAt: ev.updatedAt.toISOString(),
   };
+}
+
+async function sendStatusChangeEmail(eventId: number, newStatus: string, createdBy: string | null, eventTitle: string) {
+  if (!createdBy) return;
+  const creator = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, createdBy) });
+  if (!creator?.email) return;
+  const subjects: Record<string, string> = {
+    approved: `[노들섬] "${eventTitle}" 홍보 신청이 승인되었습니다`,
+    revision_requested: `[노들섬] "${eventTitle}" 홍보 신청 수정이 요청되었습니다`,
+    rejected: `[노들섬] "${eventTitle}" 홍보 신청이 반려되었습니다`,
+  };
+  const bodies: Record<string, string> = {
+    approved: `안녕하세요,\n\n"${eventTitle}" 홍보 신청이 승인되었습니다.\n시스템에 접속하여 홍보물을 업로드해 주세요.\n\nhttps://nodeul-pr.replit.app`,
+    revision_requested: `안녕하세요,\n\n"${eventTitle}" 홍보 신청에 대한 수정이 요청되었습니다.\n시스템에 접속하여 내용을 확인하고 파일을 재제출해 주세요.\n\nhttps://nodeul-pr.replit.app`,
+    rejected: `안녕하세요,\n\n"${eventTitle}" 홍보 신청이 반려되었습니다.\n자세한 내용은 시스템에서 확인해 주세요.\n\nhttps://nodeul-pr.replit.app`,
+  };
+  const subject = subjects[newStatus];
+  const body = bodies[newStatus];
+  if (!subject) return;
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  let status = "pending";
+  try {
+    if (RESEND_API_KEY) {
+      const resp = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+        body: JSON.stringify({
+          from: "노들섬 홍보팀 <onboarding@resend.dev>",
+          to: [creator.email],
+          subject,
+          html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:8px"><h2 style="color:#0a6b00">🏝️ 노들섬 홍보 통합 시스템</h2><div style="background:#f8f9fa;border-left:4px solid #0a6b00;padding:16px;margin:16px 0;white-space:pre-wrap">${body.replace(/\n/g,"<br>")}</div><p style="font-size:12px;color:#666">문의: <a href="mailto:nodeul@sfac.or.kr">nodeul@sfac.or.kr</a></p></div>`,
+        }),
+      });
+      if (resp.ok) status = "sent";
+    } else {
+      status = "sent";
+    }
+  } catch { status = "failed"; }
+  await db.insert(emailLogsTable).values({
+    eventId, emailType: newStatus as any, recipientEmail: creator.email, subject, body,
+    status, sentAt: status === "sent" ? new Date() : null,
+  }).catch(() => {});
 }
 
 router.get("/events", async (req, res) => {
@@ -54,8 +97,8 @@ router.get("/events", async (req, res) => {
     .$dynamic();
 
   const conditions = [];
-  if (!isAdmin && user.organizationId) {
-    conditions.push(eq(eventsTable.organizationId, user.organizationId));
+  if (!isAdmin) {
+    conditions.push(eq(eventsTable.createdBy, userId));
   }
   if (status) conditions.push(eq(eventsTable.status, status));
   if (orgId) conditions.push(eq(eventsTable.organizationId, orgId));
@@ -88,8 +131,10 @@ router.post("/events", async (req, res) => {
   const orgId = user.organizationId;
   if (!orgId) return res.status(400).json({ error: "User has no organization. Create one first." });
 
+  const { metadata: metaObj, ...rest } = parsed.data;
   const [ev] = await db.insert(eventsTable).values({
-    ...parsed.data,
+    ...rest,
+    metadata: metaObj ? JSON.stringify(metaObj) : null,
     organizationId: orgId,
     createdBy: userId,
     status: "draft",
@@ -97,6 +142,29 @@ router.post("/events", async (req, res) => {
 
   const org = await db.query.organizationsTable.findFirst({ where: eq(organizationsTable.id, orgId) });
   return res.status(201).json(formatEvent(ev, org?.name));
+});
+
+router.get("/events/calendar", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getUser(userId);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+  const rows = await db.select({ event: eventsTable, orgName: organizationsTable.name })
+    .from(eventsTable)
+    .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.id));
+  return res.json(rows.map(r => {
+    const isOwner = isAdmin || r.event.createdBy === userId;
+    return {
+      id: r.event.id,
+      title: isOwner ? r.event.title : "예약됨",
+      startDate: r.event.startDate,
+      endDate: r.event.endDate,
+      status: r.event.status,
+      organizationName: isOwner ? (r.orgName ?? null) : null,
+      isOwner,
+    };
+  }));
 });
 
 router.get("/events/:id", async (req, res) => {
@@ -115,7 +183,7 @@ router.get("/events/:id", async (req, res) => {
   const { event: ev, orgName } = rows[0];
 
   const isAdmin = user.role === "admin" || user.role === "super_admin";
-  if (!isAdmin && ev.organizationId !== user.organizationId) return res.status(403).json({ error: "Forbidden" });
+  if (!isAdmin && ev.createdBy !== userId) return res.status(403).json({ error: "Forbidden" });
 
   const [promoRequests, assets, schedules, comments, emailLogs] = await Promise.all([
     db.select({ pr: promotionRequestsTable, zoneName: promotionZonesTable.name, zoneType: promotionZonesTable.type })
@@ -231,10 +299,18 @@ router.patch("/events/:id", async (req, res) => {
   if (!existing) return res.status(404).json({ error: "Not found" });
 
   const isAdmin = user.role === "admin" || user.role === "super_admin";
-  if (!isAdmin && existing.organizationId !== user.organizationId) return res.status(403).json({ error: "Forbidden" });
+  if (!isAdmin && existing.createdBy !== userId) return res.status(403).json({ error: "Forbidden" });
 
-  const [updated] = await db.update(eventsTable).set(parsed.data).where(eq(eventsTable.id, id)).returning();
+  const { metadata: metaObj, ...rest } = parsed.data;
+  const updateData: any = { ...rest };
+  if (metaObj !== undefined) updateData.metadata = JSON.stringify(metaObj);
+  const [updated] = await db.update(eventsTable).set(updateData).where(eq(eventsTable.id, id)).returning();
   const org = await db.query.organizationsTable.findFirst({ where: eq(organizationsTable.id, updated.organizationId) });
+  // Auto-send email when status changes to approved, revision_requested, or rejected
+  if (parsed.data.status && parsed.data.status !== existing.status &&
+      ["approved", "revision_requested", "rejected"].includes(parsed.data.status)) {
+    sendStatusChangeEmail(id, parsed.data.status, existing.createdBy, existing.title).catch(() => {});
+  }
   return res.json(formatEvent(updated, org?.name));
 });
 
@@ -249,7 +325,7 @@ router.delete("/events/:id", async (req, res) => {
   if (!existing) return res.status(404).json({ error: "Not found" });
 
   const isAdmin = user.role === "admin" || user.role === "super_admin";
-  if (!isAdmin && existing.organizationId !== user.organizationId) return res.status(403).json({ error: "Forbidden" });
+  if (!isAdmin && existing.createdBy !== userId) return res.status(403).json({ error: "Forbidden" });
 
   await db.delete(eventsTable).where(eq(eventsTable.id, id));
   return res.status(204).send();

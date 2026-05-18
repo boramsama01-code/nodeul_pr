@@ -59,9 +59,11 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             ))}
             {isSignedIn ? (
               <div className="flex items-center gap-3 border-l-4 border-black pl-3 ml-1">
-                <span className="font-pixel-body text-base font-bold truncate max-w-[120px]">
-                  {me?.name || me?.email?.split("@")[0] || ""}
-                  {isAdmin && <span className="text-destructive ml-1 text-xs">★</span>}
+                <span className="font-pixel-body text-base font-bold truncate max-w-[140px]">
+                  {isAdmin
+                    ? <><span className="text-destructive">★</span> {(me as any)?.organizationName || "관리자"}</>
+                    : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0] || "")
+                  }
                 </span>
                 <PixelButton variant="ghost" size="sm" onClick={handleSignOut}>로그아웃</PixelButton>
               </div>
@@ -111,7 +113,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     onClick={handleSignOut}
                     className="w-full text-left font-pixel text-xs px-3 py-3 border-2 border-black hover:bg-destructive hover:text-white transition-colors mt-1"
                   >
-                    🚪 로그아웃 ({me?.name || me?.email?.split("@")[0]})
+                    🚪 로그아웃 ({isAdmin ? "관리자" : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0])})
                   </button>
                 ) : (
                   <div className="flex gap-2 mt-1">

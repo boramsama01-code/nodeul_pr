@@ -6,8 +6,10 @@ export const organizationsTable = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   contactName: text("contact_name"),
-  contactEmail: text("contact_email").notNull(),
+  contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
+  contactTitle: text("contact_title"),
+  extensionPhone: text("extension_phone"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

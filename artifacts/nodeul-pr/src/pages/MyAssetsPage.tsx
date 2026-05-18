@@ -47,6 +47,22 @@ export default function MyAssetsPage() {
     setNPCMessage("홍보물을 업로드하거나 재제출하는 페이지예요. 수정 요청된 파일은 여기서 다시 제출하세요 🐸");
   }, [setNPCMessage]);
 
+  const BASE_URL_API = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [guideUrl, setGuideUrl] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${BASE_URL_API}/api/admin/settings`, { headers: { Authorization: `Bearer ${session?.access_token}` } });
+        if (res.ok) {
+          const settings: any[] = await res.json();
+          const pdf = settings.find((s: any) => s.key === "zone_guide_pdf");
+          if (pdf?.value) setGuideUrl(pdf.value);
+        }
+      } catch {}
+    })();
+  }, []);
+
   const { data: eventData, isLoading, refetch } = useListEvents(
     {},
     { query: { enabled: !!isSignedIn, queryKey: getListEventsQueryKey({}) } }
@@ -164,11 +180,13 @@ export default function MyAssetsPage() {
             행사별 홍보물 업로드 및 수정 요청 파일 재제출
           </p>
         </div>
-        <Link href="/events/new">
-          <button className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
-            + 새 행사 신청
-          </button>
-        </Link>
+        {guideUrl && (
+          <a href={guideUrl} target="_blank" rel="noopener noreferrer">
+            <button className="h-8 px-3 text-xs font-medium bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors" style={KR}>
+              📄 가이드 PDF
+            </button>
+          </a>
+        )}
       </div>
 
       {isLoading ? (

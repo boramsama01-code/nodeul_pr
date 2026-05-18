@@ -35,17 +35,23 @@ export default function DashboardPage() {
   const { isSignedIn } = useAuth();
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
 
-  React.useEffect(() => {
-    setNPCMessage("내 홍보 신청 목록이에요! 새 행사를 신청하거나 진행 현황을 확인해 보세요 🐸");
-  }, [setNPCMessage]);
-
   const { data: eventData, isLoading } = useListEvents({}, {
     query: { enabled: !!isSignedIn, queryKey: getListEventsQueryKey({}) },
   });
 
+  const events = eventData?.events ?? [];
+
+  React.useEffect(() => {
+    const draftCount = events.filter(e => e.status === "draft").length;
+    if (!isLoading && draftCount > 0) {
+      setNPCMessage(`초안 행사가 ${draftCount}건이에요! 제출하지 않으면 처리되지 않아요. 빨리 제출해 주세요 🐸`);
+    } else {
+      setNPCMessage("내 홍보 신청 목록이에요. 새 행사를 신청하거나 진행 현황을 확인하세요 🐸");
+    }
+  }, [events.length, isLoading, setNPCMessage]);
+
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
-  const events = eventData?.events ?? [];
   const pending = events.filter(e => e.status === "submitted" || e.status === "revision_requested").length;
 
   return (

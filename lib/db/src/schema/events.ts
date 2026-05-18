@@ -15,6 +15,7 @@ export const eventsTable = pgTable("events", {
   venue: text("venue"),
   tags: text("tags").array(),
   adminNote: text("admin_note"),
+  metadata: text("metadata"),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

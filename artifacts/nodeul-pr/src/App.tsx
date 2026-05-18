@@ -13,6 +13,8 @@ import SignUpPage from "@/pages/auth/SignUpPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminEventsPage from "@/pages/admin/AdminEventsPage";
+import AdminPendingEventsPage from "@/pages/admin/AdminPendingEventsPage";
+import AdminRevisionEventsPage from "@/pages/admin/AdminRevisionEventsPage";
 import AdminCalendarPage from "@/pages/admin/AdminCalendarPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import EventCreatePage from "@/pages/events/EventCreatePage";
@@ -29,9 +31,6 @@ setAuthTokenGetter(async () => {
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function HomeRedirect() {
-  const { isSignedIn, isLoaded } = useAuth();
-  if (!isLoaded) return <LandingPage />;
-  if (isSignedIn) return <Redirect to="/dashboard" />;
   return <LandingPage />;
 }
 
@@ -69,6 +68,8 @@ export default function App() {
               <Route path="/calendar" component={UserCalendarPage} />
               <Route path="/my-assets" component={MyAssetsPage} />
               <Route path="/admin" component={AdminDashboardPage} />
+              <Route path="/admin/pending" component={AdminPendingEventsPage} />
+              <Route path="/admin/revision" component={AdminRevisionEventsPage} />
               <Route path="/admin/events" component={AdminEventsPage} />
               <Route path="/admin/calendar" component={AdminCalendarPage} />
               <Route path="/admin/settings" component={AdminSettingsPage} />
