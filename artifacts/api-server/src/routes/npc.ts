@@ -28,14 +28,16 @@ router.post("/npc/chat", async (req, res) => {
     return res.status(400).json({ error: "message is required" });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  const baseUrl = process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL;
+  const apiKey = process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY;
+
+  if (!baseUrl || !apiKey) {
     return res.json({ reply: "AI 도우미가 현재 준비 중이에요. 잠시 후 다시 시도해 주세요! 🐸" });
   }
 
   try {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const anthropic = new Anthropic({ apiKey });
+    const anthropic = new Anthropic({ apiKey, baseURL: baseUrl });
 
     const messages = [
       ...history.slice(-8).map((h) => ({ role: h.role as "user" | "assistant", content: h.content })),
@@ -43,7 +45,7 @@ router.post("/npc/chat", async (req, res) => {
     ];
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-haiku-4-5",
       max_tokens: 512,
       system: SYSTEM_PROMPT,
       messages,
