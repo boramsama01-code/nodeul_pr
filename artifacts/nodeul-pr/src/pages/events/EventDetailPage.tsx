@@ -93,7 +93,7 @@ export default function EventDetailPage() {
   );
   if (!event) return (
     <div className="text-center py-20">
-      <p className="text-sm text-zinc-500" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>이벤트를 찾을 수 없습니다.</p>
+      <p className="text-sm text-zinc-500" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>행사를 찾을 수 없습니다.</p>
       <button onClick={() => setLocation("/dashboard")} className="mt-4 text-xs text-primary underline">← 돌아가기</button>
     </div>
   );
@@ -303,7 +303,7 @@ export default function EventDetailPage() {
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-black/10 rounded-lg p-4 bg-white">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>이벤트 정보</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 정보</h3>
             <dl className="space-y-2">
               {[
                 ["단체", event.organizationName || "-"],

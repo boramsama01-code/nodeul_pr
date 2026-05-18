@@ -11,7 +11,7 @@ const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const VENUE_OPTIONS = ["잔디마당", "라이브하우스", "노들갤러리1관", "노들갤러리2관", "노들라운지", "노들서가", "마켓뜰", "서가뜰", "노들섬 전역"];
-const CATEGORY_OPTIONS = ["음악", "책", "식물", "쿠킹", "예술", "공연", "전시", "어린이", "워크숍", "페스티벌", "강의", "마켓", "팝업", "이벤트"];
+const CATEGORY_OPTIONS = ["음악", "책", "식물", "쿠킹", "예술", "공연", "전시", "어린이", "워크숍", "페스티벌", "강의", "마켓", "팝업", "행사"];
 const AGE_OPTIONS = ["전체연령", "초등학생 이상", "중학생 이상", "고등학생 이상", "만18세 이상"];
 const VIEWING_OPTIONS = ["자유관람", "사전 예매", "선착순 신청", "신청 후 추첨", "현장 판매", "초대자 한정"];
 const PROMO_ITEMS = [

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const STORAGE_KEY = "maengkongi_chat_history";
 
 async function sendToNPC(message: string, history: ChatMsg[]): Promise<string> {
   const res = await fetch(`${BASE}/api/npc/chat`, {
@@ -18,20 +19,61 @@ async function sendToNPC(message: string, history: ChatMsg[]): Promise<string> {
   return data.reply;
 }
 
+function MessageContent({ content }: { content: string }) {
+  const lines = content.split("\n");
+  return (
+    <>
+      {lines.map((line, idx) => (
+        <React.Fragment key={idx}>
+          {line}
+          {idx < lines.length - 1 && <br />}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 export const NPCHelper: React.FC = () => {
   const { npcMessage, showNPC, setShowNPC } = useUIStore();
 
   const [history, setHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    if (npcMessage) {
-      setHistory([{ role: "assistant", content: npcMessage }]);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHistory(parsed);
+          setInitialized(true);
+        }
+      } catch {}
     }
-  }, [npcMessage]);
+  }, []);
+
+  // Save to localStorage whenever history changes
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    }
+  }, [history]);
+
+  // Set initial greeting only if no saved history
+  useEffect(() => {
+    if (npcMessage && !initialized) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        setHistory([{ role: "assistant", content: npcMessage }]);
+        setInitialized(true);
+      }
+    }
+  }, [npcMessage, initialized]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,6 +101,16 @@ export const NPCHelper: React.FC = () => {
     }
   };
 
+  const handleClear = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setHistory([]);
+    setInitialized(false);
+    if (npcMessage) {
+      setHistory([{ role: "assistant", content: npcMessage }]);
+      setInitialized(true);
+    }
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -80,6 +132,14 @@ export const NPCHelper: React.FC = () => {
                   노들섬 안내 도우미
                 </p>
               </div>
+              <button
+                onClick={handleClear}
+                className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/20 transition-colors text-xs opacity-70"
+                aria-label="대화 초기화"
+                title="대화 초기화"
+              >
+                🗑️
+              </button>
               <button
                 onClick={() => setShowNPC(false)}
                 className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/20 transition-colors text-sm"
@@ -105,9 +165,9 @@ export const NPCHelper: React.FC = () => {
                         ? "bg-primary text-white"
                         : "bg-white border border-black/10 text-foreground shadow-sm"
                     }`}
-                    style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                    style={{ fontFamily: "'Noto Sans KR', sans-serif", whiteSpace: "pre-wrap" }}
                   >
-                    {msg.content}
+                    <MessageContent content={msg.content} />
                   </div>
                 </div>
               ))}

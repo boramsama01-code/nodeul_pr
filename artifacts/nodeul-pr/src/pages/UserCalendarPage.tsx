@@ -74,11 +74,11 @@ export default function UserCalendarPage() {
   const events = eventData?.events ?? [];
   const isLoading = eventsLoading || schedulesLoading;
 
-  // 이벤트 ID → 색상 맵
+  // 행사 ID → 색상 맵
   const eventColorMap = new Map<number, string>();
   events.forEach(e => { if (!eventColorMap.has(e.id)) eventColorMap.set(e.id, getEventColor(e.id)); });
 
-  // FullCalendar 이벤트 목록 구성
+  // FullCalendar 행사 목록 구성
   const fcEvents = [
     // 내 행사 블록
     ...events.map(e => ({

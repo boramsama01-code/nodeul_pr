@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { PixelButton } from "@/components/pixel/PixelButton";
 import { motion } from "framer-motion";
 import { useGetSystemSettings, getGetSystemSettingsQueryKey } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
+import { useAuth } from "@/contexts/AuthContext";
 
-/* ── 픽셀아트 노들섬 씬 (개구리 몸통 포함) ── */
+/* ── 픽셀아트 노들섬 씬 ── */
 function NodeulScene() {
   return (
     <svg
@@ -100,43 +101,44 @@ function NodeulScene() {
       <rect x="250" y="119" width="9"  height="9"  fill="#87CEEB"/>
       <rect x="230" y="126" width="10" height="15" fill="#7A5030"/>
 
-      {/* ── 픽셀아트 맹꽁이 (섬 앞쪽) ── */}
-      {/* 뒷다리 */}
-      <rect x="223" y="128" width="12" height="7" fill="#389444"/>
-      <rect x="245" y="128" width="12" height="7" fill="#389444"/>
-      {/* 발가락 */}
-      <rect x="219" y="133" width="5"  height="3" fill="#389444"/>
-      <rect x="224" y="135" width="4"  height="3" fill="#2A7234"/>
-      <rect x="228" y="134" width="5"  height="3" fill="#389444"/>
-      <rect x="244" y="134" width="5"  height="3" fill="#389444"/>
-      <rect x="249" y="135" width="4"  height="3" fill="#2A7234"/>
-      <rect x="253" y="133" width="5"  height="3" fill="#389444"/>
-      {/* 앞다리 */}
-      <rect x="224" y="122" width="8"  height="5" fill="#389444"/>
-      <rect x="248" y="122" width="8"  height="5" fill="#389444"/>
-      {/* 몸통 */}
-      <rect x="228" y="112" width="24" height="20" fill="#4CB85C"/>
-      {/* 배 */}
-      <rect x="231" y="117" width="18" height="13" fill="#96D88A"/>
-      {/* 눈 받침 (개구리 눈은 위로 솟음) */}
-      <rect x="225" y="108" width="9"  height="8"  fill="#4CB85C"/>
-      <rect x="246" y="108" width="9"  height="8"  fill="#4CB85C"/>
+      {/* ── 픽셀아트 맹꽁이 (섬 오른쪽 변두리, 건물과 오른쪽 나무 사이) ── */}
+      {/* 눈 받침 */}
+      <rect x="306" y="119" width="8" height="8" fill="#4CB85C"/>
+      <rect x="319" y="119" width="8" height="8" fill="#4CB85C"/>
       {/* 눈 흰자 */}
-      <rect x="226" y="109" width="7"  height="6"  fill="white"/>
-      <rect x="247" y="109" width="7"  height="6"  fill="white"/>
+      <rect x="306" y="119" width="7" height="6" fill="white"/>
+      <rect x="319" y="119" width="7" height="6" fill="white"/>
       {/* 눈동자 */}
-      <rect x="228" y="110" width="4"  height="4"  fill="#162A16"/>
-      <rect x="249" y="110" width="4"  height="4"  fill="#162A16"/>
+      <rect x="307" y="120" width="4" height="4" fill="#162A16"/>
+      <rect x="320" y="120" width="4" height="4" fill="#162A16"/>
       {/* 눈 반짝 */}
-      <rect x="228" y="110" width="2"  height="2"  fill="white"/>
-      <rect x="249" y="110" width="2"  height="2"  fill="white"/>
-      {/* 입 (넓은 개구리 입) */}
-      <rect x="231" y="129" width="18" height="2"  fill="#2A6632"/>
-      <rect x="229" y="127" width="3"  height="2"  fill="#2A6632"/>
-      <rect x="248" y="127" width="3"  height="2"  fill="#2A6632"/>
+      <rect x="307" y="120" width="2" height="2" fill="white"/>
+      <rect x="320" y="120" width="2" height="2" fill="white"/>
+      {/* 앞다리 */}
+      <rect x="303" y="129" width="6" height="4" fill="#389444"/>
+      <rect x="324" y="129" width="6" height="4" fill="#389444"/>
+      {/* 몸통 */}
+      <rect x="306" y="125" width="21" height="13" fill="#4CB85C"/>
+      {/* 배 */}
+      <rect x="309" y="128" width="15" height="9" fill="#96D88A"/>
+      {/* 뒷다리 */}
+      <rect x="304" y="133" width="10" height="6" fill="#389444"/>
+      <rect x="319" y="133" width="10" height="6" fill="#389444"/>
+      {/* 발가락 L */}
+      <rect x="301" y="137" width="4" height="3" fill="#389444"/>
+      <rect x="305" y="138" width="4" height="3" fill="#2A7234"/>
+      <rect x="309" y="137" width="4" height="3" fill="#389444"/>
+      {/* 발가락 R */}
+      <rect x="318" y="137" width="4" height="3" fill="#389444"/>
+      <rect x="322" y="138" width="4" height="3" fill="#2A7234"/>
+      <rect x="326" y="137" width="4" height="3" fill="#389444"/>
+      {/* 입 */}
+      <rect x="310" y="136" width="13" height="2" fill="#2A6632"/>
+      <rect x="308" y="134" width="3" height="2" fill="#2A6632"/>
+      <rect x="322" y="134" width="3" height="2" fill="#2A6632"/>
       {/* 등 무늬 */}
-      <rect x="234" y="114" width="5"  height="6"  fill="#389444" opacity="0.4"/>
-      <rect x="241" y="115" width="5"  height="5"  fill="#389444" opacity="0.4"/>
+      <rect x="312" y="126" width="5" height="6" fill="#389444" opacity="0.4"/>
+      <rect x="318" y="127" width="4" height="5" fill="#389444" opacity="0.4"/>
 
       {/* 물고기들 */}
       <rect x="56"  y="163" width="13" height="7"  fill="#E8834A"/>
@@ -152,22 +154,33 @@ function NodeulScene() {
 }
 
 const STEPS = [
-  { n: "01", icon: "📝", title: "행사 등록",    desc: "홍보할 행사 정보를 시스템에 등록합니다." },
-  { n: "02", icon: "📍", title: "구역 신청",    desc: "전광판·SNS·배너 등 홍보 구역을 선택합니다." },
-  { n: "03", icon: "📁", title: "홍보물 제출",  desc: "이미지·영상을 업로드하고 버전을 관리합니다." },
-  { n: "04", icon: "✅", title: "승인 & 게시",  desc: "관리자 승인 후 노들섬에 홍보가 시작됩니다." },
+  { n: "01", icon: "📝", title: "행사 등록",   desc: "홍보할 행사 정보를 시스템에 등록합니다.",    href: "/dashboard" },
+  { n: "02", icon: "📍", title: "구역 신청",   desc: "전광판·SNS·배너 등 홍보 구역을 선택합니다.", href: "/my-assets" },
+  { n: "03", icon: "📁", title: "홍보물 제출", desc: "이미지·영상을 업로드하고 버전을 관리합니다.", href: "/my-assets" },
+  { n: "04", icon: "✅", title: "승인 & 게시", desc: "관리자 승인 후 노들섬에 홍보가 시작됩니다.",  href: "/calendar" },
 ];
 
 export default function LandingPage() {
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
   const setShowNPC    = useUIStore(s => s.setShowNPC);
   const { data: settings } = useGetSystemSettings({ query: { queryKey: getGetSystemSettingsQueryKey() } });
+  const { isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const greeting = settings?.find(s => s.key === "npc_greeting")?.value;
     setNPCMessage(greeting || "안녕하세요! 노들섬 홍보 시스템에 오신 것을 환영합니다. 궁금한 점은 언제든지 물어보세요 🐸");
     setShowNPC(true);
   }, [settings, setNPCMessage, setShowNPC]);
+
+  const handleStepClick = (href: string) => {
+    if (!isSignedIn) {
+      alert("로그인하세요");
+      setLocation("/sign-in");
+      return;
+    }
+    setLocation(href);
+  };
 
   return (
     <div className="flex flex-col -mt-4 sm:-mt-6">
@@ -217,7 +230,8 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.48 + i * 0.07 }}
-                className="relative border border-black/12 p-5 bg-white hover:border-primary/50 hover:shadow-md transition-all"
+                onClick={() => handleStepClick(step.href)}
+                className="relative border border-black/12 p-5 bg-white hover:border-primary hover:shadow-md hover:bg-primary/5 transition-all cursor-pointer group"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xl">{step.icon}</span>
@@ -226,8 +240,11 @@ export default function LandingPage() {
                 {i < STEPS.length - 1 && (
                   <span className="hidden lg:block absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 text-xs text-muted-foreground/50 select-none pointer-events-none">▶</span>
                 )}
-                <h3 className="font-bold text-sm text-foreground mb-1" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{step.title}</h3>
+                <h3 className="font-bold text-sm text-foreground mb-1 group-hover:text-primary transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{step.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{step.desc}</p>
+                <p className="mt-3 text-[0.6rem] text-primary/60 font-semibold" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                  {isSignedIn ? "바로가기 →" : "로그인 후 이용"}
+                </p>
               </motion.div>
             ))}
           </div>

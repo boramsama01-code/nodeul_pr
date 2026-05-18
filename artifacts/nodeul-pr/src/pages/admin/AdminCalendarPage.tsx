@@ -72,7 +72,7 @@ export default function AdminCalendarPage() {
 
   const fcEvents = filtered.map((s) => ({
     id: String(s.id),
-    title: s.eventTitle || `이벤트 #${s.eventId}`,
+    title: s.eventTitle || `행사 #${s.eventId}`,
     start: s.startDate,
     end: addDays(s.endDate, 1),
     backgroundColor: getZoneColor(s.zoneType, s.zoneColor),

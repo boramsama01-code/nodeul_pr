@@ -49,11 +49,18 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex gap-4 items-center flex-1 justify-end">
+          <nav className="hidden md:flex gap-2 items-center flex-1 justify-end">
             {navLinks.map(l => (
               <Link key={l.href} href={l.href}>
-                <span className={`font-pixel text-xs cursor-pointer hover:underline transition-colors ${(l as any).admin ? "text-destructive" : ""}`}>
-                  {l.label}
+                <span
+                  className={`text-xs font-semibold cursor-pointer px-3 py-1.5 border-2 transition-colors ${
+                    (l as any).admin
+                      ? "border-destructive text-destructive hover:bg-destructive hover:text-white"
+                      : "border-black text-foreground hover:bg-primary hover:text-white hover:border-primary"
+                  }`}
+                  style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+                >
+                  {l.icon} {l.label}
                 </span>
               </Link>
             ))}
