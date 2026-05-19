@@ -64,8 +64,12 @@ async function sendStatusChangeEmail(eventId: number, newStatus: string, created
         }),
       });
       if (resp.ok) status = "sent";
+      else {
+        const errBody = await resp.json().catch(() => ({}));
+        console.error("[email] Resend API error in sendStatusChangeEmail:", resp.status, errBody);
+      }
     } else {
-      status = "sent";
+      console.warn("[email] RESEND_API_KEY not set — skipping auto status change email");
     }
   } catch { status = "failed"; }
   await db.insert(emailLogsTable).values({

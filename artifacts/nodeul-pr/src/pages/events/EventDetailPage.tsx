@@ -4,8 +4,6 @@ import { Redirect, useParams, useLocation } from "wouter";
 import {
   useGetEvent,
   useCreateComment,
-  useCreatePromotionRequest,
-  useListPromotionZones,
   useUpdateEvent,
   useSendEventEmail,
   useGetMe,
@@ -69,16 +67,15 @@ export default function EventDetailPage() {
   const isAdmin = me?.role === "admin" || me?.role === "super_admin";
 
   const { data: event, isLoading, refetch } = useGetEvent(Number(id));
-  const { data: zones } = useListPromotionZones();
   const createComment = useCreateComment();
-  const createPR = useCreatePromotionRequest();
   const updateEvent = useUpdateEvent();
   const sendEmail = useSendEventEmail();
 
   const [comment, setComment] = useState("");
   const [isAdminOnly, setIsAdminOnly] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
-  const [prForm, setPRForm] = useState({ zoneId: "", startDate: "", endDate: "", notes: "" });
+  const [prForm, setPRForm] = useState({ zoneName: "", notes: "" });
+  const [prSubmitting, setPrSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "schedule" | "comments">("overview");
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   const [showBaekroHint, setShowBaekroHint] = useState(true);
@@ -184,12 +181,18 @@ export default function EventDetailPage() {
 
   const handlePRSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createPR.mutateAsync({
-      data: { eventId: Number(id), zoneId: Number(prForm.zoneId), requestedStartDate: prForm.startDate, requestedEndDate: prForm.endDate, notes: prForm.notes || undefined },
-    });
-    setShowPRForm(false);
-    setPRForm({ zoneId: "", startDate: "", endDate: "", notes: "" });
-    refetch();
+    setPrSubmitting(true);
+    try {
+      const content = `[추가 구역 신청]\n구역: ${prForm.zoneName}\n메모: ${prForm.notes || "(없음)"}`;
+      await createComment.mutateAsync({
+        data: { eventId: Number(id), content, isAdminOnly: false },
+      });
+      setShowPRForm(false);
+      setPRForm({ zoneName: "", notes: "" });
+      refetch();
+    } finally {
+      setPrSubmitting(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,6 +335,12 @@ export default function EventDetailPage() {
             <button onClick={handleSubmitForReview} disabled={updateEvent.isPending}
               className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
               검토 제출
+            </button>
+          )}
+          {event.status === "revision_requested" && !isAdmin && (
+            <button onClick={handleSubmitForReview} disabled={updateEvent.isPending}
+              className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
+              수정 완료 · 재제출
             </button>
           )}
           {event.status === "submitted" && !isAdmin && (
@@ -497,33 +506,18 @@ export default function EventDetailPage() {
           {showPRForm && (
             <form onSubmit={handlePRSubmit} className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 *</label>
-                <select required className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                  value={prForm.zoneId} onChange={e => setPRForm(f => ({ ...f, zoneId: e.target.value }))}>
-                  <option value="">선택...</option>
-                  {zones?.map(z => <option key={z.id} value={z.id}>{z.name} ({z.type})</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>시작일 *</label>
-                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary"
-                    value={prForm.startDate} onChange={e => setPRForm(f => ({ ...f, startDate: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>종료일 *</label>
-                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary"
-                    value={prForm.endDate} onChange={e => setPRForm(f => ({ ...f, endDate: e.target.value }))} />
-                </div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>추가 신청 구역 *</label>
+                <input required type="text" placeholder="예: 현수막 A구역, 가로등 배너 3번 등" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                  value={prForm.zoneName} onChange={e => setPRForm(f => ({ ...f, zoneName: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>요청 메모</label>
-                <textarea rows={2} className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
+                <textarea rows={3} placeholder="추가 요청 사항을 자유롭게 입력해주세요." className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
                   value={prForm.notes} onChange={e => setPRForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
-              <button type="submit" disabled={createPR.isPending}
+              <button type="submit" disabled={prSubmitting}
                 className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
-                {createPR.isPending ? "신청 중..." : "신청"}
+                {prSubmitting ? "신청 중..." : "신청"}
               </button>
             </form>
           )}

@@ -240,9 +240,6 @@ export default function LandingPage() {
                 )}
                 <h3 className="font-bold text-sm text-foreground mb-1 group-hover:text-primary transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{step.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{step.desc}</p>
-                <p className="mt-3 text-[0.6rem] text-primary/60 font-semibold" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
-                  {isSignedIn ? "바로가기 →" : "로그인 후 이용"}
-                </p>
               </motion.div>
             ))}
           </div>
