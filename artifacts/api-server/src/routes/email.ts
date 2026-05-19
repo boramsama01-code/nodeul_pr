@@ -21,32 +21,43 @@ router.post("/events/:eventId/send-email", async (req, res) => {
   const footerNote = "\n\n---\n본 메일은 발송전용입니다. 문의사항은 nodeul@sfac.or.kr 로 보내주시면 감사하겠습니다.";
   const fullBody = body + footerNote;
 
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_API_KEY) {
+    return res.status(503).json({
+      error: "EMAIL_NOT_CONFIGURED",
+      message: "이메일 발송 설정이 완료되지 않았습니다. RESEND_API_KEY 환경변수를 설정해 주세요.",
+    });
+  }
+
   let emailStatus = "failed";
   try {
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    if (RESEND_API_KEY) {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: "노들섬 홍보팀 <onboarding@resend.dev>",
-          to: [recipientEmail],
-          subject,
-          html: `<div style="font-family:monospace;max-width:600px;margin:0 auto;padding:20px;border:2px solid #000;">
-            <h2 style="font-family:'Courier New';color:#0a6b00;">🏝️ 노들섬 홍보 통합 시스템</h2>
-            <div style="border:1px solid #000;padding:16px;background:#f8f0e3;white-space:pre-wrap;">${fullBody.replace(/\n/g, "<br>")}</div>
-            <p style="font-size:12px;color:#666;margin-top:16px;">본 메일은 발송전용입니다. 문의사항은 <a href="mailto:nodeul@sfac.or.kr">nodeul@sfac.or.kr</a> 로 보내주시면 감사하겠습니다.</p>
-          </div>`,
-        }),
-      });
-      if (response.ok) emailStatus = "sent";
-    } else {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "노들섬 홍보팀 <onboarding@resend.dev>",
+        to: [recipientEmail],
+        subject,
+        html: `<div style="font-family:monospace;max-width:600px;margin:0 auto;padding:20px;border:2px solid #000;">
+          <h2 style="font-family:'Courier New';color:#0a6b00;">🏝️ 노들섬 홍보 통합 시스템</h2>
+          <div style="border:1px solid #000;padding:16px;background:#f8f0e3;white-space:pre-wrap;">${fullBody.replace(/\n/g, "<br>")}</div>
+          <p style="font-size:12px;color:#666;margin-top:16px;">본 메일은 발송전용입니다. 문의사항은 <a href="mailto:nodeul@sfac.or.kr">nodeul@sfac.or.kr</a> 로 보내주시면 감사하겠습니다.</p>
+        </div>`,
+      }),
+    });
+    if (response.ok) {
       emailStatus = "sent";
+    } else {
+      const errBody = await response.json().catch(() => ({}));
+      console.error("Resend API error:", response.status, errBody);
+      emailStatus = "failed";
     }
-  } catch {
+  } catch (e) {
+    console.error("Email send error:", e);
     emailStatus = "failed";
   }
 
@@ -59,6 +70,13 @@ router.post("/events/:eventId/send-email", async (req, res) => {
     status: emailStatus,
     sentAt: emailStatus === "sent" ? new Date() : null,
   }).returning();
+
+  if (emailStatus === "failed") {
+    return res.status(502).json({
+      error: "EMAIL_SEND_FAILED",
+      message: "이메일 발송에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    });
+  }
 
   return res.json({
     id: log.id,

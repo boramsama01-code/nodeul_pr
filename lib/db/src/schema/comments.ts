@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const commentsTable = pgTable("comments", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").notNull(),
+  parentId: integer("parent_id"),
   content: text("content").notNull(),
   authorName: text("author_name").notNull(),
   authorRole: text("author_role").notNull().default("user"),

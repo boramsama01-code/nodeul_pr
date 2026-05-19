@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, commentsTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateCommentBody } from "@workspace/api-zod";
 
@@ -17,11 +17,13 @@ router.get("/events/:eventId/comments", async (req, res) => {
     .where(isAdmin
       ? eq(commentsTable.eventId, eventId)
       : and(eq(commentsTable.eventId, eventId), eq(commentsTable.isAdminOnly, false))
-    );
+    )
+    .orderBy(commentsTable.createdAt);
 
   return res.json(comments.map(c => ({
     id: c.id,
     eventId: c.eventId,
+    parentId: c.parentId ?? null,
     content: c.content,
     authorName: c.authorName,
     authorRole: c.authorRole,
@@ -39,8 +41,11 @@ router.post("/events/:eventId/comments", async (req, res) => {
   const parsed = CreateCommentBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
+  const parentId = (req.body as any).parentId ? Number((req.body as any).parentId) : null;
+
   const [comment] = await db.insert(commentsTable).values({
     eventId,
+    parentId,
     content: parsed.data.content,
     authorName: user?.name ?? user?.email ?? "사용자",
     authorRole: user?.role ?? "user",
@@ -50,6 +55,7 @@ router.post("/events/:eventId/comments", async (req, res) => {
   return res.status(201).json({
     id: comment.id,
     eventId: comment.eventId,
+    parentId: comment.parentId ?? null,
     content: comment.content,
     authorName: comment.authorName,
     authorRole: comment.authorRole,

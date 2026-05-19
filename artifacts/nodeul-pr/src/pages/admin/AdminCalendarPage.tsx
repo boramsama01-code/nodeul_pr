@@ -128,7 +128,6 @@ export default function AdminCalendarPage() {
           <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>홍보 일정 캘린더</h1>
           <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>구역별 게시 일정 · 드래그로 일정 변경 가능</p>
         </div>
-        <a href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>← 대시보드</a>
       </div>
 
       <div className="fc-dark-wrapper">

@@ -115,11 +115,6 @@ export default function AdminEventsPage() {
             {!showCompleted && completedCount > 0 && ` (완료 ${completedCount}건 숨김)`}
           </p>
         </div>
-        <Link href="/admin">
-          <button className="h-8 px-3 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
-            ← 대시보드
-          </button>
-        </Link>
       </div>
 
       {/* ── 백로 도우미 ── */}

@@ -59,9 +59,6 @@ export default function AdminRevisionEventsPage() {
             수정 요청(revision_requested) 상태 행사만 표시 — 재제출 대기 {eventsData?.total ?? 0}건
           </p>
         </div>
-        <Link href="/admin">
-          <button className="h-8 px-3 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>← 대시보드</button>
-        </Link>
       </div>
 
       <div>
