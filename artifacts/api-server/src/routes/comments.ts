@@ -47,7 +47,7 @@ router.post("/events/:eventId/comments", async (req, res) => {
     eventId,
     parentId,
     content: parsed.data.content,
-    authorName: user?.name ?? user?.email ?? "사용자",
+    authorName: user?.name ?? "사용자",
     authorRole: user?.role ?? "user",
     isAdminOnly: parsed.data.isAdminOnly ?? false,
   }).returning();
@@ -76,7 +76,7 @@ router.delete("/events/:eventId/comments/:commentId", async (req, res) => {
   if (!comment) return res.status(404).json({ error: "Not found" });
 
   const isAdmin = user.role === "admin" || user.role === "super_admin";
-  const isAuthor = comment.authorName === (user.name ?? user.email ?? "사용자");
+  const isAuthor = comment.authorName === (user.name ?? "사용자");
 
   if (!isAdmin && !isAuthor) {
     return res.status(403).json({ error: "Forbidden" });

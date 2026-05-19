@@ -325,7 +325,7 @@ export default function EventDetailPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
-          {event.status === "draft" && !isAdmin && (
+          {(event.status === "draft" || event.status === "revision_requested") && !isAdmin && (
             <button onClick={() => setLocation(`/events/new?edit=${id}`)}
               className="h-8 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
               ✏ 수정하기
