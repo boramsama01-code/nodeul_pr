@@ -13,12 +13,14 @@ import {
 } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/useUIStore";
+import { BaekroSpeech } from "@/components/pixel/MaengkongiSpeech";
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "초안", submitted: "제출됨", approved: "승인됨",
   revision_requested: "수정 요청", rejected: "반려됨", completed: "완료",
+  pending: "검토 중", active: "게시 중",
 };
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-zinc-100 text-zinc-600 border-zinc-200",
@@ -27,6 +29,8 @@ const STATUS_COLORS: Record<string, string> = {
   revision_requested: "bg-amber-50 text-amber-700 border-amber-200",
   rejected: "bg-red-50 text-red-700 border-red-200",
   completed: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  pending: "bg-blue-50 text-blue-600 border-blue-200",
+  active: "bg-emerald-50 text-emerald-600 border-emerald-200",
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -43,6 +47,15 @@ function formatBytes(bytes: number | null) {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / 1048576).toFixed(1)}MB`;
+}
+
+function formatDatetime(isoString: string) {
+  const d = new Date(isoString);
+  return d.toLocaleString("ko-KR", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  });
 }
 
 export default function EventDetailPage() {
@@ -67,8 +80,9 @@ export default function EventDetailPage() {
   const [showPRForm, setShowPRForm] = useState(false);
   const [prForm, setPRForm] = useState({ zoneId: "", startDate: "", endDate: "", notes: "" });
   const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "schedule" | "comments">("overview");
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+  const [showBaekroHint, setShowBaekroHint] = useState(true);
 
-  // Upload state
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadAssetId, setUploadAssetId] = useState<number | null>(null);
@@ -77,7 +91,6 @@ export default function EventDetailPage() {
   const [uploadZoneId, setUploadZoneId] = useState("");
   const [showUploadForm, setShowUploadForm] = useState(false);
 
-  // Email state
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
@@ -98,8 +111,24 @@ export default function EventDetailPage() {
     </div>
   );
 
+  const meta = (event.metadata as any) ?? {};
+  const metaPromoItems: string[] = meta.promoItems ?? [];
+  const metaPromoItemDates: Record<string, string> = meta.promoItemDates ?? {};
+  const metaBannerZones: string[] = meta.bannerZones ?? [];
+  const metaLightPoleZones: string[] = meta.lightPoleBannerZones ?? [];
+  const allRequestedZones = [
+    ...metaPromoItems.map(item => ({ label: item, type: "홍보 구역", date: metaPromoItemDates[item] ?? "" })),
+    ...metaBannerZones.map(z => ({ label: z, type: "현수막", date: "" })),
+    ...metaLightPoleZones.map(z => ({ label: z, type: "가로등 배너", date: "" })),
+  ];
+
   const handleSubmitForReview = async () => {
     await updateEvent.mutateAsync({ id: Number(id), data: { status: "submitted" } });
+    refetch();
+  };
+
+  const handleCancelSubmit = async () => {
+    await updateEvent.mutateAsync({ id: Number(id), data: { status: "draft" } });
     refetch();
   };
 
@@ -138,6 +167,21 @@ export default function EventDetailPage() {
     refetch();
   };
 
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("이 코멘트를 삭제하시겠습니까?")) return;
+    setDeletingCommentId(commentId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${BASE_URL}/api/events/${id}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      refetch();
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   const handlePRSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createPR.mutateAsync({
@@ -165,14 +209,12 @@ export default function EventDetailPage() {
       const fileType = file.type || "application/octet-stream";
 
       if (uploadAssetId) {
-        // New version of existing asset
         await fetch(`${BASE_URL}/api/assets/${uploadAssetId}/versions`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
           body: JSON.stringify({ fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
         });
       } else {
-        // New asset
         await fetch(`${BASE_URL}/api/events/${id}/assets`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
@@ -193,19 +235,19 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleSelectVersion = async (assetId: number, versionId: number, adminComment?: string) => {
+  const handleSelectVersion = async (assetId: number, versionId: number) => {
     const { data: { session } } = await supabase.auth.getSession();
     await fetch(`${BASE_URL}/api/assets/${assetId}/versions/${versionId}/select`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
-      body: JSON.stringify({ adminComment }),
+      body: JSON.stringify({}),
     });
     refetch();
   };
 
   const tabs = [
     { id: "overview", label: "개요" },
-    { id: "pr", label: `홍보신청 ${event.promotionRequests?.length ?? 0}` },
+    { id: "pr", label: `홍보신청 ${allRequestedZones.length > 0 ? allRequestedZones.length : (event.promotionRequests?.length ?? 0)}` },
     { id: "assets", label: `홍보물 ${event.assets?.length ?? 0}` },
     { id: "schedule", label: `일정 ${event.schedules?.length ?? 0}` },
     { id: "comments", label: `코멘트 ${event.comments?.length ?? 0}` },
@@ -216,6 +258,8 @@ export default function EventDetailPage() {
   const latestAdminComment = event.comments
     ?.filter((c: any) => c.authorRole === "admin" && !c.isAdminOnly)
     .slice(-1)[0] ?? null;
+
+  const myName = me?.name ?? me?.email ?? "";
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
@@ -245,6 +289,19 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* 초안 상태 백로 힌트 */}
+      {event.status === "draft" && !isAdmin && showBaekroHint && (
+        <div className="relative">
+          <BaekroSpeech mood="cheer">
+            입력이 완료되셨나요? 반드시 <strong>[검토 제출]</strong> 버튼을 눌러주세요! 검토 제출 후에도 홍보물 업로드는 계속 가능합니다 🦢
+          </BaekroSpeech>
+          <button
+            onClick={() => setShowBaekroHint(false)}
+            className="absolute top-2 right-2 text-xs text-zinc-400 hover:text-zinc-600"
+          >✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-3 pb-4 border-b border-black/8">
         <div>
@@ -265,10 +322,22 @@ export default function EventDetailPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
+          {event.status === "draft" && !isAdmin && (
+            <button onClick={() => setLocation(`/events/new?edit=${id}`)}
+              className="h-8 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+              ✏ 수정하기
+            </button>
+          )}
           {event.status === "draft" && (
             <button onClick={handleSubmitForReview} disabled={updateEvent.isPending}
               className="h-8 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
               검토 제출
+            </button>
+          )}
+          {event.status === "submitted" && !isAdmin && (
+            <button onClick={handleCancelSubmit} disabled={updateEvent.isPending}
+              className="h-8 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+              제출 취소
             </button>
           )}
           {isAdmin && event.status === "submitted" && (
@@ -310,29 +379,62 @@ export default function EventDetailPage() {
                 ["담당자", event.contactName || "-"],
                 ["이메일", event.contactEmail || "-"],
                 ["기간", `${event.startDate} ~ ${event.endDate}`],
-                ["장소", event.venue || "-"],
-                ["태그", event.tags?.length ? event.tags.join(", ") : "-"],
+                ["장소", event.venue || (meta.venues?.join(", ")) || "-"],
+                ["태그", event.tags?.length ? event.tags.join(", ") : (meta.categories?.join(", ")) || "-"],
+                ["관람료", meta.price || "-"],
+                ["관람 방법", meta.viewingMethods?.join(", ") || "-"],
+                ["공식 문의처", meta.contact || "-"],
               ].map(([label, value]) => (
                 <div key={label} className="flex gap-3 text-sm">
-                  <dt className="text-muted-foreground w-16 flex-shrink-0" style={KR}>{label}</dt>
+                  <dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>{label}</dt>
                   <dd className="text-foreground" style={KR}>{value}</dd>
                 </div>
               ))}
             </dl>
           </div>
-          {event.description && (
-            <div className="border border-black/10 rounded-lg p-4 bg-white">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>설명</h3>
-              <p className="text-sm text-foreground whitespace-pre-wrap" style={KR}>{event.description}</p>
-            </div>
-          )}
+
+          <div className="space-y-4">
+            {event.description && (
+              <div className="border border-black/10 rounded-lg p-4 bg-white">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>설명</h3>
+                <p className="text-sm text-foreground whitespace-pre-wrap" style={KR}>{event.description}</p>
+              </div>
+            )}
+            {(meta.lineup || meta.audience || meta.ageLimit || meta.operatingHours) && (
+              <div className="border border-black/10 rounded-lg p-4 bg-white">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 상세</h3>
+                <dl className="space-y-2">
+                  {meta.operatingHours && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>운영시간</dt><dd style={KR}>{meta.operatingHours}</dd></div>}
+                  {meta.lineup && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>라인업</dt><dd style={KR}>{meta.lineup}</dd></div>}
+                  {meta.audience && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>참여 대상</dt><dd style={KR}>{meta.audience}</dd></div>}
+                  {meta.ageLimit && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>참여 연령</dt><dd style={KR}>{meta.ageLimit}</dd></div>}
+                  {meta.ticketLink && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>예매 링크</dt><dd style={KR}><a href={meta.ticketLink} target="_blank" rel="noopener noreferrer" className="text-primary underline">{meta.ticketLink}</a></dd></div>}
+                  {meta.notes && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>특이사항</dt><dd style={KR}>{meta.notes}</dd></div>}
+                </dl>
+              </div>
+            )}
+            {allRequestedZones.length > 0 && (
+              <div className="border border-black/10 rounded-lg p-4 bg-white">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>신청한 홍보 구역</h3>
+                <div className="space-y-1">
+                  {allRequestedZones.map((z, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-black/5 last:border-0">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 flex-shrink-0" style={KR}>{z.type}</span>
+                      <span className="text-foreground flex-1" style={KR}>{z.label}</span>
+                      {z.date && <span className="text-muted-foreground flex-shrink-0" style={KR}>{z.date}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {isAdmin && event.adminNote && (
             <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
               <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2" style={KR}>관리자 메모</h3>
               <p className="text-sm text-amber-800" style={KR}>{event.adminNote}</p>
             </div>
           )}
-          {/* Email logs */}
           {isAdmin && event.emailLogs && event.emailLogs.length > 0 && (
             <div className="border border-black/10 rounded-lg p-4 bg-white md:col-span-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>메일 발송 이력</h3>
@@ -354,9 +456,39 @@ export default function EventDetailPage() {
 
       {/* ── 홍보신청 탭 ── */}
       {activeTab === "pr" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* 신청 시 입력한 홍보 구역 */}
+          {allRequestedZones.length > 0 && (
+            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60">
+                <span className="text-xs font-semibold text-muted-foreground" style={KR}>신청 시 선택한 홍보 구역</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/8 bg-zinc-50/30">
+                    {["구분", "홍보 구역", "희망 게시일"].map(h => (
+                      <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {allRequestedZones.map((z, i) => (
+                    <tr key={i} className="hover:bg-muted/20">
+                      <td className="px-4 py-2.5">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500" style={KR}>{z.type}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-sm" style={KR}>{z.label}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>{z.date || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* 추가 구역 신청 */}
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={KR}>홍보 구역 신청</h3>
+            <h3 className="text-sm font-semibold" style={KR}>추가 구역 신청</h3>
             <button onClick={() => setShowPRForm(!showPRForm)}
               className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
               {showPRForm ? "취소" : "+ 구역 신청"}
@@ -395,15 +527,16 @@ export default function EventDetailPage() {
               </button>
             </form>
           )}
-          {event.promotionRequests?.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>신청된 홍보 구역이 없습니다.</div>
-          ) : (
+          {event.promotionRequests && event.promotionRequests.length > 0 && (
             <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60">
+                <span className="text-xs font-semibold text-muted-foreground" style={KR}>추가 신청 현황</span>
+              </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-black/8 bg-zinc-50/60">
+                  <tr className="border-b border-black/8 bg-zinc-50/30">
                     {["구역", "기간", "상태", "관리자 메모"].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                      <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -429,6 +562,43 @@ export default function EventDetailPage() {
       {/* ── 홍보물 탭 ── */}
       {activeTab === "assets" && (
         <div className="space-y-4">
+          {/* 신청 구역 × 업로드 현황 통합 표 */}
+          {allRequestedZones.length > 0 && (
+            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60">
+                <span className="text-xs font-semibold text-muted-foreground" style={KR}>신청 구역 · 업로드 현황</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/8 bg-zinc-50/30">
+                    {["구분", "홍보 구역", "업로드 파일", "상태"].map(h => (
+                      <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {allRequestedZones.map((z, i) => {
+                    const matchedAsset = event.assets?.find(a => a.name === z.label || a.zoneName === z.label || a.name?.includes(z.label.substring(0, 6)));
+                    return (
+                      <tr key={i} className="hover:bg-muted/20">
+                        <td className="px-4 py-2.5">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500" style={KR}>{z.type}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-sm" style={KR}>{z.label}</td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>
+                          {matchedAsset ? matchedAsset.name : <span className="text-zinc-400">미업로드</span>}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {matchedAsset ? <StatusPill status={matchedAsset.status} /> : <span className="text-xs text-zinc-400" style={KR}>-</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold" style={KR}>홍보물 관리</h3>
             <button onClick={() => setShowUploadForm(!showUploadForm)}
@@ -450,11 +620,13 @@ export default function EventDetailPage() {
                       value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="예: 인스타그램 배너" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 (신청한 구역)</label>
                     <select className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
                       value={uploadZoneId} onChange={e => setUploadZoneId(e.target.value)}>
                       <option value="">구역 미지정</option>
-                      {zones?.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                      {allRequestedZones.length > 0
+                        ? allRequestedZones.map((z, i) => <option key={i} value={String(i + 1)}>{z.label}</option>)
+                        : zones?.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -491,7 +663,6 @@ export default function EventDetailPage() {
             <div className="space-y-3">
               {event.assets?.map(asset => (
                 <div key={asset.id} className="border border-black/10 rounded-lg bg-white overflow-hidden">
-                  {/* Asset header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-black/8 bg-zinc-50/60">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold" style={KR}>{asset.name}</span>
@@ -507,8 +678,6 @@ export default function EventDetailPage() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Version history table - GitHub commit style */}
                   <AssetVersionTable assetId={asset.id} isAdmin={isAdmin} onSelect={handleSelectVersion} selectedVersionId={asset.selectedVersionId} />
                 </div>
               ))}
@@ -520,15 +689,21 @@ export default function EventDetailPage() {
       {/* ── 일정 탭 ── */}
       {activeTab === "schedule" && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold" style={KR}>게시 일정</h3>
+          <BaekroSpeech mood="thinking">
+            여기에 표시되는 일정은 <strong>관리자가 승인한 실제 홍보 게시 일정</strong>입니다. 신청 시 입력한 희망 날짜와 다를 수 있으니 참고해 주세요 🗓️
+          </BaekroSpeech>
+          <h3 className="text-sm font-semibold" style={KR}>승인된 게시 일정</h3>
           {event.schedules?.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>등록된 일정이 없습니다.</div>
+            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>
+              <p>아직 승인된 일정이 없습니다.</p>
+              <p className="text-xs text-muted-foreground mt-1" style={KR}>행사 승인 후 관리자가 게시 일정을 등록합니다.</p>
+            </div>
           ) : (
             <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-black/8 bg-zinc-50/60">
-                    {["구역", "기간", "상태", "메모"].map(h => (
+                    {["구역", "승인된 게시 기간", "상태", "메모"].map(h => (
                       <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
                     ))}
                   </tr>
@@ -559,7 +734,7 @@ export default function EventDetailPage() {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold" style={KR}>코멘트</h3>
           <div className="space-y-2">
-            {event.comments?.map(c => (
+            {event.comments?.map((c: any) => (
               <div key={c.id} className={`border rounded-lg p-3 ${c.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/10 bg-white"}`}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
@@ -567,7 +742,19 @@ export default function EventDetailPage() {
                     <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-zinc-100 rounded" style={KR}>{c.authorRole}</span>
                     {c.isAdminOnly && <span className="text-[10px] text-amber-700 px-1.5 py-0.5 bg-amber-100 rounded" style={KR}>관리자 전용</span>}
                   </div>
-                  <span className="text-xs text-muted-foreground" style={KR}>{new Date(c.createdAt).toLocaleDateString("ko-KR")}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground" style={KR}>{formatDatetime(c.createdAt)}</span>
+                    {(isAdmin || c.authorName === myName) && (
+                      <button
+                        onClick={() => handleDeleteComment(c.id)}
+                        disabled={deletingCommentId === c.id}
+                        className="text-[10px] text-zinc-400 hover:text-red-500 transition-colors px-1"
+                        style={KR}
+                      >
+                        {deletingCommentId === c.id ? "..." : "삭제"}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-foreground" style={KR}>{c.content}</p>
               </div>
@@ -687,4 +874,3 @@ function AssetVersionTable({ assetId, isAdmin, onSelect, selectedVersionId }: {
     </table>
   );
 }
-

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Redirect, useLocation } from "wouter";
-import { useCreateEvent, useGetMe } from "@workspace/api-client-react";
+import { Redirect, useLocation, useSearch } from "wouter";
+import { useCreateEvent, useGetMe, useGetEvent, useUpdateEvent } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
 import { BaekroSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
@@ -23,12 +23,17 @@ const PROMO_ITEMS = [
   "잔디마당 입구 LED 전광판 (*서울문화재단/서울시 유관기관만)",
 ];
 const BANNER_ZONES = [
-  "(세로) GATE1 엘리베이터 외부 현수막 (*우선배정: ①잔디마당 ②노들갤러리)",
-  "(가로) GATE1 난간 현수막 (*우선배정: ①라이브하우스 ②잔디마당)",
-  "(세로) A동 2-3층 외부 현수막 (*우선배정: ①노들갤러리)",
-  "(세로) 라이브하우스 외부 현수막 (*우선배정: ①라이브하우스)",
+  { label: "(세로) GATE1 엘리베이터 외부 현수막", tooltip: "우선배정: ①잔디마당 ②노들갤러리" },
+  { label: "(가로) GATE1 난간 현수막", tooltip: "우선배정: ①라이브하우스 ②잔디마당" },
+  { label: "(세로) A동 2-3층 외부 현수막", tooltip: "우선배정: ①노들갤러리" },
+  { label: "(세로) 라이브하우스 외부 현수막", tooltip: "우선배정: ①라이브하우스" },
 ];
-const LIGHT_POLE_ZONES = ["노들스퀘어-A구역", "노들스퀘어-B구역", "잔디마당-A구역", "잔디마당-B구역"];
+const LIGHT_POLE_ZONES = [
+  { id: "노들스퀘어-A구역", sub: "4조, 8ea", color: "#f97316" },
+  { id: "노들스퀘어-B구역", sub: "4조, 8ea", color: "#22c55e" },
+  { id: "잔디마당-A구역", sub: "6조, 12ea", color: "#eab308" },
+  { id: "잔디마당-B구역", sub: "6조, 12ea", color: "#a855f7" },
+];
 
 function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
@@ -42,51 +47,64 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
   );
 }
 
-function CheckGroup({ options, selected, onChange, customKey }: {
+function CheckGroup({ options, selected, onChange, customKey, cols = 2 }: {
   options: string[];
   selected: string[];
   onChange: (v: string[]) => void;
   customKey?: string;
+  cols?: number;
 }) {
-  const [customVal, setCustomVal] = useState("");
+  const [customChecked, setCustomChecked] = useState(
+    () => customKey ? selected.some(s => !options.includes(s)) : false
+  );
+  const [customVal, setCustomVal] = useState(() => {
+    if (!customKey) return "";
+    return selected.filter(s => !options.includes(s)).join(", ");
+  });
+
   const toggle = (opt: string) => {
     onChange(selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt]);
   };
-  const hasCustom = customKey && selected.some(s => !options.includes(s));
-  const customCurrent = hasCustom ? selected.filter(s => !options.includes(s)).join(", ") : "";
+
+  const handleCustomCheck = (checked: boolean) => {
+    setCustomChecked(checked);
+    if (!checked) {
+      setCustomVal("");
+      onChange(selected.filter(s => options.includes(s)));
+    }
+  };
+
+  const handleCustomInput = (val: string) => {
+    setCustomVal(val);
+    const base = selected.filter(s => options.includes(s));
+    if (val.trim()) onChange([...base, val.trim()]);
+    else onChange(base);
+  };
+
   return (
     <div className="space-y-1.5">
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className={`grid grid-cols-${cols} gap-1.5`}>
         {options.map(opt => (
           <label key={opt} className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="accent-primary flex-shrink-0" checked={selected.includes(opt)} onChange={() => toggle(opt)} />
+            <input type="checkbox" className="accent-primary flex-shrink-0"
+              checked={selected.includes(opt)} onChange={() => toggle(opt)} />
             <span className="text-sm" style={KR}>{opt}</span>
           </label>
         ))}
         {customKey && (
-          <label className="flex items-center gap-2 cursor-pointer col-span-2">
+          <label className="flex items-center gap-2 cursor-pointer col-span-full">
             <input type="checkbox" className="accent-primary flex-shrink-0"
-              checked={hasCustom || false}
-              onChange={e => {
-                if (!e.target.checked) onChange(selected.filter(s => options.includes(s)));
-              }} />
+              checked={customChecked}
+              onChange={e => handleCustomCheck(e.target.checked)} />
             <span className="text-sm" style={KR}>기타 직접 입력</span>
           </label>
         )}
       </div>
-      {customKey && (
-        <input
-          className={inputCls + " mt-1"}
-          style={KR}
+      {customKey && customChecked && (
+        <input className={inputCls + " mt-1"} style={KR}
           placeholder="직접 입력"
-          value={customVal || customCurrent}
-          onChange={e => {
-            setCustomVal(e.target.value);
-            const base = selected.filter(s => options.includes(s));
-            if (e.target.value.trim()) onChange([...base, e.target.value.trim()]);
-            else onChange(base);
-          }}
-        />
+          value={customVal}
+          onChange={e => handleCustomInput(e.target.value)} />
       )}
     </div>
   );
@@ -105,12 +123,29 @@ function RadioGroup({ options, value, onChange }: { options: string[]; value: st
   );
 }
 
+function InfoIcon({ tip }: { tip: string }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-zinc-200 text-zinc-500 text-[9px] font-bold cursor-help ml-1 flex-shrink-0"
+      title={tip}
+      style={{ lineHeight: 1 }}
+    >i</span>
+  );
+}
+
 export default function EventCreatePage() {
   const { isSignedIn } = useAuth();
   const [, setLocation] = useLocation();
+  const searchStr = useSearch();
+  const editId = new URLSearchParams(searchStr).get("edit");
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
   const { data: me, isLoading: meLoading } = useGetMe();
   const createEvent = useCreateEvent();
+  const updateEvent = useUpdateEvent();
+
+  const { data: editEvent } = useGetEvent(editId ? Number(editId) : 0, {
+    query: { enabled: !!editId },
+  });
 
   const [step, setStep] = useState<"org" | "event">("org");
   const [submitting, setSubmitting] = useState(false);
@@ -142,14 +177,51 @@ export default function EventCreatePage() {
     notes: "",
     snsSiteDate: "",
     promoItems: [] as string[],
+    promoItemDates: {} as Record<string, string>,
     bannerZones: [] as string[],
     lightPoleBannerZones: [] as string[],
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (me?.organizationId) setStep("event");
-    setNPCMessage("새 행사 홍보를 신청해요! 정보를 입력하세요 🐸");
-  }, [me]);
+    if (editId) {
+      setNPCMessage("초안 행사를 수정하고 있어요. 내용을 확인 후 저장해 주세요 🐸");
+    } else {
+      setNPCMessage("새 행사 홍보를 신청해요! 정보를 입력하세요 🐸");
+    }
+  }, [me, editId]);
+
+  useEffect(() => {
+    if (!editEvent) return;
+    const m = (editEvent.metadata as any) ?? {};
+    setEventForm({
+      title: editEvent.title ?? "",
+      startDate: editEvent.startDate ?? "",
+      endDate: editEvent.endDate ?? "",
+    });
+    setMeta(prev => ({
+      ...prev,
+      operatingHours: m.operatingHours ?? "",
+      venues: m.venues ?? [],
+      lineup: m.lineup ?? "",
+      description: editEvent.description ?? "",
+      audience: m.audience ?? "",
+      categories: m.categories ?? [],
+      ageLimit: AGE_OPTIONS.includes(m.ageLimit ?? "") ? (m.ageLimit ?? "") : "",
+      ageLimitCustom: AGE_OPTIONS.includes(m.ageLimit ?? "") ? "" : (m.ageLimit ?? ""),
+      viewingMethods: m.viewingMethods ?? [],
+      ticketLink: m.ticketLink ?? "",
+      price: m.price ?? "",
+      contact: m.contact ?? "",
+      notes: m.notes ?? "",
+      snsSiteDate: m.snsSiteDate ?? "",
+      promoItems: m.promoItems ?? [],
+      promoItemDates: m.promoItemDates ?? {},
+      bannerZones: m.bannerZones ?? [],
+      lightPoleBannerZones: m.lightPoleBannerZones ?? [],
+    }));
+    setStep("event");
+  }, [editEvent]);
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
@@ -204,22 +276,31 @@ export default function EventCreatePage() {
         notes: meta.notes || null,
         snsSiteDate: meta.snsSiteDate || null,
         promoItems: meta.promoItems,
+        promoItemDates: meta.promoItemDates,
         bannerZones: meta.bannerZones,
         lightPoleBannerZones: meta.lightPoleBannerZones,
       };
 
-      const ev = await createEvent.mutateAsync({
-        data: {
-          title: eventForm.title,
-          description: meta.description || undefined,
-          startDate: eventForm.startDate,
-          endDate: eventForm.endDate,
-          venue: allVenues.join(", ") || undefined,
-          metadata,
-        } as any,
-      });
-      setNPCMessage("행사 신청 완료! 관리자 승인을 기다려 주세요 🐸");
-      setLocation(`/events/${ev.id}`);
+      const payload = {
+        title: eventForm.title,
+        description: meta.description || undefined,
+        startDate: eventForm.startDate,
+        endDate: eventForm.endDate,
+        venue: allVenues.join(", ") || undefined,
+        contactName: orgForm.contactName || (me?.name ?? undefined),
+        tags: allCategories.length > 0 ? allCategories : undefined,
+        metadata,
+      };
+
+      if (editId) {
+        await updateEvent.mutateAsync({ id: Number(editId), data: payload as any });
+        setNPCMessage("행사 정보가 수정되었습니다 🐸");
+        setLocation(`/events/${editId}`);
+      } else {
+        const ev = await createEvent.mutateAsync({ data: payload as any });
+        setNPCMessage("행사 신청 완료! 관리자 승인을 기다려 주세요 🐸");
+        setLocation(`/events/${ev.id}`);
+      }
     } catch (err: any) {
       setError(err.message || "행사 신청에 실패했습니다. 입력 내용을 확인해 주세요.");
     } finally {
@@ -229,36 +310,39 @@ export default function EventCreatePage() {
 
   const setM = (key: keyof typeof meta, val: unknown) => setMeta(m => ({ ...m, [key]: val }));
 
+  const setPromoItemDate = (item: string, date: string) => {
+    setMeta(m => ({ ...m, promoItemDates: { ...m.promoItemDates, [item]: date } }));
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex-1 bg-white border border-slate-200 rounded-lg px-5 py-4">
-          <StepGuide currentStep={1} />
-        </div>
-        <button onClick={() => setLocation("/dashboard")} className="ml-3 text-xs text-muted-foreground hover:text-foreground flex-shrink-0" style={KR}>
-          ← 목록
-        </button>
+      <div className="bg-white border border-slate-200 rounded-lg px-5 py-4">
+        <StepGuide currentStep={1} />
       </div>
 
       <BaekroSpeech mood={step === "org" ? "normal" : "cheer"}>
-        {step === "org"
-          ? "먼저 담당자 정보를 입력해 주세요. 행사 승인 시 이 정보로 연락을 드려요!"
-          : "거의 다 왔어요! 이번엔 행사 정보와 원하는 홍보 구역을 선택해 주세요 🐸"}
+        {editId
+          ? "초안 상태의 행사를 수정하고 있어요. 내용을 확인 후 [저장]을 눌러주세요 🐸"
+          : step === "org"
+            ? "먼저 담당자 정보를 입력해 주세요. 행사 승인 시 이 정보로 연락을 드려요!"
+            : "거의 다 왔어요! 이번엔 행사 정보와 원하는 홍보 구역을 선택해 주세요 🐸"}
       </BaekroSpeech>
 
-      <div className="border-b border-black/8 pb-4"/>
+      <div className="border-b border-black/8 pb-4" />
 
-      <div className="flex items-center gap-2">
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "org" ? "bg-primary text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`} style={KR}>
-          {step === "event" ? "✓" : "1"} 담당자 정보
+      {!editId && (
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "org" ? "bg-primary text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`} style={KR}>
+            {step === "event" ? "✓" : "1"} 담당자 정보
+          </div>
+          <div className="w-6 h-px bg-black/15" />
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "event" ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400 border border-zinc-200"}`} style={KR}>
+            2 행사 정보 + 홍보 신청
+          </div>
         </div>
-        <div className="w-6 h-px bg-black/15" />
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium ${step === "event" ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400 border border-zinc-200"}`} style={KR}>
-          2 행사 정보 + 홍보 신청
-        </div>
-      </div>
+      )}
 
-      {step === "org" && (
+      {step === "org" && !editId && (
         <Section title="담당자 정보" desc="처음 신청하시는 경우 담당자 정보를 등록해 주세요">
           <form onSubmit={handleOrgSubmit} className="space-y-4">
             <div>
@@ -267,20 +351,20 @@ export default function EventCreatePage() {
                 onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 서울문화재단" />
             </div>
             <div>
-              <label className={labelCls} style={KR}>담당자 성함 및 직함 * <span className="text-zinc-400">(예: 홍길동 주임)</span></label>
+              <label className={labelCls} style={KR}>담당자 성함 및 직함 * <span className="text-zinc-400">(예: 김노들 주임)</span></label>
               <input required className={inputCls} style={KR} value={orgForm.contactName}
-                onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))} placeholder="예: 홍길동 주임" />
+                onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))} placeholder="예: 김노들 주임" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls} style={KR}>핸드폰 번호 *</label>
                 <input required type="tel" className={inputCls} style={KR} value={orgForm.contactPhone}
-                  onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="010-1234-5678" />
+                  onChange={e => setOrgForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="01012345678" />
               </div>
               <div>
-                <label className={labelCls} style={KR}>내선번호 <span className="text-zinc-400">(선택)</span></label>
+                <label className={labelCls} style={KR}>유선번호 <span className="text-zinc-400">(선택)</span></label>
                 <input className={inputCls} style={KR} value={orgForm.extensionPhone}
-                  onChange={e => setOrgForm(f => ({ ...f, extensionPhone: e.target.value }))} placeholder="예: 1234" />
+                  onChange={e => setOrgForm(f => ({ ...f, extensionPhone: e.target.value }))} placeholder="02-123-4567" />
               </div>
             </div>
             {error && <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded px-3 py-2" style={KR}>{error}</p>}
@@ -361,14 +445,21 @@ export default function EventCreatePage() {
             <div>
               <label className={labelCls} style={KR}>참여가능연령 *</label>
               <div className="space-y-1.5">
-                {[...AGE_OPTIONS, "기타 직접 입력"].map(opt => (
-                  <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" className="accent-primary"
-                      checked={opt === "기타 직접 입력" ? !AGE_OPTIONS.includes(meta.ageLimit) && !!meta.ageLimitCustom : meta.ageLimit === opt}
-                      onChange={() => { if (opt === "기타 직접 입력") { setM("ageLimit", ""); } else { setM("ageLimit", opt); setM("ageLimitCustom", ""); } }} />
-                    <span className="text-sm" style={KR}>{opt}</span>
-                  </label>
-                ))}
+                {[...AGE_OPTIONS, "기타 직접 입력"].map(opt => {
+                  const isCustomOpt = opt === "기타 직접 입력";
+                  const isCustomActive = !AGE_OPTIONS.includes(meta.ageLimit) && (!!meta.ageLimitCustom || meta.ageLimit === "");
+                  return (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" className="accent-primary"
+                        checked={isCustomOpt ? isCustomActive : meta.ageLimit === opt}
+                        onChange={() => {
+                          if (isCustomOpt) { setM("ageLimit", ""); }
+                          else { setM("ageLimit", opt); setM("ageLimitCustom", ""); }
+                        }} />
+                      <span className="text-sm" style={KR}>{opt}</span>
+                    </label>
+                  );
+                })}
                 {!AGE_OPTIONS.includes(meta.ageLimit) && (
                   <input className={inputCls + " mt-1"} style={KR}
                     value={meta.ageLimitCustom} onChange={e => setM("ageLimitCustom", e.target.value)}
@@ -405,48 +496,121 @@ export default function EventCreatePage() {
             <div>
               <label className={labelCls} style={KR}>기타 특이사항</label>
               <textarea rows={2} className={`${inputCls} resize-none`} style={KR} value={meta.notes}
-                onChange={e => setM("notes", e.target.value)} placeholder="라인업 공개일 별도인 경우, 주차 안내 등" />
+                onChange={e => setM("notes", e.target.value)}
+                placeholder="예: 라인업 공개일자가 정해져 있는 경우 / 현장 수어통역 지원 등" />
             </div>
           </Section>
 
           <Section title="3. 홍보 신청" desc="승인된 항목은 캘린더에 자동 반영됩니다">
             <div>
               <label className={labelCls} style={KR}>
-                홈페이지 / SNS 게시 희망일 * <span className="text-zinc-400">— 홈페이지는 수령일로부터 1주 이내, SNS는 진행일로부터 2주 이내 게시. 라인업 공개일 별도인 경우 특이사항에 기입</span>
+                홈페이지 / SNS 게시 희망일 * <span className="text-zinc-400">— 홈페이지는 수령일로부터 1주 이내, SNS는 진행일로부터 2주 이내 게시</span>
               </label>
               <input required type="date" className={inputCls} value={meta.snsSiteDate}
                 onChange={e => setM("snsSiteDate", e.target.value)} />
             </div>
+
             <div>
               <label className={labelCls} style={KR}>
-                사용 희망 홍보 항목 <span className="text-zinc-400">(선택) — 진행일로부터 2주 전 게시. 매주 월요일 교체 (화요일 이후 제출시 차주 월요일 게시)</span>
+                사용 희망 홍보 구역 <span className="text-zinc-400">(선택) — 진행일로부터 2주 전 게시. 매주 월요일 교체</span>
               </label>
-              <CheckGroup options={PROMO_ITEMS} selected={meta.promoItems} onChange={v => setM("promoItems", v)} />
+              <div className="space-y-2">
+                {PROMO_ITEMS.map(item => (
+                  <div key={item}>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" className="accent-primary flex-shrink-0 mt-0.5"
+                        checked={meta.promoItems.includes(item)}
+                        onChange={e => {
+                          if (e.target.checked) setM("promoItems", [...meta.promoItems, item]);
+                          else {
+                            setM("promoItems", meta.promoItems.filter(p => p !== item));
+                            setPromoItemDate(item, "");
+                          }
+                        }} />
+                      <span className="text-sm" style={KR}>{item}</span>
+                    </label>
+                    {meta.promoItems.includes(item) && (
+                      <div className="ml-6 mt-1">
+                        <label className={labelCls} style={KR}>게시 희망일</label>
+                        <input type="date" className={inputCls} style={{ maxWidth: 200 }}
+                          value={meta.promoItemDates[item] ?? ""}
+                          onChange={e => setPromoItemDate(item, e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+
             <div>
-              <label className={labelCls} style={KR}>
-                대형 현수막 희망 구역 <span className="text-zinc-400">(선택) — 라이브하우스 로비 및 입구는 별도 신청 없이 당일 사용 가능. 대관일로부터 최대 1일 전후~당일만 사용 가능</span>
-              </label>
-              <CheckGroup options={BANNER_ZONES} selected={meta.bannerZones} onChange={v => setM("bannerZones", v)} />
+              <div className="flex items-center gap-1 mb-1">
+                <span className={labelCls} style={KR}>대형 현수막 희망 구역</span>
+                <span className="text-zinc-400 text-xs" style={KR}>(선택)</span>
+              </div>
+              <p className="text-xs text-zinc-400 mb-2" style={KR}>
+                대관일 기준 최대 1일 전후~당일 사용. 라이브하우스 로비·입구는 당일 별도 신청 없이 사용 가능.
+              </p>
+              <div className="space-y-1.5">
+                {BANNER_ZONES.map(zone => (
+                  <label key={zone.label} className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" className="accent-primary flex-shrink-0"
+                      checked={meta.bannerZones.includes(zone.label)}
+                      onChange={e => {
+                        if (e.target.checked) setM("bannerZones", [...meta.bannerZones, zone.label]);
+                        else setM("bannerZones", meta.bannerZones.filter(b => b !== zone.label));
+                      }} />
+                    <span className="text-sm" style={KR}>{zone.label}</span>
+                    <InfoIcon tip={zone.tooltip} />
+                  </label>
+                ))}
+              </div>
             </div>
+
             <div>
-              <label className={labelCls} style={KR}>
-                가로등 배너 희망 구역 <span className="text-zinc-400">(선택) — 대관일로부터 최대 일주일 전~당일만 사용 가능</span>
-              </label>
-              <CheckGroup options={LIGHT_POLE_ZONES} selected={meta.lightPoleBannerZones} onChange={v => setM("lightPoleBannerZones", v)} />
+              <div className="flex items-center gap-1 mb-1">
+                <span className={labelCls} style={KR}>가로등 배너 희망 구역</span>
+                <span className="text-zinc-400 text-xs" style={KR}>(선택) — 대관일로부터 최대 1주 전~당일</span>
+              </div>
+              <div className="border border-black/10 rounded-lg overflow-hidden mb-3">
+                <img
+                  src={`${BASE}/light-pole-map.png`}
+                  alt="가로등 배너 구역 안내"
+                  className="w-full h-auto block"
+                  style={{ maxHeight: 280, objectFit: "contain", background: "#fafafa" }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {LIGHT_POLE_ZONES.map(zone => (
+                  <label key={zone.id} className="flex items-center gap-2 cursor-pointer border border-black/8 rounded px-3 py-2 hover:bg-zinc-50 transition-colors">
+                    <input type="checkbox" className="accent-primary flex-shrink-0"
+                      checked={meta.lightPoleBannerZones.includes(zone.id)}
+                      onChange={e => {
+                        if (e.target.checked) setM("lightPoleBannerZones", [...meta.lightPoleBannerZones, zone.id]);
+                        else setM("lightPoleBannerZones", meta.lightPoleBannerZones.filter(z => z !== zone.id));
+                      }} />
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: zone.color }} />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate" style={KR}>{zone.id}</div>
+                      <div className="text-xs text-muted-foreground" style={KR}>{zone.sub}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
             </div>
           </Section>
 
           {error && <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded px-3 py-2" style={KR}>{error}</p>}
 
           <div className="flex items-center justify-between pt-1 pb-6">
-            <button type="button" onClick={() => setLocation("/dashboard")}
+            <button type="button" onClick={() => setLocation(editId ? `/events/${editId}` : "/dashboard")}
               className="h-8 px-3 text-xs text-muted-foreground border border-black/15 rounded bg-white hover:bg-muted/60" style={KR}>
               취소
             </button>
-            <button type="submit" disabled={submitting || createEvent.isPending}
+            <button type="submit" disabled={submitting || createEvent.isPending || updateEvent.isPending}
               className="h-8 px-5 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 disabled:opacity-50" style={KR}>
-              {submitting || createEvent.isPending ? "신청 중..." : "홍보 신청 완료 →"}
+              {submitting || createEvent.isPending || updateEvent.isPending
+                ? (editId ? "저장 중..." : "신청 중...")
+                : (editId ? "수정 저장 →" : "홍보 신청 완료 →")}
             </button>
           </div>
         </form>

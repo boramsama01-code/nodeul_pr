@@ -58,4 +58,26 @@ router.post("/events/:eventId/comments", async (req, res) => {
   });
 });
 
+router.delete("/events/:eventId/comments/:commentId", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, userId) });
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const commentId = Number(req.params.commentId);
+  const comment = await db.query.commentsTable.findFirst({ where: eq(commentsTable.id, commentId) });
+  if (!comment) return res.status(404).json({ error: "Not found" });
+
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+  const isAuthor = comment.authorName === (user.name ?? user.email ?? "사용자");
+
+  if (!isAdmin && !isAuthor) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  await db.delete(commentsTable).where(eq(commentsTable.id, commentId));
+  return res.status(204).send();
+});
+
 export default router;
