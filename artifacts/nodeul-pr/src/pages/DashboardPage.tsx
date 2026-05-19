@@ -96,12 +96,10 @@ export default function DashboardPage() {
       <div className="bg-white border border-slate-200 rounded-lg px-5 py-4">
         <StepGuide currentStep={questStep} />
       </div>
-
       {/* 맹꽁이 말풍선 */}
       <MaengkongiSpeech mood={revisionCount > 0 ? "alert" : approvedCount > 0 ? "cheer" : "normal"}>
         {froggMsg}
       </MaengkongiSpeech>
-
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
@@ -120,11 +118,10 @@ export default function DashboardPage() {
           </button>
         </Link>
       </div>
-
       {/* 테이블 */}
       <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
         <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground" style={KR}>신청 목록</h2>
+          <h2 className="text-sm font-semibold text-foreground" style={KR}>🏝️ 나의 행사 리스트</h2>
         </div>
 
         {isLoading ? (
