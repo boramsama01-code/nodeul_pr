@@ -10,145 +10,325 @@ import { useAuth } from "@/contexts/AuthContext";
 function NodeulScene() {
   return (
     <svg
-      viewBox="0 0 480 210"
+      viewBox="0 0 480 220"
       xmlns="http://www.w3.org/2000/svg"
       className="w-full block"
       style={{ imageRendering: "pixelated" }}
     >
       <defs>
         <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#A0CFEA"/>
-          <stop offset="100%" stopColor="#C4E4D0"/>
+          <stop offset="0%" stopColor="#6AAFD8"/>
+          <stop offset="55%" stopColor="#94C8E0"/>
+          <stop offset="100%" stopColor="#B4D8C4"/>
         </linearGradient>
         <linearGradient id="riverGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4A9EC8"/>
-          <stop offset="100%" stopColor="#3580A8"/>
+          <stop offset="0%" stopColor="#52A8CC"/>
+          <stop offset="100%" stopColor="#347EA8"/>
+        </linearGradient>
+        <linearGradient id="islandGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5ABE6A"/>
+          <stop offset="100%" stopColor="#3A7A44"/>
         </linearGradient>
       </defs>
 
-      {/* 하늘 */}
-      <rect width="480" height="210" fill="url(#skyGrad)"/>
+      {/* ── 하늘 ── */}
+      <rect width="480" height="220" fill="url(#skyGrad)"/>
 
-      {/* 구름들 */}
-      <rect x="24"  y="22" width="60" height="14" fill="white" opacity="0.92"/>
-      <rect x="16"  y="30" width="76" height="16" fill="white" opacity="0.92"/>
-      <rect x="36"  y="14" width="32" height="12" fill="white" opacity="0.92"/>
-      <rect x="196" y="18" width="52" height="12" fill="white" opacity="0.88"/>
-      <rect x="188" y="26" width="68" height="16" fill="white" opacity="0.88"/>
-      <rect x="206" y="10" width="28" height="12" fill="white" opacity="0.88"/>
-      <rect x="344" y="28" width="40" height="10" fill="white" opacity="0.75"/>
-      <rect x="336" y="36" width="56" height="14" fill="white" opacity="0.75"/>
+      {/* ── 구름 ── */}
+      <rect x="10"  y="22" width="72" height="12" fill="white" opacity="0.94"/>
+      <rect x="6"   y="28" width="82" height="16" fill="white" opacity="0.94"/>
+      <rect x="20"  y="14" width="42" height="12" fill="white" opacity="0.90"/>
+      <rect x="26"  y="10" width="24" height="8"  fill="white" opacity="0.85"/>
 
-      {/* 태양 */}
-      <rect x="408" y="12" width="32" height="32" fill="#F5C842"/>
-      <rect x="418" y="4"  width="12" height="8"  fill="#F5C842"/>
-      <rect x="418" y="44" width="12" height="8"  fill="#F5C842"/>
-      <rect x="400" y="22" width="8"  height="12" fill="#F5C842"/>
-      <rect x="440" y="22" width="8"  height="12" fill="#F5C842"/>
+      <rect x="178" y="14" width="58" height="12" fill="white" opacity="0.88"/>
+      <rect x="172" y="20" width="70" height="14" fill="white" opacity="0.88"/>
+      <rect x="186" y="8"  width="34" height="10" fill="white" opacity="0.82"/>
 
-      {/* 서울 스카이라인 */}
-      <rect x="0"   y="90"  width="480" height="45" fill="#C0D8C8" opacity="0.45"/>
-      <rect x="14"  y="76"  width="12"  height="14" fill="#A0BCB0" opacity="0.55"/>
-      <rect x="32"  y="66"  width="9"   height="24" fill="#96B4A8" opacity="0.55"/>
-      <rect x="48"  y="78"  width="11"  height="12" fill="#A0BCB0" opacity="0.55"/>
-      <rect x="72"  y="72"  width="8"   height="18" fill="#96B4A8" opacity="0.45"/>
-      <rect x="394" y="74"  width="12"  height="16" fill="#A0BCB0" opacity="0.55"/>
-      <rect x="412" y="64"  width="9"   height="26" fill="#96B4A8" opacity="0.55"/>
-      <rect x="428" y="78"  width="13"  height="12" fill="#A0BCB0" opacity="0.55"/>
-      <rect x="448" y="68"  width="9"   height="22" fill="#96B4A8" opacity="0.45"/>
+      <rect x="332" y="26" width="48" height="10" fill="white" opacity="0.78"/>
+      <rect x="326" y="32" width="62" height="14" fill="white" opacity="0.78"/>
+      <rect x="342" y="20" width="30" height="10" fill="white" opacity="0.72"/>
 
-      {/* 한강 */}
-      <rect x="0" y="134" width="480" height="76" fill="url(#riverGrad)"/>
-      <rect x="20"  y="142" width="48" height="4" fill="#6BB8D8" opacity="0.45"/>
-      <rect x="108" y="150" width="64" height="4" fill="#6BB8D8" opacity="0.45"/>
-      <rect x="204" y="143" width="54" height="4" fill="#6BB8D8" opacity="0.45"/>
-      <rect x="312" y="152" width="52" height="4" fill="#6BB8D8" opacity="0.45"/>
-      <rect x="388" y="144" width="56" height="4" fill="#6BB8D8" opacity="0.45"/>
-      <rect x="66"  y="160" width="8"  height="3" fill="#A8D8EE" opacity="0.4"/>
-      <rect x="172" y="168" width="6"  height="3" fill="#A8D8EE" opacity="0.4"/>
-      <rect x="278" y="158" width="10" height="3" fill="#A8D8EE" opacity="0.4"/>
-      <rect x="360" y="165" width="8"  height="3" fill="#A8D8EE" opacity="0.4"/>
+      <rect x="418" y="18" width="30" height="8"  fill="white" opacity="0.52"/>
+      <rect x="414" y="24" width="38" height="8"  fill="white" opacity="0.52"/>
 
-      {/* 노들섬 */}
-      <ellipse cx="240" cy="142" rx="92" ry="22" fill="#3A7A44"/>
-      <ellipse cx="240" cy="138" rx="88" ry="18" fill="#52A862"/>
+      <rect x="272" y="46" width="30" height="7"  fill="white" opacity="0.50"/>
+      <rect x="268" y="50" width="38" height="8"  fill="white" opacity="0.50"/>
 
-      {/* 섬 잔디 */}
-      <rect x="152" y="127" width="5" height="14" fill="#2C6433"/>
-      <rect x="163" y="123" width="5" height="16" fill="#2C6433"/>
-      <rect x="308" y="125" width="5" height="14" fill="#2C6433"/>
-      <rect x="320" y="129" width="5" height="12" fill="#2C6433"/>
+      {/* ── 태양 ── */}
+      <rect x="434" y="10" width="24" height="24" fill="#F8D44A"/>
+      <rect x="440" y="4"  width="12" height="6"  fill="#F8D44A"/>
+      <rect x="440" y="34" width="12" height="6"  fill="#F8D44A"/>
+      <rect x="428" y="16" width="6"  height="12" fill="#F8D44A"/>
+      <rect x="458" y="16" width="6"  height="12" fill="#F8D44A"/>
+      <rect x="430" y="10" width="4"  height="4"  fill="#F8D44A"/>
+      <rect x="456" y="10" width="4"  height="4"  fill="#F8D44A"/>
+      <rect x="430" y="28" width="4"  height="4"  fill="#F8D44A"/>
+      <rect x="456" y="28" width="4"  height="4"  fill="#F8D44A"/>
 
-      {/* 나무 왼쪽 */}
-      <rect x="187" y="116" width="6"  height="20" fill="#6B4226"/>
-      <rect x="176" y="100" width="27" height="20" fill="#1A5C24"/>
-      <rect x="180" y="92"  width="19" height="12" fill="#1A5C24"/>
-      <rect x="184" y="86"  width="13" height="10" fill="#22722E"/>
-      <rect x="178" y="98"  width="27" height="6"  fill="#22722E"/>
+      {/* ── 서울 스카이라인 (배경, 안개) ── */}
+      <rect x="0"   y="82" width="16" height="54" fill="#88A8A4" opacity="0.38"/>
+      <rect x="20"  y="70" width="11" height="66" fill="#7A9E9A" opacity="0.38"/>
+      <rect x="2"   y="66" width="5"  height="16" fill="#88A8A4" opacity="0.32"/>
+      <rect x="34"  y="78" width="14" height="58" fill="#88A8A4" opacity="0.34"/>
+      <rect x="52"  y="72" width="10" height="64" fill="#7A9E9A" opacity="0.34"/>
+      <rect x="66"  y="80" width="14" height="56" fill="#88A8A4" opacity="0.30"/>
+      <rect x="82"  y="74" width="10" height="62" fill="#7A9E9A" opacity="0.28"/>
+      <rect x="94"  y="82" width="12" height="54" fill="#88A8A4" opacity="0.26"/>
 
-      {/* 나무 오른쪽 */}
-      <rect x="287" y="114" width="6"  height="22" fill="#6B4226"/>
-      <rect x="276" y="98"  width="27" height="20" fill="#1A5C24"/>
-      <rect x="280" y="90"  width="19" height="12" fill="#1A5C24"/>
-      <rect x="284" y="84"  width="13" height="10" fill="#22722E"/>
-      <rect x="278" y="96"  width="27" height="6"  fill="#22722E"/>
+      <rect x="374" y="76" width="14" height="60" fill="#88A8A4" opacity="0.38"/>
+      <rect x="392" y="66" width="11" height="70" fill="#7A9E9A" opacity="0.38"/>
+      <rect x="394" y="60" width="5"  height="16" fill="#88A8A4" opacity="0.32"/>
+      <rect x="406" y="76" width="14" height="60" fill="#88A8A4" opacity="0.34"/>
+      <rect x="424" y="72" width="10" height="64" fill="#7A9E9A" opacity="0.32"/>
+      <rect x="438" y="80" width="14" height="56" fill="#88A8A4" opacity="0.28"/>
+      <rect x="456" y="74" width="24" height="62" fill="#7A9E9A" opacity="0.26"/>
 
-      {/* 건물 */}
-      <rect x="218" y="113" width="44" height="28" fill="#E8DCC8"/>
-      <rect x="218" y="107" width="44" height="10" fill="#C8A050"/>
-      <rect x="224" y="119" width="9"  height="9"  fill="#87CEEB"/>
-      <rect x="237" y="119" width="9"  height="9"  fill="#87CEEB"/>
-      <rect x="250" y="119" width="9"  height="9"  fill="#87CEEB"/>
-      <rect x="230" y="126" width="10" height="15" fill="#7A5030"/>
+      {/* ── 한강대교 연결 다리 ── */}
+      <rect x="0"   y="132" width="148" height="7" fill="#9AAAB2" opacity="0.68"/>
+      <rect x="332" y="132" width="148" height="7" fill="#9AAAB2" opacity="0.68"/>
+      <rect x="0"   y="130" width="148" height="2" fill="#B4C0C4" opacity="0.60"/>
+      <rect x="332" y="130" width="148" height="2" fill="#B4C0C4" opacity="0.60"/>
+      <rect x="0"   y="139" width="148" height="2" fill="#788490" opacity="0.55"/>
+      <rect x="332" y="139" width="148" height="2" fill="#788490" opacity="0.55"/>
+      {/* 다리 기둥 */}
+      <rect x="0"   y="132" width="10" height="88" fill="#9AAAB2" opacity="0.65"/>
+      <rect x="24"  y="135" width="8"  height="85" fill="#9AAAB2" opacity="0.60"/>
+      <rect x="460" y="132" width="20" height="88" fill="#9AAAB2" opacity="0.65"/>
+      <rect x="448" y="135" width="8"  height="85" fill="#9AAAB2" opacity="0.60"/>
 
-      {/* ── 픽셀아트 맹꽁이 (섬 오른쪽 변두리, 건물과 오른쪽 나무 사이) ── */}
-      {/* 눈 받침 */}
-      <rect x="306" y="119" width="8" height="8" fill="#4CB85C"/>
-      <rect x="319" y="119" width="8" height="8" fill="#4CB85C"/>
-      {/* 눈 흰자 */}
-      <rect x="306" y="119" width="7" height="6" fill="white"/>
-      <rect x="319" y="119" width="7" height="6" fill="white"/>
-      {/* 눈동자 */}
-      <rect x="307" y="120" width="4" height="4" fill="#162A16"/>
-      <rect x="320" y="120" width="4" height="4" fill="#162A16"/>
-      {/* 눈 반짝 */}
-      <rect x="307" y="120" width="2" height="2" fill="white"/>
-      <rect x="320" y="120" width="2" height="2" fill="white"/>
-      {/* 앞다리 */}
-      <rect x="303" y="129" width="6" height="4" fill="#389444"/>
-      <rect x="324" y="129" width="6" height="4" fill="#389444"/>
+      {/* ── 한강 ── */}
+      <rect x="0" y="138" width="480" height="82" fill="url(#riverGrad)"/>
+
+      {/* 강물 반짝임 */}
+      <rect x="16"  y="150" width="48" height="3" fill="#7ACCE8" opacity="0.48"/>
+      <rect x="90"  y="162" width="36" height="3" fill="#7ACCE8" opacity="0.42"/>
+      <rect x="204" y="148" width="48" height="3" fill="#7ACCE8" opacity="0.38"/>
+      <rect x="362" y="155" width="50" height="3" fill="#7ACCE8" opacity="0.48"/>
+      <rect x="422" y="168" width="36" height="3" fill="#7ACCE8" opacity="0.42"/>
+      <rect x="50"  y="176" width="20" height="2" fill="#A8D8EE" opacity="0.36"/>
+      <rect x="144" y="185" width="16" height="2" fill="#A8D8EE" opacity="0.36"/>
+      <rect x="298" y="172" width="22" height="2" fill="#A8D8EE" opacity="0.36"/>
+      <rect x="400" y="182" width="18" height="2" fill="#A8D8EE" opacity="0.36"/>
+
+      {/* 섬 수면 반영 */}
+      <ellipse cx="240" cy="162" rx="82" ry="7" fill="#2C6038" opacity="0.18"/>
+
+      {/* ── 노들섬 ── */}
+      <ellipse cx="240" cy="148" rx="96" ry="24" fill="#2E6438"/>
+      <ellipse cx="240" cy="144" rx="92" ry="20" fill="#3E8848"/>
+      <ellipse cx="240" cy="140" rx="88" ry="16" fill="#52A85C"/>
+
+      {/* 섬 앞쪽 잔디마당 */}
+      <rect x="185" y="148" width="110" height="6" fill="#5AB864" opacity="0.65"/>
+
+      {/* 섬 가장자리 잔디 */}
+      <rect x="148" y="134" width="5" height="12" fill="#266030"/>
+      <rect x="156" y="130" width="5" height="15" fill="#266030"/>
+      <rect x="164" y="127" width="4" height="17" fill="#266030"/>
+      <rect x="312" y="129" width="5" height="15" fill="#266030"/>
+      <rect x="320" y="132" width="5" height="13" fill="#266030"/>
+      <rect x="328" y="136" width="4" height="10" fill="#266030"/>
+
+      {/* ── 나무 왼쪽 군락 ── */}
+      {/* 큰 나무 */}
+      <rect x="174" y="118" width="7"  height="24" fill="#7A5430"/>
+      <rect x="162" y="100" width="30" height="22" fill="#1C6422"/>
+      <rect x="166" y="93"  width="22" height="12" fill="#1C6422"/>
+      <rect x="169" y="86"  width="16" height="10" fill="#247830"/>
+      <rect x="160" y="106" width="30" height="8"  fill="#247830"/>
+      <rect x="170" y="118" width="8"  height="4"  fill="#5A3C20"/>
+      {/* 작은 나무 */}
+      <rect x="148" y="124" width="5"  height="18" fill="#6B4226"/>
+      <rect x="139" y="110" width="22" height="16" fill="#1C6422"/>
+      <rect x="143" y="104" width="14" height="10" fill="#247830"/>
+      <rect x="146" y="124" width="6"  height="4"  fill="#5A3C20"/>
+      {/* 덤불 */}
+      <rect x="156" y="130" width="16" height="6"  fill="#2E7A38" opacity="0.7"/>
+
+      {/* ── 라이브하우스 (Live House) - 노들섬 대표 건물 ── */}
+      {/* 건물 본체 */}
+      <rect x="208" y="114" width="58" height="28" fill="#D4C8B0"/>
+      {/* 특유의 다크 그린 경사 지붕 */}
+      <rect x="206" y="107" width="62" height="10" fill="#3C5848"/>
+      <rect x="210" y="100" width="54" height="9"  fill="#3C5848"/>
+      <rect x="215" y="94"  width="44" height="8"  fill="#445E50"/>
+      <rect x="208" y="105" width="62" height="4"  fill="#5A7868"/>
+      <rect x="212" y="99"  width="54" height="3"  fill="#5A7868"/>
+      {/* 옥상 / 루프탑 */}
+      <rect x="210" y="92"  width="54" height="4"  fill="#7A9288"/>
+      <rect x="214" y="89"  width="4"  height="5"  fill="#6A8278"/>
+      <rect x="256" y="89"  width="4"  height="5"  fill="#6A8278"/>
+      <rect x="234" y="88"  width="6"  height="4"  fill="#5A7268"/>
+      {/* 유리창 (가로로 긴 파노라마 창) */}
+      <rect x="212" y="118" width="10" height="8" fill="#7AC0D8" opacity="0.88"/>
+      <rect x="226" y="118" width="10" height="8" fill="#7AC0D8" opacity="0.88"/>
+      <rect x="240" y="118" width="10" height="8" fill="#7AC0D8" opacity="0.88"/>
+      <rect x="254" y="118" width="10" height="8" fill="#7AC0D8" opacity="0.88"/>
+      {/* 창틀 */}
+      <rect x="211" y="117" width="12" height="10" fill="none" stroke="#9A8C6C" strokeWidth="1"/>
+      <rect x="225" y="117" width="12" height="10" fill="none" stroke="#9A8C6C" strokeWidth="1"/>
+      <rect x="239" y="117" width="12" height="10" fill="none" stroke="#9A8C6C" strokeWidth="1"/>
+      <rect x="253" y="117" width="12" height="10" fill="none" stroke="#9A8C6C" strokeWidth="1"/>
+      {/* 출입문 */}
+      <rect x="228" y="128" width="12" height="14" fill="#8A5C38"/>
+      <rect x="229" y="129" width="5"  height="13" fill="#6A3C1C" opacity="0.6"/>
+      {/* 건물 앞 목재 덱 */}
+      <rect x="208" y="140" width="58" height="4"  fill="#B89060" opacity="0.80"/>
+      <rect x="210" y="142" width="10" height="2"  fill="#A07848" opacity="0.60"/>
+      <rect x="226" y="142" width="10" height="2"  fill="#A07848" opacity="0.60"/>
+      <rect x="242" y="142" width="10" height="2"  fill="#A07848" opacity="0.60"/>
+      <rect x="258" y="142" width="8"  height="2"  fill="#A07848" opacity="0.60"/>
+
+      {/* ── 노들서가 / 라운지 (오른쪽 소형 건물) ── */}
+      <rect x="272" y="122" width="28" height="20" fill="#DDD2BC"/>
+      <rect x="270" y="115" width="32" height="9"  fill="#445E50"/>
+      <rect x="274" y="126" width="9"  height="7"  fill="#7AC0D8" opacity="0.82"/>
+      <rect x="286" y="126" width="9"  height="7"  fill="#7AC0D8" opacity="0.82"/>
+      <rect x="275" y="132" width="8"  height="10" fill="#8A6040"/>
+      {/* 작은 간판 */}
+      <rect x="276" y="112" width="18" height="3"  fill="#E8C860" opacity="0.80"/>
+
+      {/* ── 나무 오른쪽 군락 ── */}
+      <rect x="307" y="116" width="7"  height="26" fill="#7A5430"/>
+      <rect x="295" y="98"  width="30" height="22" fill="#1C6422"/>
+      <rect x="299" y="91"  width="22" height="12" fill="#1C6422"/>
+      <rect x="302" y="84"  width="16" height="10" fill="#247830"/>
+      <rect x="293" y="104" width="30" height="8"  fill="#247830"/>
+      <rect x="303" y="116" width="8"  height="4"  fill="#5A3C20"/>
+      {/* 오른쪽 작은 나무 */}
+      <rect x="328" y="122" width="5"  height="20" fill="#6B4226"/>
+      <rect x="319" y="110" width="24" height="15" fill="#1C6422"/>
+      <rect x="323" y="104" width="16" height="10" fill="#247830"/>
+      <rect x="325" y="122" width="6"  height="4"  fill="#5A3C20"/>
+
+      {/* ── 맹꽁이 픽셀아트 (잔디마당, 건물 오른쪽) ── */}
+      {/* 눈 (볼록 튀어나온) */}
+      <rect x="342" y="131" width="9" height="8"  fill="#4CB85C"/>
+      <rect x="355" y="131" width="9" height="8"  fill="#4CB85C"/>
+      <rect x="342" y="131" width="8" height="7"  fill="white"/>
+      <rect x="355" y="131" width="8" height="7"  fill="white"/>
+      <rect x="343" y="132" width="5" height="5"  fill="#182818"/>
+      <rect x="356" y="132" width="5" height="5"  fill="#182818"/>
+      <rect x="343" y="132" width="2" height="2"  fill="white"/>
+      <rect x="356" y="132" width="2" height="2"  fill="white"/>
       {/* 몸통 */}
-      <rect x="306" y="125" width="21" height="13" fill="#4CB85C"/>
+      <rect x="340" y="137" width="26" height="13" fill="#4CB85C"/>
       {/* 배 */}
-      <rect x="309" y="128" width="15" height="9" fill="#96D88A"/>
+      <rect x="343" y="140" width="20" height="9"  fill="#9CD88A"/>
+      {/* 입 (웃는) */}
+      <rect x="344" y="147" width="18" height="2"  fill="#2A6632"/>
+      <rect x="342" y="145" width="4"  height="2"  fill="#2A6632"/>
+      <rect x="360" y="145" width="4"  height="2"  fill="#2A6632"/>
+      {/* 앞다리 */}
+      <rect x="335" y="140" width="6"  height="5"  fill="#389444"/>
+      <rect x="365" y="140" width="6"  height="5"  fill="#389444"/>
       {/* 뒷다리 */}
-      <rect x="304" y="133" width="10" height="6" fill="#389444"/>
-      <rect x="319" y="133" width="10" height="6" fill="#389444"/>
+      <rect x="333" y="145" width="10" height="6"  fill="#389444"/>
+      <rect x="363" y="145" width="10" height="6"  fill="#389444"/>
       {/* 발가락 L */}
-      <rect x="301" y="137" width="4" height="3" fill="#389444"/>
-      <rect x="305" y="138" width="4" height="3" fill="#2A7234"/>
-      <rect x="309" y="137" width="4" height="3" fill="#389444"/>
+      <rect x="330" y="150" width="5"  height="3"  fill="#389444"/>
+      <rect x="335" y="151" width="4"  height="2"  fill="#2A7234"/>
+      <rect x="339" y="150" width="5"  height="3"  fill="#389444"/>
       {/* 발가락 R */}
-      <rect x="318" y="137" width="4" height="3" fill="#389444"/>
-      <rect x="322" y="138" width="4" height="3" fill="#2A7234"/>
-      <rect x="326" y="137" width="4" height="3" fill="#389444"/>
-      {/* 입 */}
-      <rect x="310" y="136" width="13" height="2" fill="#2A6632"/>
-      <rect x="308" y="134" width="3" height="2" fill="#2A6632"/>
-      <rect x="322" y="134" width="3" height="2" fill="#2A6632"/>
+      <rect x="362" y="150" width="5"  height="3"  fill="#389444"/>
+      <rect x="367" y="151" width="4"  height="2"  fill="#2A7234"/>
+      <rect x="371" y="150" width="5"  height="3"  fill="#389444"/>
       {/* 등 무늬 */}
-      <rect x="312" y="126" width="5" height="6" fill="#389444" opacity="0.4"/>
-      <rect x="318" y="127" width="4" height="5" fill="#389444" opacity="0.4"/>
+      <rect x="346" y="138" width="7"  height="8"  fill="#389444" opacity="0.32"/>
+      <rect x="354" y="137" width="6"  height="9"  fill="#389444" opacity="0.28"/>
 
-      {/* 물고기들 */}
-      <rect x="56"  y="163" width="13" height="7"  fill="#E8834A"/>
-      <rect x="52"  y="165" width="5"  height="4"  fill="#E8834A"/>
-      <rect x="69"  y="164" width="3"  height="2"  fill="white"/>
-      <rect x="368" y="169" width="12" height="6"  fill="#E07898"/>
-      <rect x="364" y="171" width="5"  height="3"  fill="#E07898"/>
-      <rect x="380" y="170" width="3"  height="2"  fill="white"/>
-      <rect x="146" y="175" width="10" height="5"  fill="#7EC8E3"/>
-      <rect x="142" y="177" width="4"  height="3"  fill="#7EC8E3"/>
+      {/* ── 백로 1 (오른쪽 하늘 - 날개 펼치고 날아오는) ── */}
+      <g>
+        <animateTransform attributeName="transform" type="translate"
+          values="0,0; 0,-4; 0,0; 0,3; 0,0" dur="2.2s" repeatCount="indefinite"/>
+        {/* 몸통 */}
+        <rect x="356" y="60" width="16" height="7" fill="white"/>
+        {/* 왼쪽 날개 */}
+        <rect x="338" y="53" width="18" height="6" fill="white"/>
+        <rect x="330" y="57" width="10" height="5" fill="white"/>
+        <rect x="328" y="61" width="6"  height="3" fill="#303030"/>
+        {/* 오른쪽 날개 */}
+        <rect x="372" y="53" width="18" height="6" fill="white"/>
+        <rect x="388" y="57" width="10" height="5" fill="white"/>
+        <rect x="394" y="61" width="6"  height="3" fill="#303030"/>
+        {/* 날개 아랫면 음영 */}
+        <rect x="339" y="57" width="16" height="3" fill="#E0E8E4" opacity="0.75"/>
+        <rect x="373" y="57" width="16" height="3" fill="#E0E8E4" opacity="0.75"/>
+        {/* 목 (앞으로 뻗은) */}
+        <rect x="356" y="54" width="4"  height="8" fill="white"/>
+        <rect x="353" y="50" width="8"  height="6" fill="white"/>
+        {/* 머리 */}
+        <rect x="351" y="46" width="8"  height="6" fill="white"/>
+        {/* 부리 (오른쪽 향함) */}
+        <rect x="357" y="44" width="12" height="3" fill="#D4A420"/>
+        <rect x="366" y="47" width="4"  height="2" fill="#D4A420"/>
+        {/* 눈 */}
+        <rect x="352" y="47" width="3"  height="3" fill="#181818"/>
+        <rect x="352" y="47" width="1"  height="1" fill="white"/>
+        {/* 다리 (뒤로) */}
+        <rect x="358" y="67" width="2"  height="10" fill="white"/>
+        <rect x="363" y="67" width="2"  height="10" fill="white"/>
+        {/* 깃털 장식 */}
+        <rect x="356" y="64" width="10" height="3" fill="white" opacity="0.80"/>
+        <rect x="354" y="66" width="14" height="2" fill="#E8F0EC" opacity="0.60"/>
+      </g>
+
+      {/* ── 백로 2 (왼쪽 하늘 - 방향 반대, 약간 낮게) ── */}
+      <g>
+        <animateTransform attributeName="transform" type="translate"
+          values="0,0; 0,3; 0,0; 0,-4; 0,0" dur="2.8s" repeatCount="indefinite"/>
+        {/* 몸통 */}
+        <rect x="108" y="74" width="16" height="7" fill="white"/>
+        {/* 왼쪽 날개 (반대 방향이라 좌우 반전) */}
+        <rect x="90"  y="67" width="18" height="6" fill="white"/>
+        <rect x="82"  y="71" width="10" height="5" fill="white"/>
+        <rect x="78"  y="75" width="6"  height="3" fill="#303030"/>
+        {/* 오른쪽 날개 */}
+        <rect x="124" y="67" width="18" height="6" fill="white"/>
+        <rect x="140" y="71" width="10" height="5" fill="white"/>
+        <rect x="146" y="75" width="6"  height="3" fill="#303030"/>
+        {/* 날개 아랫면 음영 */}
+        <rect x="91"  y="71" width="16" height="3" fill="#E0E8E4" opacity="0.75"/>
+        <rect x="125" y="71" width="16" height="3" fill="#E0E8E4" opacity="0.75"/>
+        {/* 목 (왼쪽으로 뻗은) */}
+        <rect x="120" y="68" width="4"  height="8" fill="white"/>
+        <rect x="119" y="64" width="8"  height="6" fill="white"/>
+        {/* 머리 */}
+        <rect x="120" y="60" width="8"  height="6" fill="white"/>
+        {/* 부리 (왼쪽 향함) */}
+        <rect x="110" y="58" width="12" height="3" fill="#D4A420"/>
+        <rect x="108" y="61" width="4"  height="2" fill="#D4A420"/>
+        {/* 눈 */}
+        <rect x="124" y="61" width="3"  height="3" fill="#181818"/>
+        <rect x="126" y="61" width="1"  height="1" fill="white"/>
+        {/* 다리 (뒤로) */}
+        <rect x="110" y="81" width="2"  height="10" fill="white"/>
+        <rect x="115" y="81" width="2"  height="10" fill="white"/>
+        {/* 깃털 장식 */}
+        <rect x="108" y="78" width="10" height="3" fill="white" opacity="0.80"/>
+        <rect x="106" y="80" width="14" height="2" fill="#E8F0EC" opacity="0.60"/>
+      </g>
+
+      {/* ── 물고기 ── */}
+      <rect x="44"  y="170" width="14" height="7"  fill="#E8834A"/>
+      <rect x="40"  y="172" width="6"  height="4"  fill="#E8834A"/>
+      <rect x="57"  y="171" width="3"  height="2"  fill="white"/>
+
+      <rect x="376" y="176" width="13" height="6"  fill="#D06880"/>
+      <rect x="372" y="178" width="6"  height="3"  fill="#D06880"/>
+      <rect x="389" y="177" width="3"  height="2"  fill="white"/>
+
+      <rect x="138" y="186" width="11" height="5"  fill="#7EC8E3"/>
+      <rect x="134" y="188" width="5"  height="3"  fill="#7EC8E3"/>
+
+      <rect x="308" y="192" width="10" height="5"  fill="#98D878"/>
+      <rect x="304" y="194" width="4"  height="3"  fill="#98D878"/>
+
+      {/* 잔물결 */}
+      <rect x="62"  y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.52"/>
+      <rect x="170" y="168" width="6"  height="2" fill="#8CCCE8" opacity="0.46"/>
+      <rect x="264" y="160" width="10" height="2" fill="#8CCCE8" opacity="0.46"/>
+      <rect x="370" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.52"/>
     </svg>
   );
 }
