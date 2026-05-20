@@ -5,6 +5,8 @@ import { PixelButton } from "@/components/pixel/PixelButton";
 import { FrogBadge } from "@/components/pixel/MaengkongiSpeech";
 import { Link } from "wouter";
 
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "").replace(/^\/[^/]+/, "") + "/api";
+
 export default function SignUpPage() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
@@ -27,11 +29,21 @@ export default function SignUpPage() {
     }
     setLoading(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        setError(signUpError.message || "회원가입 중 오류가 발생했습니다.");
-      } else {
+      const resp = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setError(data.error || "회원가입 중 오류가 발생했습니다.");
+        return;
+      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
         setSuccess(true);
+      } else {
+        setLocation("/dashboard");
       }
     } catch {
       setError("회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.");
@@ -49,13 +61,10 @@ export default function SignUpPage() {
             <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
           </div>
           <div className="bg-white border border-black/15 p-7 shadow-sm text-left space-y-3">
-            <p className="text-3xl text-center">📬</p>
+            <p className="text-3xl text-center">🎉</p>
             <h2 className="font-pixel text-base text-primary text-center">가입 완료!</h2>
             <p className="font-pixel-body text-sm text-muted-foreground text-center">
-              이메일 인증 링크를 발송했습니다.<br />메일함을 확인해 주세요.
-            </p>
-            <p className="font-pixel-body text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded">
-              ⚠️ 메일이 보이지 않으면 <strong>스팸메일함</strong>도 확인해 보세요.
+              계정이 생성되었습니다.<br />로그인 페이지에서 바로 로그인해 주세요.
             </p>
             <PixelButton variant="primary" size="md" onClick={() => setLocation("/sign-in")} className="w-full">
               로그인 페이지로

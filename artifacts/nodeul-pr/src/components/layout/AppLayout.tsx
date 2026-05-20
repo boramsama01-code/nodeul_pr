@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGetMe, getGetMeQueryKey, useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useListEvents, getListEventsQueryKey, useGetAdminDashboard, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { NPCHelper } from "../pixel/NPCHelper";
 import { Scanlines } from "../pixel/Scanlines";
 import { AnimatePresence, motion } from "framer-motion";
@@ -138,6 +138,15 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   );
   const revisionCount = (myEvents as any)?.total ?? (Array.isArray(myEvents) ? myEvents.length : 0);
 
+  const { data: adminDashboard } = useGetAdminDashboard({
+    query: {
+      enabled: !!isSignedIn && isAdmin,
+      queryKey: getGetAdminDashboardQueryKey(),
+      refetchInterval: 60_000,
+    },
+  });
+  const newSubmissionsCount = (adminDashboard as any)?.newSubmissionsCount ?? 0;
+
   const handleSignOut = async () => {
     await signOut();
     setLocation("/");
@@ -148,7 +157,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     ? isAdmin
       ? [
           { href: "/admin",          label: "대시보드", admin: true },
-          { href: "/admin/events",   label: "행사 목록", admin: true },
+          { href: "/admin/events",   label: "행사 목록", admin: true, badge: newSubmissionsCount },
           { href: "/admin/calendar", label: "캘린더",   admin: true },
           { href: "/admin/settings", label: "설정",     admin: true },
         ]
@@ -195,7 +204,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     </span>
                     {l.label}
                     {(l as any).badge > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                      <span className={`absolute -top-1.5 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none ${(l as any).admin ? "bg-amber-500" : "bg-red-500"}`}>
                         {(l as any).badge}
                       </span>
                     )}
@@ -277,7 +286,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                       </span>
                       {l.label}
                       {(l as any).badge > 0 && (
-                        <span className="ml-auto min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        <span className={`ml-auto min-w-[18px] h-[18px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 ${(l as any).admin ? "bg-amber-500" : "bg-red-500"}`}>
                           {(l as any).badge}
                         </span>
                       )}

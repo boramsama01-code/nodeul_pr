@@ -12,9 +12,11 @@ import commentsRouter from "./comments";
 import emailRouter from "./email";
 import adminRouter from "./admin";
 import npcRouter from "./npc";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
+router.use(authRouter);
 router.use(healthRouter);
 router.use(usersRouter);
 router.use(organizationsRouter);
