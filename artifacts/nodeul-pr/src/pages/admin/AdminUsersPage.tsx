@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect } from "wouter";
-import { useGetMe, getGetMeQueryKey, useListAdminUsers, getListAdminUsersQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 
 const ROLE_KR: Record<string, string> = {
@@ -30,21 +29,38 @@ export default function AdminUsersPage() {
   const { isSignedIn } = useAuth();
   const { data: me, isLoading: meLoading } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
-  const queryClient = useQueryClient();
 
   const [updating, setUpdating] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [users, setUsers] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setNPCMessage("회원 목록입니다. 역할을 변경하거나 현황을 확인하세요 🐸");
   }, [setNPCMessage]);
 
   const isSuperAdmin = me?.role === "super_admin";
   const isAdmin = me?.role === "admin" || me?.role === "super_admin";
 
-  const { data: users, isLoading } = useListAdminUsers({
-    query: { enabled: !!me && isAdmin, queryKey: getListAdminUsersQueryKey() },
-  });
+  const fetchUsers = useCallback(async () => {
+    if (!me || !isAdmin) return;
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await import("@/lib/supabase").then(m => m.supabase.auth.getSession());
+      const apiBase = import.meta.env.BASE_URL?.replace(/\/$/, "").replace(/^\/[^/]+/, "") + "/api";
+      const res = await fetch(`${apiBase}/admin/users`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users ?? data ?? []);
+      }
+    } catch { /* ignore */ }
+    setIsLoading(false);
+  }, [me?.id, isAdmin, refreshKey]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (!meLoading && me && !isAdmin) return <Redirect to="/dashboard" />;
@@ -62,7 +78,7 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ role: newRole }),
       });
       if (resp.ok) {
-        await queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
+        setRefreshKey(k => k + 1);
         setToast({ msg: "역할이 변경되었습니다.", ok: true });
       } else {
         const err = await resp.json().catch(() => ({}));

@@ -263,7 +263,6 @@ export default function MyAssetsPage() {
 
           {otherEvents.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-sm font-semibold text-muted-foreground" style={KR}>기타 행사</h2>
               {otherEvents.map(e => renderEventRow(e, false))}
             </section>
           )}

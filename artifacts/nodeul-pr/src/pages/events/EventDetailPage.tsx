@@ -87,6 +87,8 @@ export default function EventDetailPage() {
   const [uploadName, setUploadName] = useState("");
   const [uploadZoneId, setUploadZoneId] = useState("");
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -132,6 +134,30 @@ export default function EventDetailPage() {
   const handleAdminStatus = async (status: string) => {
     await updateEvent.mutateAsync({ id: Number(id), data: { status } });
     refetch();
+  };
+
+  const handleZoneUpload = (zoneName: string) => {
+    setUploadName(zoneName);
+    setUploadZoneId("");
+    setUploadAssetId(null);
+    setUploadMemo("");
+    setUploadError("");
+    setShowUploadForm(true);
+    setActiveTab("assets");
+    setTimeout(() => document.getElementById("uploadFormAnchor")?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
+  const handleReply = async (parentId: number) => {
+    if (!replyText.trim()) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${BASE_URL}/api/events/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ content: replyText.trim(), parentId, isAdminOnly }),
+      });
+      if (res.ok) { setReplyText(""); setReplyingToId(null); refetch(); }
+    } catch { /* ignore */ }
   };
 
   const handleSendApprovalEmail = async () => {
@@ -379,20 +405,15 @@ export default function EventDetailPage() {
 
       {/* ── 개요 탭 ── */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* 담당자 정보 */}
           <div className="border border-black/10 rounded-lg p-4 bg-white">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 정보</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>담당자 정보</h3>
             <dl className="space-y-2">
               {[
                 ["단체", event.organizationName || "-"],
                 ["담당자", event.contactName || "-"],
                 ["이메일", event.contactEmail || "-"],
-                ["기간", `${event.startDate} ~ ${event.endDate}`],
-                ["장소", event.venue || (meta.venues?.join(", ")) || "-"],
-                ["태그", event.tags?.length ? event.tags.join(", ") : (meta.categories?.join(", ")) || "-"],
-                ["관람료", meta.price || "-"],
-                ["관람 방법", meta.viewingMethods?.join(", ") || "-"],
-                ["공식 문의처", meta.contact || "-"],
               ].map(([label, value]) => (
                 <div key={label} className="flex gap-3 text-sm">
                   <dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>{label}</dt>
@@ -402,41 +423,83 @@ export default function EventDetailPage() {
             </dl>
           </div>
 
-          <div className="space-y-4">
-            {event.description && (
-              <div className="border border-black/10 rounded-lg p-4 bg-white">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>설명</h3>
-                <p className="text-sm text-foreground whitespace-pre-wrap" style={KR}>{event.description}</p>
-              </div>
-            )}
-            {(meta.lineup || meta.audience || meta.ageLimit || meta.operatingHours) && (
-              <div className="border border-black/10 rounded-lg p-4 bg-white">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 상세</h3>
-                <dl className="space-y-2">
-                  {meta.operatingHours && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>운영시간</dt><dd style={KR}>{meta.operatingHours}</dd></div>}
-                  {meta.lineup && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>라인업</dt><dd style={KR}>{meta.lineup}</dd></div>}
-                  {meta.audience && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>참여 대상</dt><dd style={KR}>{meta.audience}</dd></div>}
-                  {meta.ageLimit && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>참여 연령</dt><dd style={KR}>{meta.ageLimit}</dd></div>}
-                  {meta.ticketLink && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>예매 링크</dt><dd style={KR}><a href={meta.ticketLink} target="_blank" rel="noopener noreferrer" className="text-primary underline">{meta.ticketLink}</a></dd></div>}
-                  {meta.notes && <div className="flex gap-3 text-sm"><dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>특이사항</dt><dd style={KR}>{meta.notes}</dd></div>}
-                </dl>
-              </div>
-            )}
-            {allRequestedZones.length > 0 && (
-              <div className="border border-black/10 rounded-lg p-4 bg-white">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>신청한 홍보 구역</h3>
-                <div className="space-y-1">
-                  {allRequestedZones.map((z, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-black/5 last:border-0">
+          {/* 행사 정보 통합 */}
+          <div className="border border-black/10 rounded-lg p-4 bg-white">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 정보</h3>
+            <dl className="space-y-2">
+              {[
+                ["기간", `${event.startDate} ~ ${event.endDate}`],
+                ["장소", event.venue || (meta.venues?.join(", ")) || "-"],
+                ["운영시간", meta.operatingHours || null],
+                ["카테고리", event.tags?.length ? event.tags.join(", ") : (meta.categories?.join(", ")) || null],
+                ["라인업", meta.lineup || null],
+                ["참여 대상", meta.audience || null],
+                ["참여 연령", meta.ageLimit || null],
+                ["관람료", meta.price || "-"],
+                ["관람 방법", meta.viewingMethods?.join(", ") || "-"],
+                ["공식 문의처", meta.contact || "-"],
+              ].filter(([, v]) => v != null).map(([label, value]) => (
+                <div key={label as string} className="flex gap-3 text-sm">
+                  <dt className="text-muted-foreground w-24 flex-shrink-0" style={KR}>{label}</dt>
+                  <dd className="text-foreground" style={KR}>{value as string}</dd>
+                </div>
+              ))}
+              {meta.ticketLink && (
+                <div className="flex gap-3 text-sm">
+                  <dt className="text-muted-foreground w-24 flex-shrink-0" style={KR}>예매 링크</dt>
+                  <dd><a href={meta.ticketLink} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">{meta.ticketLink}</a></dd>
+                </div>
+              )}
+              {meta.notes && (
+                <div className="flex gap-3 text-sm">
+                  <dt className="text-muted-foreground w-24 flex-shrink-0" style={KR}>특이사항</dt>
+                  <dd className="text-foreground" style={KR}>{meta.notes}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          {/* 설명 */}
+          {event.description && (
+            <div className="border border-black/10 rounded-lg p-4 bg-white">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>행사 설명</h3>
+              <p className="text-sm text-foreground whitespace-pre-wrap" style={KR}>{event.description}</p>
+            </div>
+          )}
+
+          {/* 신청한 홍보 구역 */}
+          {allRequestedZones.length > 0 && (
+            <div className="border border-black/10 rounded-lg p-4 bg-white">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>신청한 홍보 구역</h3>
+              <div className="space-y-1.5">
+                {meta.snsSiteDate && (
+                  <div className="flex items-center gap-2 text-xs py-1.5 border-b border-black/5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 border border-blue-200 flex-shrink-0" style={KR}>필수</span>
+                    <span className="text-foreground flex-1" style={KR}>홈페이지 / SNS 게시</span>
+                    <span className="text-muted-foreground text-[10px] flex-shrink-0" style={KR}>{meta.snsSiteDate}</span>
+                  </div>
+                )}
+                {allRequestedZones.map((z, i) => {
+                  const isBanner = z.type === "현수막" || z.type === "가로등 배너";
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs py-1.5 border-b border-black/5 last:border-0">
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 flex-shrink-0" style={KR}>{z.type}</span>
                       <span className="text-foreground flex-1" style={KR}>{z.label}</span>
-                      {z.date && <span className="text-muted-foreground flex-shrink-0" style={KR}>{z.date}</span>}
+                      {z.date && <span className="text-muted-foreground text-[10px] flex-shrink-0" style={KR}>{z.date}</span>}
+                      {!isBanner && (event.status === "approved" || event.status === "completed") && (
+                        <button
+                          onClick={() => handleZoneUpload(z.label)}
+                          className="h-5 px-2 text-[10px] border border-primary/30 text-primary rounded bg-primary/5 hover:bg-primary/10 transition-colors flex-shrink-0"
+                          style={KR}>
+                          + 파일
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {isAdmin && event.adminNote && (
             <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
@@ -445,7 +508,7 @@ export default function EventDetailPage() {
             </div>
           )}
           {isAdmin && event.emailLogs && event.emailLogs.length > 0 && (
-            <div className="border border-black/10 rounded-lg p-4 bg-white md:col-span-2">
+            <div className="border border-black/10 rounded-lg p-4 bg-white">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>메일 발송 이력</h3>
               <div className="space-y-1">
                 {event.emailLogs.map(log => (
@@ -565,13 +628,34 @@ export default function EventDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-black/8 bg-zinc-50/30">
-                    {["구분", "홍보 구역", "업로드 파일", "상태"].map(h => (
+                    {["구분", "홍보 구역", "게시 예정일", "업로드 파일", "승인 상태"].map(h => (
                       <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5">
+                  {meta.snsSiteDate && (
+                    <tr className="hover:bg-muted/20 bg-blue-50/20">
+                      <td className="px-4 py-2.5">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 border border-blue-200" style={KR}>필수</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-sm" style={KR}>홈페이지 / SNS 게시</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>{meta.snsSiteDate}</td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>
+                        {(() => {
+                          const a = event.assets?.find(a => a.name?.includes("SNS") || a.name?.includes("홈페이지") || a.zoneName?.includes("SNS") || a.zoneName?.includes("홈페이지"));
+                          return a
+                            ? <span className="font-medium text-foreground">{a.name}</span>
+                            : <button onClick={() => handleZoneUpload("홈페이지 / SNS 게시")} className="text-primary underline hover:text-primary/80 cursor-pointer">미업로드</button>;
+                        })()}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {event.assets?.find(a => a.name?.includes("SNS") || a.name?.includes("홈페이지")) ? <StatusPill status={event.assets?.find(a => a.name?.includes("SNS") || a.name?.includes("홈페이지"))?.status ?? "pending"} /> : <span className="text-xs text-zinc-400">-</span>}
+                      </td>
+                    </tr>
+                  )}
                   {allRequestedZones.map((z, i) => {
+                    const isBanner = z.type === "현수막" || z.type === "가로등 배너";
                     const matchedAsset = event.assets?.find(a => a.name === z.label || a.zoneName === z.label || a.name?.includes(z.label.substring(0, 6)));
                     return (
                       <tr key={i} className="hover:bg-muted/20">
@@ -579,11 +663,28 @@ export default function EventDetailPage() {
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500" style={KR}>{z.type}</span>
                         </td>
                         <td className="px-4 py-2.5 text-sm" style={KR}>{z.label}</td>
-                        <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>
-                          {matchedAsset ? matchedAsset.name : <span className="text-zinc-400">미업로드</span>}
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>{z.date || "-"}</td>
+                        <td className="px-4 py-2.5 text-xs" style={KR}>
+                          {isBanner ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 border border-zinc-200">
+                              🔧 설치 예정
+                            </span>
+                          ) : matchedAsset ? (
+                            <span className="font-medium text-foreground">{matchedAsset.name}</span>
+                          ) : (
+                            <button onClick={() => handleZoneUpload(z.label)} className="text-primary underline hover:text-primary/80 cursor-pointer" style={KR}>
+                              미업로드
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-2.5">
-                          {matchedAsset ? <StatusPill status={matchedAsset.status} /> : <span className="text-xs text-zinc-400" style={KR}>-</span>}
+                          {isBanner ? (
+                            <span className="text-xs text-zinc-400">-</span>
+                          ) : matchedAsset ? (
+                            <StatusPill status={matchedAsset.status} />
+                          ) : (
+                            <span className="text-xs text-zinc-400">-</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -593,9 +694,9 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
+          <div id="uploadFormAnchor" className="flex items-center justify-between">
             <h3 className="text-sm font-semibold" style={KR}>홍보물 관리</h3>
-            <button onClick={() => setShowUploadForm(!showUploadForm)}
+            <button onClick={() => { setUploadName(""); setUploadZoneId(""); setUploadAssetId(null); setShowUploadForm(!showUploadForm); }}
               className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
               {showUploadForm ? "취소" : "+ 홍보물 업로드"}
             </button>
@@ -728,31 +829,77 @@ export default function EventDetailPage() {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold" style={KR}>코멘트</h3>
           <div className="space-y-2">
-            {event.comments?.map((c: any) => (
-              <div key={c.id} className={`border rounded-lg p-3 ${c.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/10 bg-white"}`}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold" style={KR}>{c.authorName}</span>
-                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-zinc-100 rounded" style={KR}>{c.authorRole}</span>
-                    {c.isAdminOnly && <span className="text-[10px] text-amber-700 px-1.5 py-0.5 bg-amber-100 rounded" style={KR}>관리자 전용</span>}
+            {event.comments?.filter((c: any) => !c.parentId).map((c: any) => {
+              const replies = event.comments?.filter((r: any) => r.parentId === c.id) ?? [];
+              return (
+                <div key={c.id}>
+                  <div className={`border rounded-lg p-3 ${c.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/10 bg-white"}`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold" style={KR}>{c.authorName}</span>
+                        <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-zinc-100 rounded" style={KR}>{c.authorRole}</span>
+                        {c.isAdminOnly && <span className="text-[10px] text-amber-700 px-1.5 py-0.5 bg-amber-100 rounded" style={KR}>관리자 전용</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground" style={KR}>{formatDatetime(c.createdAt)}</span>
+                        <button onClick={() => setReplyingToId(replyingToId === c.id ? null : c.id)}
+                          className="text-[10px] text-primary hover:text-primary/80 transition-colors px-1" style={KR}>
+                          {replyingToId === c.id ? "취소" : "↩ 답글"}
+                        </button>
+                        {(isAdmin || c.authorName === myName) && (
+                          <button onClick={() => handleDeleteComment(c.id)} disabled={deletingCommentId === c.id}
+                            className="text-[10px] text-zinc-400 hover:text-red-500 transition-colors px-1" style={KR}>
+                            {deletingCommentId === c.id ? "..." : "삭제"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-foreground" style={KR}>{c.content}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-muted-foreground" style={KR}>{formatDatetime(c.createdAt)}</span>
-                    {(isAdmin || c.authorName === myName) && (
-                      <button
-                        onClick={() => handleDeleteComment(c.id)}
-                        disabled={deletingCommentId === c.id}
-                        className="text-[10px] text-zinc-400 hover:text-red-500 transition-colors px-1"
-                        style={KR}
-                      >
-                        {deletingCommentId === c.id ? "..." : "삭제"}
-                      </button>
-                    )}
-                  </div>
+
+                  {/* 대댓글 목록 */}
+                  {replies.length > 0 && (
+                    <div className="ml-5 mt-1 space-y-1 border-l-2 border-primary/20 pl-3">
+                      {replies.map((r: any) => (
+                        <div key={r.id} className={`border rounded-md p-2.5 ${r.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/8 bg-zinc-50/60"}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-semibold" style={KR}>{r.authorName}</span>
+                              <span className="text-[10px] text-muted-foreground px-1 py-0.5 bg-zinc-100 rounded" style={KR}>{r.authorRole}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-muted-foreground" style={KR}>{formatDatetime(r.createdAt)}</span>
+                              {(isAdmin || r.authorName === myName) && (
+                                <button onClick={() => handleDeleteComment(r.id)} disabled={deletingCommentId === r.id}
+                                  className="text-[10px] text-zinc-400 hover:text-red-500 transition-colors" style={KR}>
+                                  {deletingCommentId === r.id ? "..." : "삭제"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-foreground" style={KR}>{r.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 답글 입력창 */}
+                  {replyingToId === c.id && (
+                    <div className="ml-5 mt-1 pl-3 border-l-2 border-primary/20">
+                      <div className="flex gap-2">
+                        <textarea rows={2} className="flex-1 border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
+                          placeholder={`${c.authorName}에게 답글...`}
+                          value={replyText} onChange={e => setReplyText(e.target.value)} />
+                        <button onClick={() => handleReply(c.id)} disabled={!replyText.trim()}
+                          className="h-8 self-end px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-40" style={KR}>
+                          등록
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-foreground" style={KR}>{c.content}</p>
-              </div>
-            ))}
+              );
+            })}
             {event.comments?.length === 0 && (
               <div className="text-center py-8 text-sm text-muted-foreground" style={KR}>코멘트가 없습니다.</div>
             )}

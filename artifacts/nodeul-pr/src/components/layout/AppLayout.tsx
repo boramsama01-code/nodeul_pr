@@ -182,7 +182,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         ]
       : [
           { href: "/dashboard", label: "내 행사 목록", badge: revisionCount > 0 ? revisionCount : 0 },
-          { href: "/my-assets", label: "홍보물 제출" },
           { href: "/calendar",  label: "캘린더" },
         ]
     : [];
