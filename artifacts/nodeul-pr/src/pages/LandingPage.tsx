@@ -43,7 +43,7 @@ const SEASON_THEME: Record<Season, {
     sky: ["#8898B0", "#B0C0CC", "#C4D4DC"],
     tree1: "#9A7050", tree2: "#7A5030", trunk: "#5A3820",
     island: ["#3A6040", "#4A7850", "#5A9060"], grass: "#62A068",
-    sun: "#D8D0C0", river: ["#4280A0", "#305870"],
+    sun: "#D8D0C0", river: ["#C0D8EA", "#98BCD0"],
   },
 };
 
@@ -99,6 +99,9 @@ function NodeulScene({ season }: { season: Season }) {
           <stop offset="0%" stopColor={th.river[0]}/>
           <stop offset="100%" stopColor={th.river[1]}/>
         </linearGradient>
+        <filter id="egretShadow" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#405060" floodOpacity="0.55"/>
+        </filter>
       </defs>
 
       {/* 하늘 */}
@@ -294,47 +297,123 @@ function NodeulScene({ season }: { season: Season }) {
       <rect x="202" y="150" width="3"  height="3" fill="#2A7232"/>
 
       {/* 백로 1 */}
-      <g>
+      <g filter="url(#egretShadow)">
         <animateTransform attributeName="transform" type="translate" values="0,0; 0,-4; 0,0; 0,3; 0,0" dur="2.2s" repeatCount="indefinite"/>
+        {/* 몸통 */}
         <rect x="356" y="60" width="16" height="7" fill="white"/>
+        {/* 날개 왼쪽 */}
         <rect x="338" y="53" width="18" height="6" fill="white"/>
         <rect x="330" y="57" width="10" height="5" fill="white"/>
         <rect x="328" y="61" width="6"  height="3" fill="#303030"/>
+        {/* 날개 오른쪽 */}
         <rect x="372" y="53" width="18" height="6" fill="white"/>
         <rect x="388" y="57" width="10" height="5" fill="white"/>
         <rect x="394" y="61" width="6"  height="3" fill="#303030"/>
+        {/* 목 */}
         <rect x="356" y="54" width="4"  height="8" fill="white"/>
-        <rect x="357" y="44" width="12" height="3" fill="#D4A420"/>
-        <rect x="352" y="47" width="3"  height="3" fill="#181818"/>
-        <rect x="352" y="47" width="1"  height="1" fill="white"/>
+        {/* 머리 */}
+        <rect x="349" y="44" width="14" height="13" fill="white"/>
+        {/* 부리 */}
+        <rect x="357" y="44" width="14" height="3" fill="#D4A420"/>
+        {/* 눈 */}
+        <rect x="351" y="47" width="4" height="3" fill="#181818"/>
+        <rect x="351" y="47" width="1" height="1" fill="white"/>
+        {/* 다리 */}
         <rect x="358" y="67" width="2"  height="10" fill="white"/>
         <rect x="363" y="67" width="2"  height="10" fill="white"/>
       </g>
 
       {/* 백로 2 */}
-      <g>
+      <g filter="url(#egretShadow)">
         <animateTransform attributeName="transform" type="translate" values="0,0; 0,3; 0,0; 0,-4; 0,0" dur="2.8s" repeatCount="indefinite"/>
+        {/* 몸통 */}
         <rect x="108" y="74" width="16" height="7" fill="white"/>
+        {/* 날개 왼쪽 */}
         <rect x="90"  y="67" width="18" height="6" fill="white"/>
         <rect x="82"  y="71" width="10" height="5" fill="white"/>
         <rect x="78"  y="75" width="6"  height="3" fill="#303030"/>
+        {/* 날개 오른쪽 */}
         <rect x="124" y="67" width="18" height="6" fill="white"/>
         <rect x="140" y="71" width="10" height="5" fill="white"/>
+        {/* 목 */}
         <rect x="120" y="68" width="4"  height="8" fill="white"/>
-        <rect x="110" y="58" width="12" height="3" fill="#D4A420"/>
-        <rect x="124" y="61" width="3"  height="3" fill="#181818"/>
+        {/* 머리 */}
+        <rect x="107" y="58" width="16" height="13" fill="white"/>
+        {/* 부리 */}
+        <rect x="110" y="58" width="14" height="3" fill="#D4A420"/>
+        {/* 눈 */}
+        <rect x="118" y="61" width="4" height="3" fill="#181818"/>
+        <rect x="118" y="61" width="1" height="1" fill="white"/>
+        {/* 다리 */}
         <rect x="110" y="81" width="2"  height="10" fill="white"/>
         <rect x="115" y="81" width="2"  height="10" fill="white"/>
       </g>
 
-      {/* 물고기 */}
-      <rect x="44"  y="170" width="14" height="7"  fill="#E8834A"/>
-      <rect x="40"  y="172" width="6"  height="4"  fill="#E8834A"/>
-      <rect x="57"  y="171" width="3"  height="2"  fill="white"/>
-      <rect x="376" y="176" width="13" height="6"  fill="#D06880"/>
-      <rect x="372" y="178" width="6"  height="3"  fill="#D06880"/>
-      <rect x="62"  y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
-      <rect x="370" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+      {/* 물고기 (겨울엔 얼음 아래라 숨김) */}
+      {!isWinter && <>
+        <rect x="44"  y="170" width="14" height="7"  fill="#E8834A"/>
+        <rect x="40"  y="172" width="6"  height="4"  fill="#E8834A"/>
+        <rect x="57"  y="171" width="3"  height="2"  fill="white"/>
+        <rect x="376" y="176" width="13" height="6"  fill="#D06880"/>
+        <rect x="372" y="178" width="6"  height="3"  fill="#D06880"/>
+        <rect x="62"  y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+        <rect x="370" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+      </>}
+
+      {/* 겨울: 얼어있는 강 표면 + 고양이 */}
+      {isWinter && <>
+        {/* 얼음 표면 - 강 왼쪽 (노들섬 왼편, x=0~148) */}
+        <rect x="0"   y="138" width="148" height="5" fill="white" opacity="0.45"/>
+        <rect x="0"   y="143" width="148" height="3" fill="#D8EEF8" opacity="0.55"/>
+        {/* 얼음 표면 - 강 오른쪽 (노들섬 오른편, x=332~480) */}
+        <rect x="332" y="138" width="148" height="5" fill="white" opacity="0.45"/>
+        <rect x="332" y="143" width="148" height="3" fill="#D8EEF8" opacity="0.55"/>
+        {/* 얼음 균열 - 왼쪽 강 구간만 */}
+        <line x1="30"  y1="148" x2="65"  y2="158" stroke="#A8C8DC" strokeWidth="0.8" opacity="0.7"/>
+        <line x1="65"  y1="158" x2="110" y2="152" stroke="#A8C8DC" strokeWidth="0.8" opacity="0.7"/>
+        {/* 얼음 균열 - 오른쪽 강 구간만 */}
+        <line x1="350" y1="148" x2="385" y2="158" stroke="#A8C8DC" strokeWidth="0.8" opacity="0.7"/>
+        <line x1="400" y1="145" x2="440" y2="155" stroke="#A8C8DC" strokeWidth="0.8" opacity="0.6"/>
+        {/* 얼음 광택 반사 */}
+        <rect x="20"  y="152" width="50" height="2" fill="white" opacity="0.25"/>
+        <rect x="370" y="152" width="50" height="2" fill="white" opacity="0.25"/>
+        {/* 고양이 (얼음 위를 걷는) */}
+        <g>
+          <animateTransform attributeName="transform" type="translate"
+            values="0,0;4,0;8,0;12,0;16,0;20,0;24,0;28,0;32,0;36,0;40,0;44,0;44,0;40,0;36,0;32,0;28,0;24,0;20,0;16,0;12,0;8,0;4,0;0,0"
+            dur="10s" repeatCount="indefinite"/>
+          {/* 몸통 */}
+          <rect x="24" y="151" width="20" height="10" fill="#8880A0"/>
+          {/* 머리 */}
+          <rect x="28" y="143" width="14" height="10" fill="#8880A0"/>
+          {/* 귀 */}
+          <rect x="28" y="140" width="4" height="4" fill="#8880A0"/>
+          <rect x="38" y="140" width="4" height="4" fill="#8880A0"/>
+          <rect x="29" y="141" width="2" height="2" fill="#E8B0C0"/>
+          <rect x="39" y="141" width="2" height="2" fill="#E8B0C0"/>
+          {/* 눈 */}
+          <rect x="30" y="146" width="3" height="2" fill="#181818"/>
+          <rect x="37" y="146" width="3" height="2" fill="#181818"/>
+          <rect x="30" y="146" width="1" height="1" fill="white"/>
+          <rect x="37" y="146" width="1" height="1" fill="white"/>
+          {/* 코 */}
+          <rect x="33" y="149" width="4" height="2" fill="#E88098"/>
+          {/* 꼬리 (올라간) */}
+          <rect x="44" y="154" width="3" height="2" fill="#8880A0"/>
+          <rect x="46" y="150" width="3" height="4" fill="#8880A0"/>
+          <rect x="48" y="147" width="3" height="4" fill="#8880A0"/>
+          <rect x="50" y="146" width="2" height="3" fill="#7870A0"/>
+          {/* 발 */}
+          <rect x="26" y="159" width="4" height="3" fill="#7870A0"/>
+          <rect x="31" y="159" width="4" height="3" fill="#7870A0"/>
+          <rect x="36" y="159" width="4" height="3" fill="#7870A0"/>
+          <rect x="41" y="159" width="4" height="3" fill="#7870A0"/>
+          {/* 발자국 */}
+          <rect x="8"  y="162" width="3" height="1" fill="white" opacity="0.55"/>
+          <rect x="14" y="160" width="3" height="1" fill="white" opacity="0.45"/>
+          <rect x="19" y="162" width="3" height="1" fill="white" opacity="0.35"/>
+        </g>
+      </>}
 
       {/* ── 봄: 벚꽃잎 낙하 ── */}
       {isSpring && CHERRY_PETALS.map((p, i) => (
@@ -412,7 +491,7 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col -mt-4 sm:-mt-6">
       <div className="relative overflow-hidden" style={{ background: skyBg }}>
-        <div className="max-w-5xl mx-auto px-4 pt-6 pb-4 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
+        <div className="max-w-6xl mx-auto px-4 pt-6 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
           {/* 왼쪽: 타이틀 + 절차 안내 */}
           <div className="space-y-3">
@@ -458,7 +537,7 @@ export default function LandingPage() {
               style={{ backdropFilter: "blur(4px)" }}
             >
               <h2 className="text-sm font-bold text-foreground mb-3" style={KR}>홍보 신청 절차</h2>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {STEPS.map((step, i) => (
                   <motion.div
                     key={step.n}

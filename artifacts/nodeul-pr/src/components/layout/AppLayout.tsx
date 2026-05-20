@@ -5,6 +5,7 @@ import { useGetMe, getGetMeQueryKey, useListEvents, getListEventsQueryKey, useGe
 import { NPCHelper } from "../pixel/NPCHelper";
 import { Scanlines } from "../pixel/Scanlines";
 import { AnimatePresence, motion } from "framer-motion";
+import { useUIStore } from "@/store/useUIStore";
 
 /* ── 픽셀 아이콘 SVG 컴포넌트 ── */
 function PixelListIcon({ size = 14 }: { size?: number }) {
@@ -165,6 +166,11 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   });
   const newSubmissionsCount = (adminDashboard as any)?.newSubmissionsCount ?? 0;
 
+  const setNpcBadgeCount = useUIStore(s => s.setNpcBadgeCount);
+  React.useEffect(() => {
+    setNpcBadgeCount(isAdmin ? newSubmissionsCount : revisionCount);
+  }, [newSubmissionsCount, revisionCount, isAdmin, setNpcBadgeCount]);
+
   const handleSignOut = async () => {
     await signOut();
     setLocation("/");
@@ -191,38 +197,36 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <Scanlines className="flex flex-col min-h-[100dvh] bg-background">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 w-full bg-card border-b border-slate-200/80 shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-3 h-14 flex items-center justify-between gap-2">
           <Link href="/">
-            <div className="font-pixel text-sm sm:text-base tracking-tight text-primary cursor-pointer hover:text-primary/80 transition-colors whitespace-nowrap">
-              NODEUL PR SYSTEM
+            <div className="font-pixel text-sm sm:text-base tracking-tight cursor-pointer whitespace-nowrap">
+              <span className="text-primary">NODEUL</span>
+              <span className="hidden sm:inline text-foreground"> PR SYSTEM</span>
+              <span className="sm:hidden text-foreground"> PR</span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex gap-1.5 items-center flex-1 justify-end">
+          <nav className="hidden md:flex gap-1 items-center flex-1 justify-end">
             {navLinks.map(l => {
               const active = isActive(l.href);
               return (
                 <Link key={l.href} href={l.href}>
                   <span
                     className={`relative inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded transition-all ${
-                      (l as any).admin
-                        ? active
-                          ? "bg-destructive/10 text-destructive border border-destructive/30"
-                          : "text-destructive/80 border border-destructive/20 hover:bg-destructive/8 hover:border-destructive/40"
-                        : active
-                          ? "bg-primary text-white border border-primary shadow-sm"
-                          : "text-slate-600 border border-slate-200 hover:bg-primary/8 hover:text-primary hover:border-primary/30"
+                      active
+                        ? "bg-primary/10 text-primary border border-primary/25"
+                        : "text-foreground/60 border border-transparent hover:bg-slate-100 hover:text-foreground"
                     }`}
                     style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                   >
-                    <span className={active && !(l as any).admin ? "text-white" : (l as any).admin ? "text-destructive" : "text-primary"}>
+                    <span className={active ? "text-primary" : "text-foreground/40"}>
                       {navIcons[l.href]}
                     </span>
                     {l.label}
                     {(l as any).badge > 0 && (
-                      <span className={`absolute -top-1.5 -right-1.5 min-w-[16px] h-4 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none ${(l as any).admin ? "bg-amber-500" : "bg-red-500"}`}>
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                         {(l as any).badge}
                       </span>
                     )}
@@ -233,15 +237,15 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
             {isSignedIn ? (
               <div className="flex items-center gap-2.5 border-l border-slate-200 pl-3 ml-1">
-                <span className="text-xs font-semibold text-slate-600 truncate max-w-[120px]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                <span className="text-xs font-semibold text-foreground/60 truncate max-w-[120px]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
                   {isAdmin
-                    ? <><span className="text-destructive font-bold">★</span> {(me as any)?.organizationName || "관리자"}</>
+                    ? <><span className="text-primary font-bold">★</span> {(me as any)?.organizationName || "관리자"}</>
                     : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0] || "")
                   }
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="text-xs font-semibold text-slate-500 border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                  className="text-xs font-semibold text-foreground/50 border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-100 hover:text-foreground transition-colors"
                   style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                 >
                   로그아웃
@@ -250,7 +254,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             ) : (
               <div className="flex gap-2 border-l border-slate-200 pl-3 ml-1">
                 <Link href="/sign-in">
-                  <span className="text-xs font-semibold text-slate-600 border border-slate-200 px-3 py-1.5 rounded cursor-pointer hover:bg-slate-50 transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                  <span className="text-xs font-semibold text-foreground/60 border border-slate-200 px-3 py-1.5 rounded cursor-pointer hover:bg-slate-100 hover:text-foreground transition-colors" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
                     로그인
                   </span>
                 </Link>
@@ -265,13 +269,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5 rounded border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+            className="md:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5 rounded border border-slate-200 hover:bg-slate-100 transition-colors"
             onClick={() => setMobileOpen(o => !o)}
             aria-label="메뉴"
           >
-            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "opacity-0" : ""}`} />
-            <span className={`block w-4 h-0.5 bg-slate-600 transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-foreground/60 transition-all ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-foreground/60 transition-all ${mobileOpen ? "opacity-0" : ""}`} />
+            <span className={`block w-4 h-0.5 bg-foreground/60 transition-all ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
           </button>
         </div>
 
@@ -283,7 +287,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t border-slate-100 bg-white"
+              className="md:hidden overflow-hidden border-t border-slate-200 bg-white"
             >
               <div className="flex flex-col p-3 gap-1">
                 {navLinks.map(l => (
@@ -291,20 +295,18 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     <button
                       onClick={() => setMobileOpen(false)}
                       className={`w-full text-left text-xs font-semibold px-3 py-2.5 rounded flex items-center gap-2 transition-colors relative ${
-                        (l as any).admin
-                          ? "text-destructive hover:bg-destructive/8 border border-destructive/20"
-                          : isActive(l.href)
-                            ? "bg-primary text-white"
-                            : "text-slate-700 hover:bg-primary/8 hover:text-primary border border-slate-200"
+                        isActive(l.href)
+                          ? "bg-primary/10 text-primary border border-primary/20"
+                          : "text-foreground/60 hover:bg-slate-100 hover:text-foreground border border-transparent"
                       }`}
                       style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                     >
-                      <span className={isActive(l.href) && !(l as any).admin ? "text-white" : (l as any).admin ? "text-destructive" : "text-primary"}>
+                      <span className={isActive(l.href) ? "text-primary" : "text-foreground/40"}>
                         {navIcons[l.href]}
                       </span>
                       {l.label}
                       {(l as any).badge > 0 && (
-                        <span className={`ml-auto min-w-[18px] h-[18px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 ${(l as any).admin ? "bg-amber-500" : "bg-red-500"}`}>
+                        <span className="ml-auto min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                           {(l as any).badge}
                         </span>
                       )}
@@ -314,7 +316,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 {isSignedIn ? (
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-left text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors mt-1"
+                    className="w-full text-left text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-foreground/50 hover:bg-slate-100 transition-colors mt-1"
                     style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                   >
                     🚪 로그아웃 ({isAdmin ? "관리자" : ((me as any)?.organizationName || me?.name || me?.email?.split("@")[0])})
@@ -324,7 +326,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     <Link href="/sign-in" className="flex-1">
                       <button
                         onClick={() => setMobileOpen(false)}
-                        className="w-full text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        className="w-full text-xs font-semibold px-3 py-2.5 rounded border border-slate-200 text-foreground/60 hover:bg-slate-100"
                         style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                       >
                         로그인

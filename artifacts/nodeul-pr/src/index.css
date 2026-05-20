@@ -59,42 +59,49 @@
   --radius-xl: 0px;
 }
 
-/* LIGHT MODE — Nodeul Island Refined Palette */
+/* ── LIGHT MODE — Nodeul Island 2.0 Palette ── */
 :root {
-  --background: 40 30% 96%;
-  --foreground: 220 20% 10%;
-  --border: 0 0% 0%;
+  /* 배경: #F8F7F4 따뜻한 오프화이트 */
+  --background: 45 29% 97%;
+  /* 텍스트: #1A1A2E 딥 네이비 */
+  --foreground: 240 28% 14%;
+  /* 테두리: #E5E7EB 연한 그레이 */
+  --border: 220 13% 91%;
   --card: 0 0% 100%;
-  --card-foreground: 220 20% 10%;
-  --card-border: 0 0% 0%;
+  --card-foreground: 240 28% 14%;
+  --card-border: 220 13% 91%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 20% 10%;
-  --popover-border: 0 0% 0%;
-  /* 에메랄드 — 세련된 노들섬 메인 컬러 */
-  --primary: 162 62% 27%;
+  --popover-foreground: 240 28% 14%;
+  --popover-border: 220 13% 91%;
+  /* Primary: #2D6A4F 딥 포레스트 그린 */
+  --primary: 153 40% 30%;
   --primary-foreground: 0 0% 100%;
-  --primary-border: 162 62% 16%;
-  /* 한강 딥 블루 */
-  --secondary: 210 65% 40%;
+  --primary-border: 153 40% 20%;
+  /* Secondary: #52796F 뮤트 세이지 */
+  --secondary: 165 19% 40%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 210 65% 28%;
-  --muted: 40 18% 90%;
-  --muted-foreground: 220 10% 42%;
-  --muted-border: 220 8% 70%;
-  /* 골드 액센트 */
-  --accent: 38 88% 48%;
-  --accent-foreground: 220 20% 10%;
-  --accent-border: 38 88% 34%;
-  --destructive: 0 72% 44%;
+  --secondary-border: 165 19% 28%;
+  /* Muted */
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --muted-border: 220 9% 82%;
+  /* Accent: #95D5B2 라이트 민트 */
+  --accent: 147 43% 71%;
+  --accent-foreground: 240 28% 14%;
+  --accent-border: 147 43% 55%;
+  /* Destructive: #991B1B 딥 레드 */
+  --destructive: 0 70% 35%;
   --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 72% 30%;
-  --success: 145 55% 32%;
+  --destructive-border: 0 70% 25%;
+  /* Success */
+  --success: 153 40% 30%;
   --success-foreground: 0 0% 100%;
-  --success-border: 145 55% 20%;
-  --highlight: 73 100% 50%;
-  --highlight-foreground: 220 20% 10%;
+  --success-border: 153 40% 20%;
+  /* Highlight: 민트 */
+  --highlight: 147 43% 71%;
+  --highlight-foreground: 240 28% 14%;
   --input: 0 0% 100%;
-  --ring: 162 62% 27%;
+  --ring: 153 40% 30%;
   --radius: 0px;
 }
 
@@ -172,44 +179,43 @@
 }
 
 @layer utilities {
-  /* ── Pixel Borders ───────────────────────────────────────────────────────── */
+  /* ── Pixel Borders ── */
   .pixel-border {
-    border: 3px solid #000;
-    box-shadow: 4px 4px 0 0 #000;
+    border: 2px solid #2D6A4F;
+    box-shadow: 3px 3px 0 0 #1B4332;
   }
   .pixel-border-sm {
-    border: 2px solid #000;
-    box-shadow: 2px 2px 0 0 #000;
+    border: 1px solid #2D6A4F;
+    box-shadow: 2px 2px 0 0 #1B4332;
   }
   .pixel-border-inset {
-    border: 3px solid #000;
-    box-shadow: inset 2px 2px 0 0 rgba(255,255,255,0.5), inset -2px -2px 0 0 rgba(0,0,0,0.15);
+    border: 2px solid #2D6A4F;
+    box-shadow: inset 1px 1px 0 0 rgba(149,213,178,0.25), inset -1px -1px 0 0 rgba(0,0,0,0.08);
   }
 
-  /* ── Hover & Press effects ───────────────────────────────────────────────── */
+  /* ── Hover & Press effects ── */
   .pixel-hover:hover {
-    box-shadow: 6px 6px 0 0 #000;
+    box-shadow: 4px 4px 0 0 #1B4332;
     transform: translate(-1px, -1px);
   }
   .pixel-hover-sm:hover {
-    box-shadow: 3px 3px 0 0 #000;
+    box-shadow: 2px 2px 0 0 #1B4332;
     transform: translate(-1px, -1px);
   }
   .pixel-press:active {
-    box-shadow: 1px 1px 0 0 #000;
-    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 #1B4332;
+    transform: translate(1px, 1px);
   }
   .pixel-press-sm:active {
-    box-shadow: 0px 0px 0 0 #000;
-    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0 0 #1B4332;
+    transform: translate(1px, 1px);
   }
-  /* legacy compat aliases */
   .pixel-hover-glow:hover {
-    box-shadow: 6px 6px 0 0 #000;
+    box-shadow: 4px 4px 0 0 #1B4332;
     transform: translate(-1px, -1px);
   }
   .pixel-hover-glow-sm:hover {
-    box-shadow: 3px 3px 0 0 #000;
+    box-shadow: 2px 2px 0 0 #1B4332;
     transform: translate(-1px, -1px);
   }
 

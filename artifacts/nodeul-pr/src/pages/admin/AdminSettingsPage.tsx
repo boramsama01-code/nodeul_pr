@@ -5,8 +5,7 @@ import {
   useGetMe, getGetMeQueryKey,
   useGetSystemSettings, useUpdateSystemSetting,
   useListPromotionZones, useCreatePromotionZone, useUpdatePromotionZone, useDeletePromotionZone,
-  useListAdminUsers, useUpdateUserRole,
-  getGetSystemSettingsQueryKey, getListAdminUsersQueryKey, getListPromotionZonesQueryKey,
+  getGetSystemSettingsQueryKey, getListPromotionZonesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/store/useUIStore";
@@ -61,11 +60,26 @@ export default function AdminSettingsPage() {
     if (file.type !== "application/pdf") { setPdfError("PDF 파일만 업로드 가능합니다."); return; }
     setPdfUploading(true); setPdfError(""); setPdfSaved(false);
     try {
-      const path = `guides/zone_guide_${Date.now()}.pdf`;
-      const { data, error } = await supabase.storage.from("nodeul-assets").upload(path, file, { cacheControl: "3600", upsert: true });
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("nodeul-assets").getPublicUrl(data.path);
-      await updateSetting.mutateAsync({ key: "zone_guide_pdf", data: { value: urlData.publicUrl } });
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const apiBase = import.meta.env.BASE_URL?.replace(/\/$/, "").replace(/^\/[^/]+/, "") + "/api";
+      const resp = await fetch(`${apiBase}/admin/upload-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ base64, filename: file.name, mimeType: file.type }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error((err as any).error || "업로드 실패");
+      }
+      const { url } = await resp.json() as { url: string };
+      await updateSetting.mutateAsync({ key: "zone_guide_pdf", data: { value: url } });
       queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
       setPdfSaved(true);
     } catch (err: any) {
@@ -108,13 +122,6 @@ export default function AdminSettingsPage() {
     queryClient.invalidateQueries({ queryKey: getListPromotionZonesQueryKey() });
   };
 
-  // Users
-  const { data: users = [] } = useListAdminUsers({ query: { enabled: !!me, queryKey: getListAdminUsersQueryKey() } });
-  const updateRole = useUpdateUserRole();
-  const handleRoleChange = async (userId: number, role: string) => {
-    await updateRole.mutateAsync({ userId, data: { role: role as "user" | "admin" | "super_admin" } });
-    queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
-  };
 
   useEffect(() => {
     setNPCMessage("시스템 설정 페이지예요. 구역 등록, 인사말, 가이드 PDF를 설정할 수 있어요! 궁금한 게 있으면 물어봐요 🦢");
@@ -363,48 +370,6 @@ export default function AdminSettingsPage() {
         )}
       </div>
 
-      {/* ── 사용자 권한 관리 ── */}
-      <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
-        <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
-          <h2 className="text-sm font-semibold text-foreground" style={KR}>👥 사용자 권한 관리</h2>
-          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>사용자의 역할을 변경하면 즉시 적용됩니다.</p>
-        </div>
-        <div className="p-4">
-          {users.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6" style={KR}>등록된 사용자가 없습니다.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-black/8">
-                  {["이름", "이메일", "권한"].map(h => (
-                    <th key={h} className="text-left px-2 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5">
-                {users.map(u => (
-                  <tr key={u.id} className="hover:bg-muted/20">
-                    <td className="px-2 py-2.5 text-sm font-medium" style={KR}>{u.name || "-"}</td>
-                    <td className="px-2 py-2.5 text-xs text-muted-foreground" style={KR}>{u.email}</td>
-                    <td className="px-2 py-2.5">
-                      <select
-                        value={u.role}
-                        onChange={e => handleRoleChange(u.id, e.target.value)}
-                        className="border border-black/15 rounded px-2 py-1 text-xs bg-white focus:outline-none focus:border-primary"
-                        style={KR}
-                      >
-                        {Object.entries(ROLE_LABELS).map(([v, l]) => (
-                          <option key={v} value={v}>{l}</option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

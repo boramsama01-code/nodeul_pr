@@ -432,4 +432,31 @@ router.get("/events/:id/timeline", async (req, res) => {
   return res.json(timeline);
 });
 
+router.post("/events/:id/upload-asset", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getUser(userId);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const eventId = Number(req.params.id);
+  const { base64, filename, mimeType } = req.body;
+  if (!base64 || !filename) return res.status(400).json({ error: "base64 and filename required" });
+
+  try {
+    const { supabaseAdmin } = await import("../lib/supabase");
+    const buffer = Buffer.from(base64 as string, "base64");
+    const ext = String(filename).split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "bin";
+    const safeName = `asset_${Date.now()}.${ext}`;
+    const path = `events/${eventId}/${safeName}`;
+    const { data, error } = await supabaseAdmin.storage
+      .from("nodeul-assets")
+      .upload(path, buffer, { contentType: mimeType || "application/octet-stream", upsert: true });
+    if (error) throw error;
+    const publicUrl = supabaseAdmin.storage.from("nodeul-assets").getPublicUrl(data.path).data.publicUrl;
+    return res.json({ url: publicUrl, path: data.path });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "Upload failed" });
+  }
+});
+
 export default router;

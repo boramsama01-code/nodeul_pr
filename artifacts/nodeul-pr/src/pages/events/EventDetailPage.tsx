@@ -211,7 +211,8 @@ export default function EventDetailPage() {
     try {
       const content = `[추가 구역 신청]\n구역: ${prForm.zoneName}\n메모: ${prForm.notes || "(없음)"}`;
       await createComment.mutateAsync({
-        data: { eventId: Number(id), content, isAdminOnly: false },
+        eventId: Number(id),
+        data: { content, isAdminOnly: false },
       });
       setShowPRForm(false);
       setPRForm({ zoneName: "", notes: "" });
@@ -228,25 +229,36 @@ export default function EventDetailPage() {
     setUploadError("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const path = `events/${id}/${Date.now()}_${file.name.replace(/\s/g, "_")}`;
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from("nodeul-assets")
-        .upload(path, file, { cacheControl: "3600", upsert: true });
-      if (uploadErr) throw uploadErr;
-      const { data: urlData } = supabase.storage.from("nodeul-assets").getPublicUrl(uploadData.path);
-      const fileUrl = urlData.publicUrl;
+      const token = session?.access_token;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+      const base64 = btoa(binary);
+
+      const uploadRes = await fetch(`${BASE_URL}/api/events/${id}/upload-asset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ base64, filename: file.name, mimeType: file.type || "application/octet-stream" }),
+      });
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}));
+        throw new Error(errData.error || "파일 업로드에 실패했습니다.");
+      }
+      const { url: fileUrl } = await uploadRes.json();
       const fileType = file.type || "application/octet-stream";
 
       if (uploadAssetId) {
         await fetch(`${BASE_URL}/api/assets/${uploadAssetId}/versions`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
         });
       } else {
         await fetch(`${BASE_URL}/api/events/${id}/assets`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ name: uploadName || file.name, zoneId: uploadZoneId ? Number(uploadZoneId) : null, fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
         });
       }

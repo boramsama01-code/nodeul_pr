@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, eventsTable, promotionRequestsTable, schedulesTable, commentsTable, promotionZonesTable, usersTable, systemSettingsTable } from "@workspace/db";
-import { eq, sql, desc, asc, and, gte, lte } from "drizzle-orm";
+import { eq, sql, desc, asc, and, gte, lte, inArray } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
 const router = Router();
@@ -187,9 +187,12 @@ router.get("/admin/users", async (req, res) => {
     orgName: organizationsTable.name,
     orgContactName: organizationsTable.contactName,
     orgContactPhone: organizationsTable.contactPhone,
+    eventCount: sql<number>`CAST(COUNT(DISTINCT ${eventsTable.id}) AS INTEGER)`,
   })
     .from(usersTable)
     .leftJoin(organizationsTable, eq(usersTable.organizationId, organizationsTable.id))
+    .leftJoin(eventsTable, eq(eventsTable.organizationId, organizationsTable.id))
+    .groupBy(usersTable.id, organizationsTable.id, organizationsTable.name, organizationsTable.contactName, organizationsTable.contactPhone)
     .orderBy(asc(usersTable.createdAt));
 
   return res.json(rows.map(r => ({
@@ -203,8 +206,56 @@ router.get("/admin/users", async (req, res) => {
     organizationName: r.orgName ?? null,
     contactName: r.orgContactName ?? null,
     contactPhone: r.orgContactPhone ?? null,
+    eventCount: Number(r.eventCount ?? 0),
     createdAt: r.user.createdAt.toISOString(),
   })));
+});
+
+router.post("/admin/upload-pdf", async (req, res) => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  const { base64, filename, mimeType } = req.body;
+  if (!base64 || !filename) return res.status(400).json({ error: "base64 and filename required" });
+  if (mimeType !== "application/pdf") return res.status(400).json({ error: "PDF only" });
+  try {
+    const { supabaseAdmin } = await import("../lib/supabase");
+    const buffer = Buffer.from(base64 as string, "base64");
+    const ext = String(filename).split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "pdf";
+    const safeName = `guide_${Date.now()}.${ext}`;
+    const path = `guides/${safeName}`;
+    const { data, error } = await supabaseAdmin.storage
+      .from("nodeul-assets")
+      .upload(path, buffer, { contentType: "application/pdf", upsert: true });
+    if (error) throw error;
+    const publicUrl = supabaseAdmin.storage.from("nodeul-assets").getPublicUrl(data.path).data.publicUrl;
+    return res.json({ url: publicUrl });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "Upload failed" });
+  }
+});
+
+router.delete("/admin/users/bulk", async (req, res) => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  if (admin.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  const { userIds } = req.body;
+  if (!Array.isArray(userIds) || userIds.length === 0) return res.status(400).json({ error: "userIds required" });
+  const filtered = (userIds as number[]).filter((id: number) => id !== admin.id);
+  if (filtered.length === 0) return res.status(400).json({ error: "삭제할 사용자가 없습니다." });
+  await db.delete(usersTable).where(inArray(usersTable.id, filtered));
+  return res.json({ deleted: filtered.length });
+});
+
+router.delete("/admin/users/:userId", async (req, res) => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  if (admin.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
+  const userId = Number(req.params.userId);
+  if (isNaN(userId)) return res.status(400).json({ error: "Invalid userId" });
+  if (userId === admin.id) return res.status(400).json({ error: "자신의 계정은 삭제할 수 없습니다." });
+  const [deleted] = await db.delete(usersTable).where(eq(usersTable.id, userId)).returning();
+  if (!deleted) return res.status(404).json({ error: "User not found" });
+  return res.json({ success: true });
 });
 
 router.patch("/admin/users/:userId/role", async (req, res) => {

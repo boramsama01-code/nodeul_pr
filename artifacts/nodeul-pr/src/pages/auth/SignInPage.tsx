@@ -34,7 +34,13 @@ export default function SignInPage() {
     <div className="flex min-h-[80vh] items-center justify-center py-12">
       <div className="w-full max-w-sm space-y-5 text-center">
         <div className="flex flex-col items-center gap-1">
-          <FrogBadge label="PLAYER LOGIN" />
+          <div className="flex items-end justify-center gap-5">
+            <FrogBadge label="PLAYER LOGIN" />
+            <div className="flex flex-col items-center gap-0.5 pb-1">
+              <img src="/mascots/baekro.png" alt="백로" style={{ width: 56, imageRendering: "pixelated" }} />
+              <span className="font-pixel text-[7px] text-muted-foreground/50 uppercase tracking-widest">EGRET</span>
+            </div>
+          </div>
           <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
         </div>
 

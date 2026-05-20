@@ -6,6 +6,7 @@ import {
   useGetMe, getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
+import { BaekroSpeech } from "@/components/pixel/MaengkongiSpeech";
 
 const KR: Record<string, string> = {
   draft: "초안", submitted: "제출됨", approved: "승인됨",
@@ -79,6 +80,15 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* ── 백로 인사 ── */}
+      {!isLoading && (
+        <BaekroSpeech mood="normal">
+          {(dash?.pendingApprovalCount ?? 0) > 0
+            ? `승인 대기 건이 ${dash!.pendingApprovalCount}개 있습니다. 확인해 주세요! 🦢`
+            : "오늘도 노들섬 홍보를 위해 함께해요! 새로운 신청이 오면 바로 알려드릴게요 🦢"}
+        </BaekroSpeech>
+      )}
 
       {/* ── 스탯 카드 ── */}
       {isLoading ? (

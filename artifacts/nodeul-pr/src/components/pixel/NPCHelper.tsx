@@ -15,7 +15,7 @@ function FrogFace({ width }: { width: number }) {
   return (
     <div style={{ width, height: visH, overflow: "hidden", flexShrink: 0 }}>
       <img src="/mascots/maengkongi.png" alt="맹꽁이"
-        style={{ width, height: imgH, imageRendering: "pixelated", display: "block" }} />
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", backgroundColor: "white" }} />
     </div>
   );
 }
@@ -27,7 +27,7 @@ function FrogBodyBtn({ width }: { width: number }) {
   return (
     <div style={{ width, height: visH, overflow: "hidden", position: "relative", flexShrink: 0 }}>
       <img src="/mascots/maengkongi.png" alt="맹꽁이"
-        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", position: "absolute", bottom: 0 }} />
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", position: "absolute", bottom: 0, backgroundColor: "white" }} />
     </div>
   );
 }
@@ -102,7 +102,7 @@ function TypingBubble({ visible }: { visible: boolean }) {
 }
 
 export const NPCHelper: React.FC = () => {
-  const { npcMessage, showNPC, showLandingBubble, setShowNPC } = useUIStore();
+  const { npcMessage, showNPC, showLandingBubble, npcBadgeCount, setShowNPC } = useUIStore();
 
   const [history, setHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -289,10 +289,16 @@ export const NPCHelper: React.FC = () => {
             exit={{ opacity: 0, scale: 0.6 }}
             onClick={() => setShowNPC(true)}
             title="맹꽁이 안내 도우미 열기"
-            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary rounded-full shadow-lg flex items-end justify-center overflow-hidden hover:bg-primary/90 hover:scale-105 transition-all pb-0.5"
+            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary rounded-full shadow-lg flex items-end justify-center overflow-hidden hover:bg-primary/90 hover:scale-105 transition-all pb-0.5 relative"
             style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
           >
             <FrogBodyBtn width={44} />
+            {npcBadgeCount > 0 && (
+              <span className="absolute top-0 right-0 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none border-2 border-white z-10"
+                style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                {npcBadgeCount > 99 ? "99+" : npcBadgeCount}
+              </span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>
