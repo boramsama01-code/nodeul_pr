@@ -5,13 +5,19 @@ import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
 const router = Router();
 
+const MASTER_ADMIN_EMAIL = "nodeul@sfac.or.kr";
+
 async function getOrCreateUser(supabaseId: string, email: string) {
   let user = await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, supabaseId) });
   if (!user) {
+    const isMasterAdmin = email === MASTER_ADMIN_EMAIL;
     const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
-    const role = Number(count) === 0 ? "super_admin" : "user";
+    const role = isMasterAdmin || Number(count) === 0 ? "super_admin" : "user";
     const [created] = await db.insert(usersTable).values({ supabaseId, email, role }).returning();
     user = created;
+  } else if (email === MASTER_ADMIN_EMAIL && user.role !== "super_admin") {
+    const [updated] = await db.update(usersTable).set({ role: "super_admin" }).where(eq(usersTable.supabaseId, supabaseId)).returning();
+    user = updated;
   }
   return user;
 }

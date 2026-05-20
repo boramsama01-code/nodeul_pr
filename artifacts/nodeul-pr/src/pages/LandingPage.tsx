@@ -391,11 +391,15 @@ export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [season, setSeason] = useState<Season>(getSeason);
 
+  const setShowLandingBubble = useUIStore(s => s.setShowLandingBubble);
+
   useEffect(() => {
     const greeting = settings?.find(s => s.key === "npc_greeting")?.value;
     setNPCMessage(greeting || "안녕하세요! 노들섬 홍보 시스템에 오신 것을 환영합니다. 궁금한 점은 언제든지 물어보세요 🐸");
-    setShowNPC(true);
-  }, [settings, setNPCMessage, setShowNPC]);
+    setShowLandingBubble(true);
+    const timer = setTimeout(() => setShowLandingBubble(false), 5000);
+    return () => clearTimeout(timer);
+  }, [settings, setNPCMessage, setShowLandingBubble]);
 
   const handleStepClick = (href: string) => {
     if (!isSignedIn) { setLocation("/sign-in"); return; }

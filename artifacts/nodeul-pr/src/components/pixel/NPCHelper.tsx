@@ -58,8 +58,51 @@ function MessageContent({ content }: { content: string }) {
   );
 }
 
+const LANDING_BUBBLE_TEXT = "도움이 필요하시면 저를 찾아주세요!";
+
+function TypingBubble({ visible }: { visible: boolean }) {
+  const [displayed, setDisplayed] = React.useState("");
+  const [done, setDone] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!visible) { setDisplayed(""); setDone(false); return; }
+    setDisplayed("");
+    setDone(false);
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayed(LANDING_BUBBLE_TEXT.slice(0, i));
+      if (i >= LANDING_BUBBLE_TEXT.length) { setDone(true); clearInterval(interval); }
+    }, 55);
+    return () => clearInterval(interval);
+  }, [visible]);
+
+  if (!visible && !displayed) return null;
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: 6, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 6, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="fixed bottom-20 right-4 z-50 max-w-[13rem] bg-white border border-primary/30 rounded-xl px-3 py-2 shadow-lg text-xs text-foreground"
+          style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+        >
+          {displayed}
+          {!done && <span className="ml-0.5 animate-pulse text-primary">|</span>}
+          {/* 말풍선 꼬리 */}
+          <div className="absolute bottom-[-7px] right-5 w-0 h-0"
+            style={{ borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "7px solid white", filter: "drop-shadow(0 1px 0 rgba(0,128,80,0.2))" }} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export const NPCHelper: React.FC = () => {
-  const { npcMessage, showNPC, setShowNPC } = useUIStore();
+  const { npcMessage, showNPC, showLandingBubble, setShowNPC } = useUIStore();
 
   const [history, setHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -236,7 +279,8 @@ export const NPCHelper: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 닫힌 상태: 맹꽁이 플로팅 버튼 */}
+      {/* 닫힌 상태: 말풍선 + 맹꽁이 플로팅 버튼 */}
+      <TypingBubble visible={!showNPC && showLandingBubble} />
       <AnimatePresence>
         {!showNPC && (
           <motion.button
