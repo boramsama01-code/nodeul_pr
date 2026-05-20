@@ -452,6 +452,10 @@ router.post("/events/:id/upload-asset", async (req, res) => {
   const { base64, filename, mimeType } = req.body;
   if (!base64 || !filename) return res.status(400).json({ error: "base64 and filename required" });
 
+  const MAX_FILE_BYTES = 5 * 1024 * 1024;
+  const approxBytes = Math.ceil((base64 as string).length * 0.75);
+  if (approxBytes > MAX_FILE_BYTES) return res.status(413).json({ error: "파일 크기는 5MB를 초과할 수 없습니다." });
+
   try {
     const { supabaseAdmin } = await import("../lib/supabase");
     const buffer = Buffer.from(base64 as string, "base64");

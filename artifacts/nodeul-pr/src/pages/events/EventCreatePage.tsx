@@ -362,7 +362,7 @@ export default function EventCreatePage() {
                 onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} placeholder="예: 서울문화재단" />
             </div>
             <div>
-              <label className={labelCls} style={KR}>담당자 성함 및 직함 * <span className="text-zinc-400">(예: 김노들 주임)</span></label>
+              <label className={labelCls} style={KR}>담당자 성함 및 직함 *</label>
               <input required className={inputCls} style={KR} value={orgForm.contactName}
                 onChange={e => setOrgForm(f => ({ ...f, contactName: e.target.value }))} placeholder="예: 김노들 주임" />
             </div>
@@ -535,8 +535,9 @@ export default function EventCreatePage() {
             <div className="space-y-2">
               <p className="text-xs font-bold text-foreground" style={KR}>
                 📍 희망 홍보 구역
-                <span className="ml-1.5 text-xs font-normal text-zinc-400">선택 — 진행일 2주 전 게시, 매주 월요일 교체</span>
+                <span className="ml-1.5 text-xs font-normal text-zinc-400">선택</span>
               </p>
+              <p className="text-xs text-zinc-400 -mt-1" style={KR}>참고: 통상 진행일 2주 전 게시, 매주 월요일 교체 진행</p>
               {PROMO_STANDARD.map(item => (
                 <div key={item}>
                   <label className="flex items-start gap-2 cursor-pointer">
@@ -560,41 +561,7 @@ export default function EventCreatePage() {
               ))}
             </div>
 
-            {/* C. 유관기관 한정 구역 */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-foreground" style={KR}>🏛 유관기관 한정 구역</p>
-              <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2.5">
-                <p className="text-xs font-semibold text-red-700" style={KR}>
-                  ⚠ 아래 구역은 <strong>서울문화재단 / 서울시 유관기관</strong>만 신청 가능합니다.
-                </p>
-                <p className="text-[10px] text-red-600 mt-0.5" style={KR}>
-                  해당 기관이 아닌 경우 신청하더라도 자동 취소 처리됩니다.
-                </p>
-              </div>
-              {PROMO_RESTRICTED.map(item => (
-                <div key={item}>
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" className="accent-primary flex-shrink-0 mt-0.5"
-                      checked={meta.promoItems.includes(item)}
-                      onChange={e => {
-                        if (e.target.checked) setM("promoItems", [...meta.promoItems, item]);
-                        else { setM("promoItems", meta.promoItems.filter(p => p !== item)); setPromoItemDate(item, ""); }
-                      }} />
-                    <span className="text-sm" style={KR}>{item}</span>
-                  </label>
-                  {meta.promoItems.includes(item) && (
-                    <div className="ml-6 mt-1">
-                      <label className={labelCls} style={KR}>게시 희망일</label>
-                      <input type="date" className={inputCls} style={{ maxWidth: 200 }}
-                        value={meta.promoItemDates[item] ?? ""}
-                        onChange={e => setPromoItemDate(item, e.target.value)} />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* D. 현수막 희망 구역 */}
+            {/* C. 현수막 희망 구역 */}
             <div className="space-y-3">
               <p className="text-xs font-bold text-foreground" style={KR}>
                 🚩 현수막 희망 구역
@@ -647,6 +614,40 @@ export default function EventCreatePage() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* D. 유관기관 한정 구역 */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-foreground" style={KR}>🏛 유관기관 한정 구역</p>
+              <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2.5">
+                <p className="text-xs font-semibold text-red-700" style={KR}>
+                  ⚠ 아래 구역은 <strong>서울문화재단 / 서울시 유관기관</strong>만 신청 가능합니다.
+                </p>
+                <p className="text-[10px] text-red-600 mt-0.5" style={KR}>
+                  해당 기관이 아닌 경우 신청하더라도 자동 취소 처리됩니다.
+                </p>
+              </div>
+              {PROMO_RESTRICTED.map(item => (
+                <div key={item}>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" className="accent-primary flex-shrink-0 mt-0.5"
+                      checked={meta.promoItems.includes(item)}
+                      onChange={e => {
+                        if (e.target.checked) setM("promoItems", [...meta.promoItems, item]);
+                        else { setM("promoItems", meta.promoItems.filter(p => p !== item)); setPromoItemDate(item, ""); }
+                      }} />
+                    <span className="text-sm" style={KR}>{item}</span>
+                  </label>
+                  {meta.promoItems.includes(item) && (
+                    <div className="ml-6 mt-1">
+                      <label className={labelCls} style={KR}>게시 희망일</label>
+                      <input type="date" className={inputCls} style={{ maxWidth: 200 }}
+                        value={meta.promoItemDates[item] ?? ""}
+                        onChange={e => setPromoItemDate(item, e.target.value)} />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </Section>
 

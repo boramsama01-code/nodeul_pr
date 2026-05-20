@@ -240,6 +240,12 @@ export default function EventDetailPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError("파일 크기는 5MB를 초과할 수 없습니다.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setUploading(true);
     setUploadError("");
     try {
@@ -440,7 +446,7 @@ export default function EventDetailPage() {
               {([
                 ["단체", (event as any).organizationName || "-"],
                 ["담당자", [event.contactName, (event as any).contactTitle].filter(Boolean).join(" / ") || "-"],
-                ["이메일", event.contactEmail || "-"],
+                ["이메일", event.contactEmail || (me as any)?.email || "-"],
                 ["전화번호", (event as any).contactPhone || "-"],
                 ["내선번호", (event as any).extensionPhone || null],
               ] as [string, string | null][]).filter(([, v]) => v !== null).map(([label, value]) => (
@@ -773,7 +779,7 @@ export default function EventDetailPage() {
                 ) : (
                   <>
                     <p className="text-sm font-medium" style={KR}>파일을 클릭하여 선택</p>
-                    <p className="text-xs text-muted-foreground mt-1" style={KR}>이미지, PDF, PSD, AI, ZIP, PPTX 지원 · 최대 50MB</p>
+                    <p className="text-xs text-muted-foreground mt-1" style={KR}>이미지, PDF, PSD, AI, ZIP, PPTX 지원 · 최대 5MB</p>
                   </>
                 )}
               </div>
@@ -936,13 +942,7 @@ export default function EventDetailPage() {
           <form onSubmit={handleComment} className="border border-black/10 rounded-lg p-4 bg-white space-y-2">
             <textarea rows={3} className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
               placeholder="코멘트를 입력하세요..." value={comment} onChange={e => setComment(e.target.value)} />
-            <div className="flex items-center justify-between">
-              {isAdmin && (
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer" style={KR}>
-                  <input type="checkbox" checked={isAdminOnly} onChange={e => setIsAdminOnly(e.target.checked)} className="rounded" />
-                  관리자 전용
-                </label>
-              )}
+            <div className="flex items-center justify-end">
               <button type="submit" disabled={createComment.isPending || !comment.trim()}
                 className="h-7 px-3 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
                 등록

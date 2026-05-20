@@ -131,7 +131,7 @@ export default function AdminSettingsPage() {
   if (me && me.role !== "admin" && me.role !== "super_admin") return <Redirect to="/dashboard" />;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* 헤더 */}
       <div>
         <h1 className="text-xl font-bold text-foreground" style={KR}>시스템 설정</h1>

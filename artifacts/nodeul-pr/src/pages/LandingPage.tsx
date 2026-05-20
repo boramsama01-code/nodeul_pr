@@ -323,41 +323,41 @@ function NodeulScene({ season }: { season: Season }) {
         <rect x="363" y="67" width="2"  height="10" fill="white"/>
       </g>
 
-      {/* 백로 2 */}
+      {/* 백로 2 (왼쪽 방향) */}
       <g filter="url(#egretShadow)">
         <animateTransform attributeName="transform" type="translate" values="0,0; 0,3; 0,0; 0,-4; 0,0" dur="2.8s" repeatCount="indefinite"/>
         {/* 몸통 */}
         <rect x="108" y="74" width="16" height="7" fill="white"/>
-        {/* 날개 왼쪽 */}
-        <rect x="90"  y="67" width="18" height="6" fill="white"/>
-        <rect x="82"  y="71" width="10" height="5" fill="white"/>
-        <rect x="78"  y="75" width="6"  height="3" fill="#303030"/>
-        {/* 날개 오른쪽 */}
+        {/* 날개 오른쪽 (뒤쪽 날개) */}
         <rect x="124" y="67" width="18" height="6" fill="white"/>
         <rect x="140" y="71" width="10" height="5" fill="white"/>
+        <rect x="146" y="75" width="6"  height="3" fill="#303030"/>
+        {/* 날개 왼쪽 (앞쪽 날개) */}
+        <rect x="90"  y="67" width="18" height="6" fill="white"/>
+        <rect x="76"  y="71" width="10" height="5" fill="white"/>
         {/* 목 */}
-        <rect x="120" y="68" width="4"  height="8" fill="white"/>
+        <rect x="108" y="62" width="4"  height="14" fill="white"/>
         {/* 머리 */}
-        <rect x="107" y="58" width="16" height="13" fill="white"/>
-        {/* 부리 */}
-        <rect x="110" y="58" width="14" height="3" fill="#D4A420"/>
+        <rect x="99"  y="50" width="14" height="14" fill="white"/>
+        {/* 부리 (왼쪽 방향) */}
+        <rect x="85"  y="50" width="14" height="3" fill="#D4A420"/>
         {/* 눈 */}
-        <rect x="118" y="61" width="4" height="3" fill="#181818"/>
-        <rect x="118" y="61" width="1" height="1" fill="white"/>
+        <rect x="101" y="53" width="4" height="3" fill="#181818"/>
+        <rect x="101" y="53" width="1" height="1" fill="white"/>
         {/* 다리 */}
-        <rect x="110" y="81" width="2"  height="10" fill="white"/>
-        <rect x="115" y="81" width="2"  height="10" fill="white"/>
+        <rect x="112" y="81" width="2"  height="10" fill="white"/>
+        <rect x="117" y="81" width="2"  height="10" fill="white"/>
       </g>
 
       {/* 물고기 (겨울엔 얼음 아래라 숨김) */}
       {!isWinter && <>
-        <rect x="44"  y="170" width="14" height="7"  fill="#E8834A"/>
-        <rect x="40"  y="172" width="6"  height="4"  fill="#E8834A"/>
-        <rect x="57"  y="171" width="3"  height="2"  fill="white"/>
-        <rect x="376" y="176" width="13" height="6"  fill="#D06880"/>
-        <rect x="372" y="178" width="6"  height="3"  fill="#D06880"/>
-        <rect x="62"  y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
-        <rect x="370" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+        <rect x="108" y="170" width="14" height="7"  fill="#E8834A"/>
+        <rect x="104" y="172" width="6"  height="4"  fill="#E8834A"/>
+        <rect x="121" y="171" width="3"  height="2"  fill="white"/>
+        <rect x="340" y="176" width="13" height="6"  fill="#D06880"/>
+        <rect x="351" y="178" width="6"  height="3"  fill="#D06880"/>
+        <rect x="126" y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+        <rect x="336" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
       </>}
 
       {/* 겨울: 얼어있는 강 표면 + 고양이 */}
@@ -491,9 +491,9 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col -mt-4 sm:-mt-6">
       <div className="relative overflow-hidden" style={{ background: skyBg }}>
-        <div className="max-w-6xl mx-auto px-4 pt-6 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="max-w-6xl mx-auto px-4 pt-6 pb-4 grid grid-cols-1 gap-4">
 
-          {/* 왼쪽: 타이틀 + 절차 안내 */}
+          {/* 타이틀 + 절차 안내 */}
           <div className="space-y-3">
             {/* 타이틀 카드 */}
             <motion.div
@@ -559,12 +559,12 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          {/* 오른쪽: 일러스트 + 시즌 스위처 */}
+          {/* 일러스트 + 시즌 스위처 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.12 }}
-            className="flex flex-col items-center gap-2"
+            className="flex flex-col items-center gap-2 max-w-2xl mx-auto w-full"
           >
             <div className="w-full rounded overflow-hidden border border-white/30 shadow-lg">
               <NodeulScene season={season} />

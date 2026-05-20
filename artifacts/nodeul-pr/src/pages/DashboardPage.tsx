@@ -148,7 +148,7 @@ export default function DashboardPage() {
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>상태</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={KR}>기간</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>장소</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={KR}>액션</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={KR}>상세</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                             ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600"
                             : "bg-white text-foreground border-black/15 hover:bg-muted/60"
                         }`} style={KR}>
-                          {event.status === "revision_requested" ? "수정" : "보기"}
+                          {event.status === "revision_requested" ? "수정하기" : "상세보기"}
                         </button>
                       </Link>
                     </td>

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, eventsTable, promotionRequestsTable, schedulesTable, commentsTable, promotionZonesTable, usersTable, systemSettingsTable } from "@workspace/db";
+import { db, eventsTable, promotionRequestsTable, schedulesTable, commentsTable, promotionZonesTable, usersTable, systemSettingsTable, organizationsTable } from "@workspace/db";
 import { eq, sql, desc, asc, and, gte, lte, inArray } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 
@@ -40,8 +40,15 @@ router.get("/admin/dashboard", async (req, res) => {
     if (s in statusBreakdown) statusBreakdown[s]++;
   }
 
+  const recentEventSlice = allEvents.slice(0, 5);
+  const orgIds = recentEventSlice.map(e => e.organizationId).filter(Boolean) as number[];
+  const orgs = orgIds.length > 0
+    ? await db.select({ id: organizationsTable.id, name: organizationsTable.name }).from(organizationsTable).where(inArray(organizationsTable.id, orgIds))
+    : [];
+  const orgMap = Object.fromEntries(orgs.map(o => [o.id, o.name]));
+
   return res.json({
-    pendingApprovalCount: pendingRequests.length,
+    pendingApprovalCount: newSubmissions.length,
     revisionRequestCount: revisionRequests.length,
     todayScheduleCount: todaySchedRows.length,
     conflictCount: 0,
@@ -49,13 +56,13 @@ router.get("/admin/dashboard", async (req, res) => {
     recentlyUpdatedCount: allEvents.length,
     unreadCommentsCount: allComments.length,
     statusBreakdown,
-    recentEvents: allEvents.slice(0, 5).map(ev => ({
+    recentEvents: recentEventSlice.map(ev => ({
       id: ev.id,
       title: ev.title,
       description: ev.description ?? null,
       status: ev.status,
       organizationId: ev.organizationId,
-      organizationName: null,
+      organizationName: ev.organizationId ? (orgMap[ev.organizationId] ?? null) : null,
       contactName: ev.contactName ?? null,
       contactEmail: ev.contactEmail ?? null,
       startDate: ev.startDate,
