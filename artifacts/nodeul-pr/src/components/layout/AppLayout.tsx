@@ -113,6 +113,23 @@ function PixelSettingsIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+function PixelUsersIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 14 14" width={size} height={size} style={{ imageRendering: "pixelated", display: "inline-block", verticalAlign: "middle" }}>
+      {/* 왼쪽 사람 머리 */}
+      <rect x="1" y="1" width="4" height="4" fill="currentColor" opacity="0.7"/>
+      {/* 왼쪽 사람 몸 */}
+      <rect x="0" y="6" width="6" height="4" fill="currentColor" opacity="0.7"/>
+      {/* 오른쪽 사람 머리 */}
+      <rect x="9" y="1" width="4" height="4" fill="currentColor"/>
+      {/* 오른쪽 사람 몸 */}
+      <rect x="8" y="6" width="6" height="4" fill="currentColor"/>
+      {/* 별(관리자 표시) */}
+      <rect x="6" y="11" width="2" height="1" fill="currentColor" opacity="0.8"/>
+    </svg>
+  );
+}
+
 const navIcons: Record<string, React.ReactNode> = {
   "/dashboard": <PixelListIcon />,
   "/my-assets": <PixelImageIcon />,
@@ -121,6 +138,7 @@ const navIcons: Record<string, React.ReactNode> = {
   "/admin/events":   <PixelListIcon />,
   "/admin/calendar": <PixelCalendarIcon />,
   "/admin/settings": <PixelSettingsIcon />,
+  "/admin/users":    <PixelUsersIcon />,
 };
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -156,9 +174,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const navLinks = isSignedIn
     ? isAdmin
       ? [
-          { href: "/admin",          label: "대시보드", admin: true },
+          { href: "/admin",          label: "대시보드",  admin: true },
           { href: "/admin/events",   label: "행사 목록", admin: true, badge: newSubmissionsCount },
           { href: "/admin/calendar", label: "캘린더",   admin: true },
+          { href: "/admin/users",    label: "회원 관리", admin: true },
           { href: "/admin/settings", label: "설정",     admin: true },
         ]
       : [

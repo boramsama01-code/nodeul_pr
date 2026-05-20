@@ -17,6 +17,7 @@ import AdminPendingEventsPage from "@/pages/admin/AdminPendingEventsPage";
 import AdminRevisionEventsPage from "@/pages/admin/AdminRevisionEventsPage";
 import AdminCalendarPage from "@/pages/admin/AdminCalendarPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import EventCreatePage from "@/pages/events/EventCreatePage";
 import EventDetailPage from "@/pages/events/EventDetailPage";
 import UserCalendarPage from "@/pages/UserCalendarPage";
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="/admin/events" component={AdminEventsPage} />
               <Route path="/admin/calendar" component={AdminCalendarPage} />
               <Route path="/admin/settings" component={AdminSettingsPage} />
+              <Route path="/admin/users" component={AdminUsersPage} />
               <Route component={NotFound} />
             </Switch>
           </AppLayout>
