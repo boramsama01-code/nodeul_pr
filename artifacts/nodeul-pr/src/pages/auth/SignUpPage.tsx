@@ -87,10 +87,6 @@ export default function SignUpPage() {
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-end justify-center gap-5">
             <FrogBadge label="NEW PLAYER" />
-            <div className="flex flex-col items-center gap-0.5 pb-1">
-              <img src="/mascots/baekro.png" alt="백로" style={{ width: 56, imageRendering: "pixelated" }} />
-              <span className="font-pixel text-[7px] text-muted-foreground/50 uppercase tracking-widest">EGRET</span>
-            </div>
           </div>
           <p className="font-pixel text-[10px] text-muted-foreground uppercase tracking-widest">NODEUL PR SYSTEM</p>
         </div>
