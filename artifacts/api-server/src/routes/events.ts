@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, eventsTable, organizationsTable, promotionRequestsTable, promotionZonesTable, assetsTable, assetVersionsTable, schedulesTable, commentsTable, emailLogsTable } from "@workspace/db";
-import { eq, and, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, ilike, desc, sql, inArray } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { usersTable } from "@workspace/db";
@@ -30,6 +30,58 @@ function formatEvent(ev: any, orgName?: string | null) {
     createdAt: ev.createdAt.toISOString(),
     updatedAt: ev.updatedAt.toISOString(),
   };
+}
+
+async function sendAdminNotificationEmail(eventId: number, eventTitle: string, submitterName: string | null) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    console.warn("[email] RESEND_API_KEY not set — skipping admin notification email");
+    return;
+  }
+  const admins = await db.select().from(usersTable)
+    .where(inArray(usersTable.role, ["admin", "super_admin"]));
+  if (admins.length === 0) return;
+
+  const appUrl = process.env.REPLIT_DEV_DOMAIN
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+    : "https://nodeul-pr.replit.app";
+  const subject = `[노들섬] 새 홍보 신청이 접수되었습니다: "${eventTitle}"`;
+  const body = `안녕하세요,\n\n${submitterName ? `"${submitterName}"님이 ` : ""}새 행사 홍보 신청을 제출했습니다.\n\n행사명: ${eventTitle}\n\n아래 링크에서 신청 내용을 검토해 주세요:\n${appUrl}/admin/events/${eventId}`;
+
+  for (const admin of admins) {
+    if (!admin.email) continue;
+    let status = "failed";
+    try {
+      const resp = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+        body: JSON.stringify({
+          from: "노들섬 홍보팀 <onboarding@resend.dev>",
+          to: [admin.email],
+          subject,
+          html: `<div style="font-family:monospace;max-width:600px;margin:0 auto;padding:24px;border:2px solid #000;">
+            <h2 style="font-family:'Courier New';color:#0a6b00;">🏝️ 노들섬 홍보 통합 시스템</h2>
+            <h3 style="border-bottom:1px solid #000;padding-bottom:8px;">📬 새 홍보 신청 접수 알림</h3>
+            <div style="background:#f8f0e3;border:1px solid #000;padding:16px;margin:16px 0;white-space:pre-wrap;">${body.replace(/\n/g, "<br>")}</div>
+            <p style="font-size:12px;color:#666;">본 메일은 발송전용입니다. 문의사항은 <a href="mailto:nodeul@sfac.or.kr">nodeul@sfac.or.kr</a> 로 보내주시면 감사하겠습니다.</p>
+          </div>`,
+        }),
+      });
+      if (resp.ok) {
+        status = "sent";
+        console.log(`[email] Admin notification sent to ${admin.email} for event #${eventId}`);
+      } else {
+        const errBody = await resp.json().catch(() => ({}));
+        console.error("[email] Resend API error in sendAdminNotificationEmail:", resp.status, errBody);
+      }
+    } catch (e) {
+      console.error("[email] sendAdminNotificationEmail error:", e);
+    }
+    await db.insert(emailLogsTable).values({
+      eventId, emailType: "submitted" as any, recipientEmail: admin.email, subject, body,
+      status, sentAt: status === "sent" ? new Date() : null,
+    }).catch(() => {});
+  }
 }
 
 async function sendStatusChangeEmail(eventId: number, newStatus: string, createdBy: string | null, eventTitle: string) {
@@ -310,10 +362,17 @@ router.patch("/events/:id", async (req, res) => {
   if (metaObj !== undefined) updateData.metadata = JSON.stringify(metaObj);
   const [updated] = await db.update(eventsTable).set(updateData).where(eq(eventsTable.id, id)).returning();
   const org = await db.query.organizationsTable.findFirst({ where: eq(organizationsTable.id, updated.organizationId) });
-  // Auto-send email when status changes to approved, revision_requested, or rejected
-  if (parsed.data.status && parsed.data.status !== existing.status &&
-      ["approved", "revision_requested", "rejected"].includes(parsed.data.status)) {
-    sendStatusChangeEmail(id, parsed.data.status, existing.createdBy, existing.title).catch(() => {});
+  // Auto-send email when status changes
+  if (parsed.data.status && parsed.data.status !== existing.status) {
+    if (["approved", "revision_requested", "rejected"].includes(parsed.data.status)) {
+      sendStatusChangeEmail(id, parsed.data.status, existing.createdBy, existing.title).catch(() => {});
+    }
+    if (parsed.data.status === "submitted") {
+      const submitter = existing.createdBy
+        ? await db.query.usersTable.findFirst({ where: eq(usersTable.supabaseId, existing.createdBy) })
+        : null;
+      sendAdminNotificationEmail(id, existing.title, submitter?.name ?? null).catch(() => {});
+    }
   }
   return res.json(formatEvent(updated, org?.name));
 });
