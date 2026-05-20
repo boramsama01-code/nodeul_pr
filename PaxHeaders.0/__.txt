@@ -1,0 +1,1 @@
+55 path=promotion-nd/환경변수_설정_가이드.txt
