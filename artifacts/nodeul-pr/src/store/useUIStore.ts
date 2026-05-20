@@ -5,10 +5,12 @@ type UIStore = {
   showNPC: boolean;
   showLandingBubble: boolean;
   npcBadgeCount: number;
+  npcBadgeText: string;
   setNPCMessage: (message: string) => void;
   setShowNPC: (show: boolean) => void;
   setShowLandingBubble: (show: boolean) => void;
   setNpcBadgeCount: (count: number) => void;
+  setNpcBadge: (count: number, text?: string) => void;
   isCRTEnabled: boolean;
   toggleCRT: () => void;
 };
@@ -18,10 +20,12 @@ export const useUIStore = create<UIStore>((set) => ({
   showNPC: false,
   showLandingBubble: false,
   npcBadgeCount: 0,
+  npcBadgeText: "",
   setNPCMessage: (message) => set({ npcMessage: message }),
   setShowNPC: (show) => set({ showNPC: show }),
   setShowLandingBubble: (show) => set({ showLandingBubble: show }),
   setNpcBadgeCount: (count) => set({ npcBadgeCount: count }),
+  setNpcBadge: (count, text = "") => set({ npcBadgeCount: count, npcBadgeText: text }),
   isCRTEnabled: true,
   toggleCRT: () => set((state) => ({ isCRTEnabled: !state.isCRTEnabled })),
 }));

@@ -166,10 +166,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   });
   const newSubmissionsCount = (adminDashboard as any)?.newSubmissionsCount ?? 0;
 
-  const setNpcBadgeCount = useUIStore(s => s.setNpcBadgeCount);
+  const setNpcBadge = useUIStore(s => s.setNpcBadge);
   React.useEffect(() => {
-    setNpcBadgeCount(isAdmin ? newSubmissionsCount : revisionCount);
-  }, [newSubmissionsCount, revisionCount, isAdmin, setNpcBadgeCount]);
+    const count = isAdmin ? newSubmissionsCount : revisionCount;
+    const text = isAdmin
+      ? count > 0 ? `새 행사 신청이 ${count}건 있어요! 확인해 주세요 🐸` : ""
+      : count > 0 ? `수정 요청된 행사가 ${count}건 있어요! 확인해 주세요 🐸` : "";
+    setNpcBadge(count, text);
+  }, [newSubmissionsCount, revisionCount, isAdmin, setNpcBadge]);
 
   const handleSignOut = async () => {
     await signOut();

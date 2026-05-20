@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, commentsTable, usersTable } from "@workspace/db";
+import { db, commentsTable, usersTable, eventsTable, organizationsTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { getAuth } from "../middlewares/supabaseAuthMiddleware";
 import { CreateCommentBody } from "@workspace/api-zod";
@@ -43,11 +43,26 @@ router.post("/events/:eventId/comments", async (req, res) => {
 
   const parentId = (req.body as any).parentId ? Number((req.body as any).parentId) : null;
 
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  let authorName = user?.name ?? user?.email?.split("@")[0] ?? "사용자";
+  if (!isAdmin && (!user?.name)) {
+    const evRows = await db.select({ contactName: eventsTable.contactName, orgName: organizationsTable.name })
+      .from(eventsTable)
+      .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.id))
+      .where(eq(eventsTable.id, eventId));
+    if (evRows.length > 0) {
+      const { contactName, orgName } = evRows[0];
+      if (contactName && orgName) authorName = `${orgName}(${contactName})`;
+      else if (contactName) authorName = contactName;
+      else if (orgName) authorName = orgName;
+    }
+  }
+
   const [comment] = await db.insert(commentsTable).values({
     eventId,
     parentId,
     content: parsed.data.content,
-    authorName: user?.name ?? "사용자",
+    authorName,
     authorRole: user?.role ?? "user",
     isAdminOnly: parsed.data.isAdminOnly ?? false,
   }).returning();

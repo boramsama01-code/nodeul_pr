@@ -89,6 +89,7 @@ export default function EventDetailPage() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [pendingZoneUpload, setPendingZoneUpload] = useState<string | null>(null);
 
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -96,6 +97,16 @@ export default function EventDetailPage() {
   React.useEffect(() => {
     if (event) setNPCMessage(`"${event.title}" 행사 상세페이지에요. 상태: ${STATUS_LABELS[event.status] || event.status} 🐸`);
   }, [event]);
+
+  React.useEffect(() => {
+    if (pendingZoneUpload !== null && showUploadForm && activeTab === "assets") {
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click();
+        setPendingZoneUpload(null);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingZoneUpload, showUploadForm, activeTab]);
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (isLoading) return (
@@ -136,7 +147,7 @@ export default function EventDetailPage() {
     refetch();
   };
 
-  const handleZoneUpload = (zoneName: string) => {
+  const handleZoneUpload = (zoneName: string, openFileDialog = false) => {
     setUploadName(zoneName);
     setUploadZoneId("");
     setUploadAssetId(null);
@@ -144,7 +155,11 @@ export default function EventDetailPage() {
     setUploadError("");
     setShowUploadForm(true);
     setActiveTab("assets");
-    setTimeout(() => document.getElementById("uploadFormAnchor")?.scrollIntoView({ behavior: "smooth" }), 100);
+    if (openFileDialog) {
+      setPendingZoneUpload(zoneName);
+    } else {
+      setTimeout(() => document.getElementById("uploadFormAnchor")?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
   };
 
   const handleReply = async (parentId: number) => {
@@ -422,11 +437,13 @@ export default function EventDetailPage() {
           <div className="border border-black/10 rounded-lg p-4 bg-white">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3" style={KR}>담당자 정보</h3>
             <dl className="space-y-2">
-              {[
-                ["단체", event.organizationName || "-"],
-                ["담당자", event.contactName || "-"],
+              {([
+                ["단체", (event as any).organizationName || "-"],
+                ["담당자", [event.contactName, (event as any).contactTitle].filter(Boolean).join(" / ") || "-"],
                 ["이메일", event.contactEmail || "-"],
-              ].map(([label, value]) => (
+                ["전화번호", (event as any).contactPhone || "-"],
+                ["내선번호", (event as any).extensionPhone || null],
+              ] as [string, string | null][]).filter(([, v]) => v !== null).map(([label, value]) => (
                 <div key={label} className="flex gap-3 text-sm">
                   <dt className="text-muted-foreground w-20 flex-shrink-0" style={KR}>{label}</dt>
                   <dd className="text-foreground" style={KR}>{value}</dd>
@@ -658,7 +675,7 @@ export default function EventDetailPage() {
                           const a = event.assets?.find(a => a.name?.includes("SNS") || a.name?.includes("홈페이지") || a.zoneName?.includes("SNS") || a.zoneName?.includes("홈페이지"));
                           return a
                             ? <span className="font-medium text-foreground">{a.name}</span>
-                            : <button onClick={() => handleZoneUpload("홈페이지 / SNS 게시")} className="text-primary underline hover:text-primary/80 cursor-pointer">미업로드</button>;
+                            : <button onClick={() => handleZoneUpload("홈페이지 / SNS 게시", true)} className="text-primary underline hover:text-primary/80 cursor-pointer">미업로드</button>;
                         })()}
                       </td>
                       <td className="px-4 py-2.5">
@@ -684,7 +701,7 @@ export default function EventDetailPage() {
                           ) : matchedAsset ? (
                             <span className="font-medium text-foreground">{matchedAsset.name}</span>
                           ) : (
-                            <button onClick={() => handleZoneUpload(z.label)} className="text-primary underline hover:text-primary/80 cursor-pointer" style={KR}>
+                            <button onClick={() => handleZoneUpload(z.label, true)} className="text-primary underline hover:text-primary/80 cursor-pointer" style={KR}>
                               미업로드
                             </button>
                           )}

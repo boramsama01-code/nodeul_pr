@@ -15,7 +15,7 @@ function FrogFace({ width }: { width: number }) {
   return (
     <div style={{ width, height: visH, overflow: "hidden", flexShrink: 0 }}>
       <img src="/mascots/maengkongi.png" alt="맹꽁이"
-        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", backgroundColor: "white" }} />
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", backgroundColor: "transparent" }} />
     </div>
   );
 }
@@ -27,7 +27,7 @@ function FrogBodyBtn({ width }: { width: number }) {
   return (
     <div style={{ width, height: visH, overflow: "hidden", position: "relative", flexShrink: 0 }}>
       <img src="/mascots/maengkongi.png" alt="맹꽁이"
-        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", position: "absolute", bottom: 0, backgroundColor: "white" }} />
+        style={{ width, height: imgH, imageRendering: "pixelated", display: "block", position: "absolute", bottom: 0, backgroundColor: "transparent" }} />
     </div>
   );
 }
@@ -60,9 +60,10 @@ function MessageContent({ content }: { content: string }) {
 
 const LANDING_BUBBLE_TEXT = "도움이 필요하시면 저를 찾아주세요!";
 
-function TypingBubble({ visible }: { visible: boolean }) {
+function TypingBubble({ visible, text }: { visible: boolean; text?: string }) {
   const [displayed, setDisplayed] = React.useState("");
   const [done, setDone] = React.useState(false);
+  const bubbleText = text || LANDING_BUBBLE_TEXT;
 
   React.useEffect(() => {
     if (!visible) { setDisplayed(""); setDone(false); return; }
@@ -71,11 +72,11 @@ function TypingBubble({ visible }: { visible: boolean }) {
     let i = 0;
     const interval = setInterval(() => {
       i++;
-      setDisplayed(LANDING_BUBBLE_TEXT.slice(0, i));
-      if (i >= LANDING_BUBBLE_TEXT.length) { setDone(true); clearInterval(interval); }
+      setDisplayed(bubbleText.slice(0, i));
+      if (i >= bubbleText.length) { setDone(true); clearInterval(interval); }
     }, 55);
     return () => clearInterval(interval);
-  }, [visible]);
+  }, [visible, bubbleText]);
 
   if (!visible && !displayed) return null;
 
@@ -102,7 +103,7 @@ function TypingBubble({ visible }: { visible: boolean }) {
 }
 
 export const NPCHelper: React.FC = () => {
-  const { npcMessage, showNPC, showLandingBubble, npcBadgeCount, setShowNPC } = useUIStore();
+  const { npcMessage, showNPC, showLandingBubble, npcBadgeCount, npcBadgeText, setShowNPC } = useUIStore();
 
   const [history, setHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -280,7 +281,10 @@ export const NPCHelper: React.FC = () => {
       </AnimatePresence>
 
       {/* 닫힌 상태: 말풍선 + 맹꽁이 플로팅 버튼 */}
-      <TypingBubble visible={!showNPC && showLandingBubble} />
+      <TypingBubble
+        visible={!showNPC && (showLandingBubble || npcBadgeCount > 0)}
+        text={npcBadgeCount > 0 && npcBadgeText ? npcBadgeText : undefined}
+      />
       <AnimatePresence>
         {!showNPC && (
           <motion.button
@@ -289,7 +293,7 @@ export const NPCHelper: React.FC = () => {
             exit={{ opacity: 0, scale: 0.6 }}
             onClick={() => setShowNPC(true)}
             title="맹꽁이 안내 도우미 열기"
-            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary rounded-full shadow-lg flex items-end justify-center overflow-hidden hover:bg-primary/90 hover:scale-105 transition-all pb-0.5 relative"
+            className="fixed bottom-4 right-4 z-50 w-14 h-14 bg-primary rounded-full shadow-lg flex items-end justify-center overflow-hidden hover:bg-primary/90 hover:scale-105 transition-all pb-0.5"
             style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
           >
             <FrogBodyBtn width={44} />

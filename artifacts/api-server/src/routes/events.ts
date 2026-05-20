@@ -230,13 +230,19 @@ router.get("/events/:id", async (req, res) => {
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const id = Number(req.params.id);
-  const rows = await db.select({ event: eventsTable, orgName: organizationsTable.name })
+  const rows = await db.select({
+    event: eventsTable,
+    orgName: organizationsTable.name,
+    orgContactPhone: organizationsTable.contactPhone,
+    orgContactTitle: organizationsTable.contactTitle,
+    orgExtensionPhone: organizationsTable.extensionPhone,
+  })
     .from(eventsTable)
     .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.id))
     .where(eq(eventsTable.id, id));
 
   if (!rows.length) return res.status(404).json({ error: "Not found" });
-  const { event: ev, orgName } = rows[0];
+  const { event: ev, orgName, orgContactPhone, orgContactTitle, orgExtensionPhone } = rows[0];
 
   const isAdmin = user.role === "admin" || user.role === "super_admin";
   if (!isAdmin && ev.createdBy !== userId) return res.status(403).json({ error: "Forbidden" });
@@ -275,6 +281,9 @@ router.get("/events/:id", async (req, res) => {
 
   return res.json({
     ...formatEvent(ev, orgName),
+    contactPhone: orgContactPhone ?? null,
+    contactTitle: orgContactTitle ?? null,
+    extensionPhone: orgExtensionPhone ?? null,
     promotionRequests: promoRequests.map(r => ({
       id: r.pr.id,
       eventId: r.pr.eventId,
@@ -322,6 +331,7 @@ router.get("/events/:id", async (req, res) => {
     comments: comments.map(c => ({
       id: c.id,
       eventId: c.eventId,
+      parentId: c.parentId ?? null,
       content: c.content,
       authorName: c.authorName,
       authorRole: c.authorRole,
