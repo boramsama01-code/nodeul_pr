@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useLocation, useSearch } from "wouter";
-import { useCreateEvent, useGetMe, useGetEvent, useUpdateEvent, useGetSystemSettings, getGetSystemSettingsQueryKey } from "@workspace/api-client-react";
+import { useCreateEvent, useGetMe, useGetEvent, useUpdateEvent, useGetSystemSettings, getGetSystemSettingsQueryKey, getGetEventQueryKey } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
 import { BaekroSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
@@ -154,7 +154,7 @@ export default function EventCreatePage() {
   const pdfGuideUrl = settings.find(s => s.key === "zone_guide_pdf")?.value ?? "";
 
   const { data: editEvent } = useGetEvent(editId ? Number(editId) : 0, {
-    query: { enabled: !!editId },
+    query: { enabled: !!editId, queryKey: getGetEventQueryKey(editId ? Number(editId) : 0) },
   });
 
   const [step, setStep] = useState<"org" | "event">("org");
@@ -206,7 +206,7 @@ export default function EventCreatePage() {
 
   useEffect(() => {
     if (!editEvent) return;
-    const m = (editEvent.metadata as any) ?? {};
+    const m = ((editEvent as any).metadata) ?? {};
     setEventForm({
       title: editEvent.title ?? "",
       startDate: editEvent.startDate ?? "",

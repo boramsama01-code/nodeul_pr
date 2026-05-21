@@ -1,0 +1,95 @@
+2026-05-21T07:02:18Z info: Deployment: 351fdbeb-0453-4eb2-86a3-3ceec0511da1
+2026-05-21T07:02:18Z info: Build: 8ac13a41-869b-429d-a72f-141ecf04408b
+2026-05-21T07:02:19Z info: Running Security Scan
+2026-05-21T07:02:40Z info: Security Scan Complete
+2026-05-21T07:02:44Z info: Preparing PostgreSQL 16 tools
+2026-05-21T07:02:48Z info: Preparing development database data
+2026-05-21T07:03:02Z info: Successfully copied development database data to production database
+2026-05-21T07:03:05Z info: Installing packages
+--> pnpm install
+
+Scope: all 11 workspace projects
+
+
+   ╭─────────────────────────────────────────╮
+   │                                         │
+   │   Update available! 10.26.1 → 11.1.3.   │
+   │   Changelog: https://pnpm.io/v/11.1.3   │
+   │    To update, run: pnpm add -g pnpm     │
+   │                                         │
+   ╰─────────────────────────────────────────╯
+
+
+Lockfile is up to date, resolution step is skipped
+
+Already up to date
+
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+
+. preinstall: Done
+
+Done in 3s using pnpm v10.26.1
+
+2026-05-21T07:03:09Z info: Starting Build
+Scope: all 11 workspace projects
+
+Lockfile is up to date, resolution step is skipped
+
+Already up to date
+
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+
+. preinstall: Done
+
+Done in 1.4s using pnpm v10.26.1
+
+
+> workspace@0.0.0 build /home/runner/workspace
+> pnpm run typecheck && pnpm -r --if-present run build
+
+
+
+> workspace@0.0.0 typecheck /home/runner/workspace
+> pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck
+
+
+
+> workspace@0.0.0 typecheck:libs /home/runner/workspace
+> tsc --build
+
+
+Scope: 4 of 11 workspace projects
+
+artifacts/api-server typecheck$ tsc -p tsconfig.json --noEmit
+
+artifacts/mockup-sandbox typecheck$ tsc -p tsconfig.json --noEmit
+
+artifacts/nodeul-pr typecheck$ tsc -p tsconfig.json --noEmit
+
+scripts typecheck$ tsc -p tsconfig.json --noEmit
+
+scripts typecheck: Done
+
+artifacts/api-server typecheck: src/lib/objectStorage.ts(265,11): error TS2339: Property 'signed_url' does not exist on type 'unknown'.
+
+artifacts/api-server typecheck: src/lib/supabase.ts(17,5): error TS2322: Type 'typeof WebSocket' is not assignable to type 'WebSocketLikeConstructor'.
+
+artifacts/api-server typecheck:   Types of parameters 'address' and 'address' are incompatible.
+
+artifacts/api-server typecheck:     Type 'string | URL' is not assignable to type 'null'.
+
+artifacts/api-server typecheck:       Type 'string' is not assignable to type 'null'.
+
+artifacts/api-server typecheck: src/routes/storage.ts(4,3): error TS2305: Module '"@workspace/api-zod"' has no exported member 'RequestUploadUrlBody'.
+artifacts/api-server typecheck: src/routes/storage.ts(5,3): error TS2305: Module '"@workspace/api-zod"' has no exported member 'RequestUploadUrlResponse'.
+
+artifacts/api-server typecheck: Failed
+
+/home/runner/workspace/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 typecheck: `tsc -p tsconfig.json --noEmit`
+Exit status 2
+
+ ELIFECYCLE  Command failed with exit code 2.
+
+ ELIFECYCLE  Command failed with exit code 2.
+

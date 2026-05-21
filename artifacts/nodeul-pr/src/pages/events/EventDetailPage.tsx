@@ -124,7 +124,7 @@ export default function EventDetailPage() {
     </div>
   );
 
-  const meta = (event.metadata as any) ?? {};
+  const meta = ((event as any).metadata) ?? {};
   const metaPromoItems: string[] = meta.promoItems ?? [];
   const metaPromoItemDates: Record<string, string> = meta.promoItemDates ?? {};
   const metaBannerZones: string[] = meta.bannerZones ?? [];
@@ -146,7 +146,7 @@ export default function EventDetailPage() {
   };
 
   const handleAdminStatus = async (status: string, adminNote?: string) => {
-    await updateEvent.mutateAsync({ id: Number(id), data: { status, ...(adminNote !== undefined ? { adminNote } : {}) } });
+    await updateEvent.mutateAsync({ id: Number(id), data: { status: status as any, ...(adminNote !== undefined ? { adminNote } : {}) } });
     refetch();
   };
 
@@ -189,7 +189,7 @@ export default function EventDetailPage() {
       await sendEmail.mutateAsync({
         eventId: Number(id),
         data: {
-          emailType: "approval_complete",
+          emailType: "approved",
           recipientEmail: event.contactEmail,
           subject: `[노들섬] ${event.title} 홍보 신청이 승인되었습니다`,
           body: `안녕하세요,\n\n노들섬 홍보 통합 시스템입니다.\n\n${event.organizationName || "귀 기관"}의 "${event.title}" 행사 홍보 신청이 승인되었습니다.\n\n■ 행사명: ${event.title}\n■ 기간: ${event.startDate} ~ ${event.endDate}\n■ 장소: ${event.venue || "-"}\n\n이제 홍보물을 업로드하시면 최종 검토 후 게시됩니다.\n\n감사합니다.\n노들섬 홍보팀`,
@@ -923,7 +923,7 @@ export default function EventDetailPage() {
                           {isBanner ? (
                             <span className="text-xs text-zinc-400">-</span>
                           ) : matchedAsset ? (
-                            <StatusPill status={matchedAsset.status} />
+                            <StatusPill status={matchedAsset.status ?? "pending_review"} />
                           ) : (
                             <span className="text-xs text-zinc-400">-</span>
                           )}
@@ -970,7 +970,7 @@ export default function EventDetailPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold" style={KR}>{asset.name}</span>
                       {asset.zoneName && <span className="text-xs text-muted-foreground" style={KR}>· {asset.zoneName}</span>}
-                      <StatusPill status={asset.status} />
+                      <StatusPill status={asset.status ?? "pending_review"} />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground" style={KR}>v{asset.totalVersions}</span>
