@@ -35,6 +35,12 @@ function HomeRedirect() {
   return <LandingPage />;
 }
 
+function ProtectedRoute({ component: Component }: { component: React.ComponentType; adminOnly?: boolean }) {
+  const { isSignedIn } = useAuth();
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  return <Component />;
+}
+
 function QueryCacheInvalidator() {
   const { userId } = useAuth();
   const queryClient = useQueryClient();
@@ -63,18 +69,18 @@ export default function App() {
               <Route path="/" component={HomeRedirect} />
               <Route path="/sign-in" component={SignInPage} />
               <Route path="/sign-up" component={SignUpPage} />
-              <Route path="/dashboard" component={DashboardPage} />
-              <Route path="/events/new" component={EventCreatePage} />
-              <Route path="/events/:id" component={EventDetailPage} />
-              <Route path="/calendar" component={UserCalendarPage} />
-              <Route path="/my-assets" component={MyAssetsPage} />
-              <Route path="/admin" component={AdminDashboardPage} />
-              <Route path="/admin/pending" component={AdminPendingEventsPage} />
-              <Route path="/admin/revision" component={AdminRevisionEventsPage} />
-              <Route path="/admin/events" component={AdminEventsPage} />
-              <Route path="/admin/calendar" component={AdminCalendarPage} />
-              <Route path="/admin/settings" component={AdminSettingsPage} />
-              <Route path="/admin/users" component={AdminUsersPage} />
+              <Route path="/dashboard">{() => <ProtectedRoute component={DashboardPage} />}</Route>
+              <Route path="/events/new">{() => <ProtectedRoute component={EventCreatePage} />}</Route>
+              <Route path="/events/:id">{() => <ProtectedRoute component={EventDetailPage} />}</Route>
+              <Route path="/calendar">{() => <ProtectedRoute component={UserCalendarPage} />}</Route>
+              <Route path="/my-assets">{() => <ProtectedRoute component={MyAssetsPage} />}</Route>
+              <Route path="/admin">{() => <ProtectedRoute component={AdminDashboardPage} adminOnly />}</Route>
+              <Route path="/admin/pending">{() => <ProtectedRoute component={AdminPendingEventsPage} adminOnly />}</Route>
+              <Route path="/admin/revision">{() => <ProtectedRoute component={AdminRevisionEventsPage} adminOnly />}</Route>
+              <Route path="/admin/events">{() => <ProtectedRoute component={AdminEventsPage} adminOnly />}</Route>
+              <Route path="/admin/calendar">{() => <ProtectedRoute component={AdminCalendarPage} adminOnly />}</Route>
+              <Route path="/admin/settings">{() => <ProtectedRoute component={AdminSettingsPage} adminOnly />}</Route>
+              <Route path="/admin/users">{() => <ProtectedRoute component={AdminUsersPage} adminOnly />}</Route>
               <Route component={NotFound} />
             </Switch>
           </AppLayout>

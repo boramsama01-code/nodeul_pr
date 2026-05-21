@@ -480,4 +480,50 @@ router.post("/events/:id/upload-asset", async (req, res) => {
   }
 });
 
+router.get("/events/:id/assets/zip", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await getUser(userId);
+  if (!user || (user.role !== "admin" && user.role !== "super_admin")) return res.status(403).json({ error: "Forbidden" });
+
+  const eventId = Number(req.params.id);
+  const event = await db.query.eventsTable.findFirst({ where: eq(eventsTable.id, eventId) });
+  if (!event) return res.status(404).json({ error: "Event not found" });
+
+  const assets = await db.select().from(assetsTable).where(eq(assetsTable.eventId, eventId));
+  const selectedAssets = assets.filter(a => a.selectedVersionId);
+  if (selectedAssets.length === 0) return res.status(404).json({ error: "선택된 최종 파일이 없습니다." });
+
+  const versionIds = selectedAssets.map(a => a.selectedVersionId!);
+  const versions = await db.select().from(assetVersionsTable).where(
+    versionIds.length === 1
+      ? eq(assetVersionsTable.id, versionIds[0])
+      : require("drizzle-orm").inArray(assetVersionsTable.id, versionIds)
+  );
+
+  const zipName = `assets_event_${eventId}.zip`;
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${zipName}"`);
+
+  try {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    await Promise.all(versions.map(async (v, idx) => {
+      const fileName = v.fileName ?? `asset_${idx + 1}`;
+      try {
+        const response = await fetch(v.fileUrl);
+        if (!response.ok) throw new Error(`Failed to fetch ${v.fileUrl}`);
+        const arrayBuffer = await response.arrayBuffer();
+        zip.file(fileName, Buffer.from(arrayBuffer));
+      } catch (e) {
+        console.warn(`[zip] skipping ${fileName}:`, e);
+      }
+    }));
+    const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    return res.send(buffer);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "ZIP 생성 실패" });
+  }
+});
+
 export default router;

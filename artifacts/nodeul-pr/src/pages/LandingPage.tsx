@@ -29,10 +29,10 @@ const SEASON_THEME: Record<Season, {
     sun: "#F8D44A", river: ["#5ABCD8", "#3C8CB8"],
   },
   summer: {
-    sky: ["#58A8D8", "#88C0DC", "#AACFC0"],
+    sky: ["#5BC8F5", "#88C0DC", "#E8F8FF"],
     tree1: "#1C6422", tree2: "#247830", trunk: "#7A5430",
-    island: ["#2E6438", "#3E8848", "#52A85C"], grass: "#5AB864",
-    sun: "#F8D44A", river: ["#48A0CC", "#3080A8"],
+    island: ["#2E6438", "#3E8848", "#52A85C"], grass: "#5DBB63",
+    sun: "#FFE033", river: ["#3BBCF0", "#3080A8"],
   },
   autumn: {
     sky: ["#D09060", "#E0B070", "#E8C890"],
@@ -296,6 +296,9 @@ function NodeulScene({ season }: { season: Season }) {
       <rect x="186" y="152" width="14" height="2" fill="#2A7232"/>
       <rect x="184" y="150" width="3"  height="3" fill="#2A7232"/>
       <rect x="202" y="150" width="3"  height="3" fill="#2A7232"/>
+      {/* 맹꽁이 몸통 타원 */}
+      <ellipse cx="193" cy="158" rx="14" ry="9" fill="#4CB85C"/>
+      <ellipse cx="193" cy="158" rx="11" ry="7" fill="#6CD870"/>
 
       {/* 백로 1 */}
       <g filter="url(#egretShadow)">
@@ -305,11 +308,11 @@ function NodeulScene({ season }: { season: Season }) {
         {/* 날개 왼쪽 */}
         <rect x="338" y="53" width="18" height="6" fill="white"/>
         <rect x="330" y="57" width="10" height="5" fill="white"/>
-        <rect x="328" y="61" width="6"  height="3" fill="#303030"/>
+        <rect x="328" y="61" width="6"  height="3" fill="white"/>
         {/* 날개 오른쪽 */}
         <rect x="372" y="53" width="18" height="6" fill="white"/>
         <rect x="388" y="57" width="10" height="5" fill="white"/>
-        <rect x="394" y="61" width="6"  height="3" fill="#303030"/>
+        <rect x="394" y="61" width="6"  height="3" fill="white"/>
         {/* 목 */}
         <rect x="356" y="54" width="4"  height="8" fill="white"/>
         {/* 머리 */}
@@ -332,7 +335,7 @@ function NodeulScene({ season }: { season: Season }) {
         {/* 날개 오른쪽 (뒤쪽 날개) */}
         <rect x="124" y="67" width="18" height="6" fill="white"/>
         <rect x="140" y="71" width="10" height="5" fill="white"/>
-        <rect x="146" y="75" width="6"  height="3" fill="#303030"/>
+        <rect x="146" y="75" width="6"  height="3" fill="white"/>
         {/* 날개 왼쪽 (앞쪽 날개) */}
         <rect x="90"  y="67" width="18" height="6" fill="white"/>
         <rect x="76"  y="71" width="10" height="5" fill="white"/>
@@ -463,6 +466,13 @@ const SEASON_LABELS: Record<Season, string> = {
   winter: "❄ 겨울",
 };
 
+const SEASON_TEXT: Record<Season, string> = {
+  spring: "노들섬에 봄이 왔어요! 🌸",
+  summer: "노들섬의 여름이 시작됩니다! ☀️",
+  autumn: "노들섬의 가을을 즐겨보세요! 🍂",
+  winter: "노들섬의 겨울 풍경을 만나보세요! ❄️",
+};
+
 export default function LandingPage() {
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
   const setShowNPC    = useUIStore(s => s.setShowNPC);
@@ -479,7 +489,7 @@ export default function LandingPage() {
     { status: "revision_requested" },
     { query: { enabled: !!isSignedIn && !isAdmin, queryKey: [...getListEventsQueryKey(), "revision_requested_landing"] } }
   );
-  const revisionCount = (myEvents as any)?.total ?? (Array.isArray(myEvents) ? myEvents.length : 0);
+  const revisionEventsList = (Array.isArray(myEvents) ? myEvents : ((myEvents as any)?.items ?? [])) as Array<{ id: number; title: string; status: string }>;
 
   const { data: adminDash } = useGetAdminDashboard({
     query: { enabled: !!isSignedIn && isAdmin, queryKey: getGetAdminDashboardQueryKey() },
@@ -531,13 +541,43 @@ export default function LandingPage() {
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed" style={KR}>
                 행사 등록부터 홍보물 제출·버전관리·게시 완료까지 한 곳에서 처리하세요.
               </p>
-              {/* 알림 배너 */}
-              {isSignedIn && revisionCount > 0 && (
-                <div className="mt-2 flex items-center gap-2 bg-amber-50 border border-amber-300 rounded px-3 py-2 cursor-pointer" onClick={() => setLocation("/dashboard")} style={KR}>
-                  <span className="text-sm">⚠️</span>
-                  <span className="text-xs font-semibold text-amber-800">수정 요청된 행사가 {revisionCount}건 있습니다. 확인해 주세요 →</span>
-                </div>
-              )}
+              {/* 알림 배너 - 수정 요청 (개별 이벤트별) */}
+              {isSignedIn && !isAdmin && revisionEventsList.map(ev => {
+                if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(`dismissed_revision_${ev.id}`)) return null;
+                return (
+                  <div key={ev.id} className="mt-2 flex items-center justify-between gap-2 bg-red-50 border border-red-300 rounded px-3 py-2" style={KR}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer" onClick={() => {
+                      if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`dismissed_revision_${ev.id}`, "true");
+                      setLocation(`/events/${ev.id}?tab=pr`);
+                    }}>
+                      <span className="text-sm flex-shrink-0">⚠</span>
+                      <span className="text-xs font-semibold text-red-800 truncate">"{ev.title}"에 보완 요청이 있습니다. 확인해 주세요 →</span>
+                    </div>
+                    <button className="text-zinc-400 hover:text-zinc-600 flex-shrink-0 text-xs px-1" onClick={() => {
+                      if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`dismissed_revision_${ev.id}`, "true");
+                    }}>✕</button>
+                  </div>
+                );
+              })}
+              {/* 알림 배너 - 관리자 신규 신청 */}
+              {isSignedIn && isAdmin && pendingCount > 0 && (() => {
+                const today = new Date().toISOString().split("T")[0];
+                if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(`admin_banner_dismissed_${today}`)) return null;
+                return (
+                  <div className="mt-2 flex items-center justify-between gap-2 bg-blue-50 border border-blue-300 rounded px-3 py-2" style={KR}>
+                    <div className="flex items-center gap-2 flex-1 cursor-pointer" onClick={() => {
+                      if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`admin_banner_dismissed_${today}`, "true");
+                      setLocation("/admin/events");
+                    }}>
+                      <span className="text-sm flex-shrink-0">📬</span>
+                      <span className="text-xs font-semibold text-blue-800">새 홍보 신청이 {pendingCount}건 있습니다 → [홍보신청 관리]로 이동</span>
+                    </div>
+                    <button className="text-zinc-400 hover:text-zinc-600 flex-shrink-0 text-xs px-1" onClick={() => {
+                      if (typeof sessionStorage !== "undefined") sessionStorage.setItem(`admin_banner_dismissed_${today}`, "true");
+                    }}>✕</button>
+                  </div>
+                );
+              })()}
               <div className="mt-3 flex gap-2 flex-wrap">
                 {isSignedIn ? (
                   <button onClick={() => setLocation("/dashboard")}
@@ -594,6 +634,7 @@ export default function LandingPage() {
             <div className="w-full rounded overflow-hidden border border-white/30 shadow-lg">
               <NodeulScene season={season} />
             </div>
+            <p className="text-center text-sm font-medium text-zinc-600 mt-1" style={KR}>{SEASON_TEXT[season]}</p>
             {/* 시즌 스위처 */}
             <div className="flex gap-1 flex-wrap justify-center">
               {(Object.keys(SEASON_LABELS) as Season[]).map(s => (

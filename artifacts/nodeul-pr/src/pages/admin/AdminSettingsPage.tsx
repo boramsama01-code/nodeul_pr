@@ -4,20 +4,13 @@ import { Redirect } from "wouter";
 import {
   useGetMe, getGetMeQueryKey,
   useGetSystemSettings, useUpdateSystemSetting,
-  useListPromotionZones, useCreatePromotionZone, useUpdatePromotionZone, useDeletePromotionZone,
-  getGetSystemSettingsQueryKey, getListPromotionZonesQueryKey,
+  getGetSystemSettingsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
 import { BaekroSpeech } from "@/components/pixel/MaengkongiSpeech";
 
-const COLOR_PRESETS = ["#e1306c", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#14b8a6", "#f97316"];
-const emptyZoneForm = {
-  name: "", type: "other", description: "", color: "#8b5cf6",
-  requiresEndDate: true, requiresAssetUpload: true, allowMultipleFiles: false,
-  sortOrder: 0, maxConcurrent: 1 as number | null,
-};
 const ROLE_LABELS: Record<string, string> = {
   user: "일반 사용자", admin: "관리자", super_admin: "슈퍼 관리자",
 };
@@ -28,12 +21,40 @@ const labelCls = "block text-xs font-medium text-muted-foreground mb-1";
 
 export default function AdminSettingsPage() {
   const { isSignedIn } = useAuth();
-  const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const { data: me, refetch: refetchMe } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const setNPCMessage = useUIStore(s => s.setNPCMessage);
   const queryClient = useQueryClient();
 
   const { data: settings = [] } = useGetSystemSettings({ query: { enabled: !!me, queryKey: getGetSystemSettingsQueryKey() } });
   const updateSetting = useUpdateSystemSetting();
+
+  // 이름 수정
+  const [myName, setMyName] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  useEffect(() => {
+    if (me?.name) setMyName(me.name);
+  }, [me?.name]);
+  const handleSaveName = async () => {
+    if (!myName.trim()) return;
+    setNameSaving(true); setNameSaved(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${BASE}/api/users/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ name: myName.trim() }),
+      });
+      if (res.ok) {
+        setNameSaved(true);
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        refetchMe();
+      }
+    } finally {
+      setNameSaving(false);
+    }
+  };
 
   // NPC
   const [npcText, setNpcText] = useState("");
@@ -90,39 +111,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // Zones
-  const { data: zones = [], isLoading: zonesLoading } = useListPromotionZones({ query: { enabled: !!me, queryKey: getListPromotionZonesQueryKey() } });
-  const createZone = useCreatePromotionZone();
-  const updateZone = useUpdatePromotionZone();
-  const deleteZone = useDeletePromotionZone();
-  const [showZoneForm, setShowZoneForm] = useState(false);
-  const [editingZoneId, setEditingZoneId] = useState<number | null>(null);
-  const [zoneForm, setZoneForm] = useState(emptyZoneForm);
-  const [zoneError, setZoneError] = useState("");
-
-  const handleEditZone = (zone: typeof zones[0]) => {
-    setEditingZoneId(zone.id);
-    setZoneForm({ name: zone.name, type: zone.type, description: zone.description || "", color: zone.color || "#8b5cf6", requiresEndDate: zone.requiresEndDate, requiresAssetUpload: zone.requiresAssetUpload, allowMultipleFiles: zone.allowMultipleFiles, sortOrder: zone.sortOrder, maxConcurrent: zone.maxConcurrent ?? null });
-    setShowZoneForm(true);
-    setTimeout(() => document.getElementById("zone-form-section")?.scrollIntoView({ behavior: "smooth" }), 50);
-  };
-  const handleZoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setZoneError("");
-    try {
-      const payload = { ...zoneForm, maxConcurrent: zoneForm.maxConcurrent === null ? null : Number(zoneForm.maxConcurrent) };
-      if (editingZoneId !== null) await updateZone.mutateAsync({ zoneId: editingZoneId, data: payload });
-      else await createZone.mutateAsync({ data: payload });
-      queryClient.invalidateQueries({ queryKey: getListPromotionZonesQueryKey() });
-      setShowZoneForm(false); setEditingZoneId(null);
-    } catch { setZoneError("저장에 실패했습니다."); }
-  };
-  const handleDeleteZone = async (id: number, name: string) => {
-    if (!confirm(`"${name}" 구역을 삭제하시겠습니까?`)) return;
-    await deleteZone.mutateAsync({ zoneId: id });
-    queryClient.invalidateQueries({ queryKey: getListPromotionZonesQueryKey() });
-  };
-
-
   useEffect(() => {
     setNPCMessage("시스템 설정 페이지예요. 구역 등록, 인사말, 가이드 PDF를 설정할 수 있어요! 궁금한 게 있으면 물어봐요 🦢");
   }, [setNPCMessage]);
@@ -138,9 +126,32 @@ export default function AdminSettingsPage() {
       </div>
 
       <BaekroSpeech mood="normal">
-        인사말·가이드 PDF·홍보 구역·사용자 권한을 이 페이지에서 모두 관리할 수 있어요!
+        인사말·가이드 PDF를 이 페이지에서 관리할 수 있어요!
         가이드 PDF는 <strong>행사 등록 폼 상단</strong>에 링크로 표시되어 사용자들이 다운받을 수 있어요 📄
       </BaekroSpeech>
+
+      {/* ── 내 이름 수정 ── */}
+      <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+        <div className="px-4 py-3 border-b border-black/8 bg-zinc-50/60">
+          <h2 className="text-sm font-semibold text-foreground" style={KR}>👤 내 표시 이름 수정</h2>
+          <p className="text-xs text-muted-foreground mt-0.5" style={KR}>네비게이션 바 및 코멘트에 표시되는 이름입니다.</p>
+        </div>
+        <div className="p-4 space-y-3">
+          <div>
+            <label className={labelCls} style={KR}>표시 이름</label>
+            <input className={inputCls} style={KR} value={myName}
+              onChange={e => { setMyName(e.target.value); setNameSaved(false); }}
+              placeholder="예: 노들섬 관리자" />
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleSaveName} disabled={nameSaving || !myName.trim()}
+              className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
+              {nameSaving ? "저장 중..." : "저장"}
+            </button>
+            {nameSaved && <span className="text-xs text-emerald-600" style={KR}>✓ 저장되었습니다</span>}
+          </div>
+        </div>
+      </div>
 
       {/* ── 맹꽁이 인사말 ── */}
       <div className="border border-black/10 rounded-lg bg-white overflow-hidden">

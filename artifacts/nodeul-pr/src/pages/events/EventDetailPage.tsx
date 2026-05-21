@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Redirect, useParams, useLocation } from "wouter";
+import { Redirect, useParams, useLocation, useSearch } from "wouter";
 import {
   useGetEvent,
   useCreateComment,
@@ -76,7 +76,9 @@ export default function EventDetailPage() {
   const [isAdminOnly, setIsAdminOnly] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
   const [prSubmitting, setPrSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "comments">("overview");
+  const searchStr = useSearch();
+  const tabFromUrl = new URLSearchParams(searchStr).get("tab") as "overview" | "assets" | "pr" | "comments" | null;
+  const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "comments">(tabFromUrl ?? "overview");
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   const [showBaekroHint, setShowBaekroHint] = useState(true);
 
@@ -85,7 +87,7 @@ export default function EventDetailPage() {
   const [uploadAssetId, setUploadAssetId] = useState<number | null>(null);
   const [uploadMemo, setUploadMemo] = useState("");
   const [uploadName, setUploadName] = useState("");
-  const [uploadZoneId, setUploadZoneId] = useState("");
+  const [inlinePRActionId, setInlinePRActionId] = useState<number | null>(null);
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
 
@@ -162,11 +164,26 @@ export default function EventDetailPage() {
 
   const handleZoneUpload = (zoneName: string) => {
     setUploadName(zoneName);
-    setUploadZoneId("");
     setUploadAssetId(null);
     setUploadMemo("");
     setUploadError("");
     setShowUploadModal(true);
+  };
+
+  const handleInlinePRAction = async (prId: number, action: "approve" | "reject") => {
+    if (action === "reject" && !confirm("이 홍보 신청을 반려하시겠습니까?")) return;
+    setInlinePRActionId(prId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch(`${BASE_URL}/api/promotion-requests/${prId}/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({}),
+      });
+      refetch();
+    } finally {
+      setInlinePRActionId(null);
+    }
   };
 
   const handleReply = async (parentId: number) => {
@@ -314,14 +331,13 @@ export default function EventDetailPage() {
         await fetch(`${BASE_URL}/api/events/${id}/assets`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: uploadName || file.name, zoneId: uploadZoneId ? Number(uploadZoneId) : null, fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
+          body: JSON.stringify({ name: uploadName || file.name, zoneId: null, fileUrl, fileType, fileName: file.name, fileSize: file.size, changeMemo: uploadMemo || null }),
         });
       }
       refetch();
       setShowUploadModal(false);
       setUploadMemo("");
       setUploadName("");
-      setUploadZoneId("");
       setUploadAssetId(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: any) {
@@ -445,7 +461,7 @@ export default function EventDetailPage() {
             )}
           </div>
           <button
-            onClick={() => { setUploadAssetId(null); setUploadName(""); setUploadZoneId(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
+            onClick={() => { setUploadAssetId(null); setUploadName(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
             className="h-8 px-4 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors flex-shrink-0"
             style={KR}
           >
@@ -744,7 +760,7 @@ export default function EventDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-black/8 bg-zinc-50/30">
-                    {["홍보 구역", "구분", "희망 기간", "승인 상태", "관리자 코멘트"].map(h => (
+                    {[..."홍보 구역,구분,희망 기간,승인 상태,관리자 코멘트".split(","), ...(isAdmin ? ["액션"] : [])].map(h => (
                       <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
                     ))}
                   </tr>
@@ -761,6 +777,24 @@ export default function EventDetailPage() {
                       <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{pr.requestedStartDate} ~ {pr.requestedEndDate}</td>
                       <td className="px-4 py-2.5"><StatusPill status={pr.status} /></td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[200px] truncate" style={KR}>{pr.adminComment || "-"}</td>
+                      {isAdmin && (
+                        <td className="px-4 py-2.5">
+                          {pr.status === "pending" && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                disabled={inlinePRActionId === pr.id}
+                                onClick={() => handleInlinePRAction(pr.id, "approve")}
+                                className="h-6 px-2 text-[10px] font-semibold bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                                style={KR}>승인</button>
+                              <button
+                                disabled={inlinePRActionId === pr.id}
+                                onClick={() => handleInlinePRAction(pr.id, "reject")}
+                                className="h-6 px-2 text-[10px] font-semibold bg-red-400 text-white rounded hover:bg-red-500 transition-colors disabled:opacity-50"
+                                style={KR}>반려</button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -940,10 +974,32 @@ export default function EventDetailPage() {
             <h3 className="text-sm font-semibold" style={KR}>홍보물 관리</h3>
           </div>
 
-          {/* 관리자용 최종 선택 파일 목록 */}
+          {/* 관리자용 최종 선택 파일 목록 + ZIP */}
           {isAdmin && event.assets && event.assets.length > 0 && event.assets.some(a => a.selectedVersionId) && (
             <div className="border border-emerald-200 rounded-lg bg-emerald-50/40 p-4">
-              <h4 className="text-xs font-semibold text-emerald-800 mb-2" style={KR}>📥 최종 선택 파일 목록 (관리자)</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold text-emerald-800" style={KR}>📥 최종 선택 파일 목록 (관리자)</h4>
+                <a
+                  href={`${BASE_URL}/api/events/${id}/assets/zip`}
+                  download
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(`${BASE_URL}/api/events/${id}/assets/zip`, {
+                      headers: { Authorization: `Bearer ${session?.access_token}` },
+                    });
+                    if (!res.ok) { alert("ZIP 다운로드 실패"); return; }
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url; a.download = `assets_event_${id}.zip`; a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="h-7 px-3 text-[11px] font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
+                  style={KR}>
+                  <span>⬇</span> ZIP 다운로드
+                </a>
+              </div>
               <div className="flex flex-col gap-1.5">
                 {event.assets.filter(a => a.selectedVersionId).map(asset => {
                   const url = asset.latestVersionUrl;
@@ -975,7 +1031,7 @@ export default function EventDetailPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground" style={KR}>v{asset.totalVersions}</span>
                       <button
-                        onClick={() => { setUploadAssetId(asset.id); setUploadName(""); setUploadZoneId(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
+                        onClick={() => { setUploadAssetId(asset.id); setUploadName(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
                         className="h-6 px-2 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
                         📎 파일 추가
                       </button>

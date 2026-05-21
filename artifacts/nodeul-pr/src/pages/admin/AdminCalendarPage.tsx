@@ -213,7 +213,7 @@ export default function AdminCalendarPage() {
           </div>
           <div className="divide-y divide-black/5">
             {schedules.map(s => (
-              <button key={s.id} onClick={() => setLocation(`/events/${s.eventId}`)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 transition-colors text-left">
+              <button key={s.id} onClick={() => setLocation(`/events/${s.eventId}?tab=overview`)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 transition-colors text-left" style={{ backgroundColor: '#fff', color: '#18181b' }}>
                 <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: getZoneColor(s.zoneType, s.zoneColor) }} />
                 <span className="text-sm text-foreground flex-1 truncate" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{s.eventTitle}</span>
                 <span className="text-xs text-muted-foreground hidden sm:block" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{ZONE_KR[s.zoneType!] || s.zoneName}</span>

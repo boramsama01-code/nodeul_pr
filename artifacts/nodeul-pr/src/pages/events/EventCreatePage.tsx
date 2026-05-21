@@ -185,7 +185,11 @@ export default function EventCreatePage() {
     price: "",
     contact: "",
     notes: "",
-    snsSiteDate: "",
+    websiteDate: "",
+    snsDate: "",
+    websiteAltText: "",
+    websiteBodyText: "",
+    posterSubmitted: false,
     promoItems: [] as string[],
     promoItemDates: {} as Record<string, string>,
     bannerZones: [] as string[],
@@ -227,7 +231,11 @@ export default function EventCreatePage() {
       price: m.price ?? "",
       contact: m.contact ?? "",
       notes: m.notes ?? "",
-      snsSiteDate: m.snsSiteDate ?? "",
+      websiteDate: m.websiteDate ?? m.snsSiteDate ?? "",
+      snsDate: m.snsDate ?? m.snsSiteDate ?? "",
+      websiteAltText: m.websiteAltText ?? "",
+      websiteBodyText: m.websiteBodyText ?? "",
+      posterSubmitted: m.posterSubmitted ?? false,
       promoItems: m.promoItems ?? [],
       promoItemDates: m.promoItemDates ?? {},
       bannerZones: m.bannerZones ?? [],
@@ -287,7 +295,11 @@ export default function EventCreatePage() {
         price: meta.price || null,
         contact: meta.contact || null,
         notes: meta.notes || null,
-        snsSiteDate: meta.snsSiteDate || null,
+        websiteDate: meta.websiteDate || null,
+        snsDate: meta.snsDate || null,
+        websiteAltText: meta.websiteAltText || null,
+        websiteBodyText: meta.websiteBodyText || null,
+        posterSubmitted: meta.posterSubmitted,
         promoItems: meta.promoItems,
         promoItemDates: meta.promoItemDates,
         bannerZones: meta.bannerZones,
@@ -527,16 +539,41 @@ export default function EventCreatePage() {
                 홍보 구역 안내 및 제작 사양 안내
               </a>
             )}
-            {/* A. 홈페이지/SNS — 필수 */}
+            {/* A. 홈페이지 게시 — 필수 */}
             <div className="bg-blue-50/70 border border-blue-200 rounded-md px-4 py-3 space-y-2">
               <p className="text-xs font-bold text-blue-800 mb-1" style={KR}>
-                🌐 홈페이지 / SNS 게시
+                🌐 홈페이지 게시
                 <span className="ml-1.5 text-[10px] font-semibold text-white bg-blue-500 px-1.5 py-0.5 rounded">필수</span>
               </p>
               <div>
                 <label className={labelCls} style={KR}>게시 희망일 *</label>
-                <input required type="date" className={inputCls} value={meta.snsSiteDate}
-                  onChange={e => setM("snsSiteDate", e.target.value)} />
+                <input required type="date" className={inputCls} value={meta.websiteDate}
+                  onChange={e => setM("websiteDate", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls} style={KR}>홈페이지 게시용 대표 문구 <span className="text-zinc-400">(선택)</span></label>
+                <input className={inputCls} style={KR} value={meta.websiteAltText}
+                  onChange={e => setM("websiteAltText", e.target.value)}
+                  placeholder="예: 2026 노들섬 여름 페스티벌" />
+              </div>
+              <div>
+                <label className={labelCls} style={KR}>홈페이지 본문 내용 <span className="text-zinc-400">(선택)</span></label>
+                <textarea rows={2} className={`${inputCls} resize-none`} style={KR} value={meta.websiteBodyText}
+                  onChange={e => setM("websiteBodyText", e.target.value)}
+                  placeholder="홈페이지에 게재될 행사 소개 내용" />
+              </div>
+            </div>
+
+            {/* A-2. SNS 게시 — 필수 */}
+            <div className="bg-sky-50/70 border border-sky-200 rounded-md px-4 py-3 space-y-2">
+              <p className="text-xs font-bold text-sky-800 mb-1" style={KR}>
+                📱 SNS (인스타그램) 게시
+                <span className="ml-1.5 text-[10px] font-semibold text-white bg-sky-500 px-1.5 py-0.5 rounded">필수</span>
+              </p>
+              <div>
+                <label className={labelCls} style={KR}>게시 희망일 *</label>
+                <input required type="date" className={inputCls} value={meta.snsDate}
+                  onChange={e => setM("snsDate", e.target.value)} />
               </div>
             </div>
 
@@ -547,27 +584,37 @@ export default function EventCreatePage() {
                 <span className="ml-1.5 text-xs font-normal text-zinc-400">선택</span>
               </p>
               <p className="text-xs text-zinc-400 -mt-1" style={KR}>통상 진행일 2주 전 게시, 매주 월요일 교체 진행 / 별도 희망일자가 없는 경우 게시 희망일 빈칸 제출</p>
-              {PROMO_STANDARD.map(item => (
-                <div key={item}>
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" className="accent-primary flex-shrink-0 mt-0.5"
-                      checked={meta.promoItems.includes(item)}
-                      onChange={e => {
-                        if (e.target.checked) setM("promoItems", [...meta.promoItems, item]);
-                        else { setM("promoItems", meta.promoItems.filter(p => p !== item)); setPromoItemDate(item, ""); }
-                      }} />
-                    <span className="text-sm" style={KR}>{item}</span>
-                  </label>
-                  {meta.promoItems.includes(item) && (
-                    <div className="ml-6 mt-1">
-                      <label className={labelCls} style={KR}>게시 희망일</label>
-                      <input type="date" className={inputCls} style={{ maxWidth: 200 }}
-                        value={meta.promoItemDates[item] ?? ""}
-                        onChange={e => setPromoItemDate(item, e.target.value)} />
-                    </div>
-                  )}
-                </div>
-              ))}
+              {PROMO_STANDARD.map(item => {
+                const isPoster = item.includes("벽면 게시대 포스터");
+                return (
+                  <div key={item}>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" className="accent-primary flex-shrink-0 mt-0.5"
+                        checked={isPoster ? meta.posterSubmitted : meta.promoItems.includes(item)}
+                        onChange={e => {
+                          if (isPoster) {
+                            setM("posterSubmitted", e.target.checked);
+                          } else {
+                            if (e.target.checked) setM("promoItems", [...meta.promoItems, item]);
+                            else { setM("promoItems", meta.promoItems.filter(p => p !== item)); setPromoItemDate(item, ""); }
+                          }
+                        }} />
+                      <span className="text-sm" style={KR}>{item}</span>
+                      {isPoster && meta.posterSubmitted && (
+                        <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded ml-1 flex-shrink-0" style={KR}>제출 예정</span>
+                      )}
+                    </label>
+                    {!isPoster && meta.promoItems.includes(item) && (
+                      <div className="ml-6 mt-1">
+                        <label className={labelCls} style={KR}>게시 희망일</label>
+                        <input type="date" className={inputCls} style={{ maxWidth: 200 }}
+                          value={meta.promoItemDates[item] ?? ""}
+                          onChange={e => setPromoItemDate(item, e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* C. 현수막 희망 구역 */}
