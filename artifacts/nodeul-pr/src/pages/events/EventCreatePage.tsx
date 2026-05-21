@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Redirect, useLocation, useSearch } from "wouter";
-import { useCreateEvent, useGetMe, useGetEvent, useUpdateEvent } from "@workspace/api-client-react";
+import { useCreateEvent, useGetMe, useGetEvent, useUpdateEvent, useGetSystemSettings, getGetSystemSettingsQueryKey } from "@workspace/api-client-react";
 import { useUIStore } from "@/store/useUIStore";
 import { supabase } from "@/lib/supabase";
 import { BaekroSpeech, StepGuide } from "@/components/pixel/MaengkongiSpeech";
@@ -150,6 +150,8 @@ export default function EventCreatePage() {
   const { data: me, isLoading: meLoading } = useGetMe();
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const { data: settings = [] } = useGetSystemSettings({ query: { queryKey: getGetSystemSettingsQueryKey() } });
+  const pdfGuideUrl = settings.find(s => s.key === "zone_guide_pdf")?.value ?? "";
 
   const { data: editEvent } = useGetEvent(editId ? Number(editId) : 0, {
     query: { enabled: !!editId },
@@ -518,6 +520,12 @@ export default function EventCreatePage() {
           </Section>
 
           <Section title="3. 홍보 신청" desc="승인된 항목은 캘린더에 자동 반영됩니다">
+            {pdfGuideUrl && (
+              <a href={pdfGuideUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline" style={KR}>
+                📄 홍보 구역 안내 가이드 PDF 보기
+              </a>
+            )}
             {/* A. 홈페이지/SNS — 필수 */}
             <div className="bg-blue-50/70 border border-blue-200 rounded-md px-4 py-3 space-y-2">
               <p className="text-xs font-bold text-blue-800 mb-1" style={KR}>

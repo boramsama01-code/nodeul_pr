@@ -70,16 +70,19 @@ export default function AdminCalendarPage() {
     return true;
   });
 
-  const fcEvents = filtered.map((s) => ({
-    id: String(s.id),
-    title: s.eventTitle || `행사 #${s.eventId}`,
-    start: s.startDate,
-    end: addDays(s.endDate, 1),
-    backgroundColor: getZoneColor(s.zoneType, s.zoneColor),
-    borderColor: "transparent",
-    textColor: "#fff",
-    extendedProps: s,
-  }));
+  const fcEvents = filtered.map((s) => {
+    const isEventItem = (s as any).itemType === "event";
+    return {
+      id: String(s.id),
+      title: isEventItem ? `📅 ${s.eventTitle || `행사 #${s.eventId}`}` : s.eventTitle || `행사 #${s.eventId}`,
+      start: s.startDate,
+      end: addDays(s.endDate, 1),
+      backgroundColor: isEventItem ? "#52525b" : getZoneColor(s.zoneType, s.zoneColor),
+      borderColor: isEventItem ? "#3f3f46" : "transparent",
+      textColor: "#fff",
+      extendedProps: s,
+    };
+  });
 
   const zoneTypes = Array.from(new Set(schedules.map((s) => s.zoneType).filter(Boolean))) as string[];
   const eventStatuses = Array.from(new Set(schedules.map((s) => (s as any).eventStatus).filter(Boolean))) as string[];

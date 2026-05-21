@@ -129,23 +129,32 @@ router.get("/admin/calendar", async (req, res) => {
   const lastDay = new Date(Number(month.split("-")[0]), Number(month.split("-")[1]), 0).getDate();
   const endDate = `${month}-${String(lastDay).padStart(2, "0")}`;
 
-  const rows = await db.select({
-    sched: schedulesTable,
-    eventTitle: eventsTable.title,
-    eventStatus: eventsTable.status,
-    zoneName: promotionZonesTable.name,
-    zoneType: promotionZonesTable.type,
-    zoneColor: promotionZonesTable.color,
-  })
-    .from(schedulesTable)
-    .leftJoin(eventsTable, eq(schedulesTable.eventId, eventsTable.id))
-    .leftJoin(promotionZonesTable, eq(schedulesTable.zoneId, promotionZonesTable.id))
-    .where(and(
-      lte(schedulesTable.startDate, endDate),
-      gte(schedulesTable.endDate, startDate),
-    ));
+  const [rows, approvedEvents] = await Promise.all([
+    db.select({
+      sched: schedulesTable,
+      eventTitle: eventsTable.title,
+      eventStatus: eventsTable.status,
+      zoneName: promotionZonesTable.name,
+      zoneType: promotionZonesTable.type,
+      zoneColor: promotionZonesTable.color,
+    })
+      .from(schedulesTable)
+      .leftJoin(eventsTable, eq(schedulesTable.eventId, eventsTable.id))
+      .leftJoin(promotionZonesTable, eq(schedulesTable.zoneId, promotionZonesTable.id))
+      .where(and(
+        lte(schedulesTable.startDate, endDate),
+        gte(schedulesTable.endDate, startDate),
+      )),
+    db.select({ id: eventsTable.id, title: eventsTable.title, status: eventsTable.status, startDate: eventsTable.startDate, endDate: eventsTable.endDate })
+      .from(eventsTable)
+      .where(and(
+        lte(eventsTable.startDate, endDate),
+        gte(eventsTable.endDate, startDate),
+        inArray(eventsTable.status, ["approved", "submitted", "revision_requested"]),
+      )),
+  ]);
 
-  return res.json(rows.map(r => ({
+  const scheduleItems = rows.map(r => ({
     id: r.sched.id,
     eventId: r.sched.eventId,
     eventTitle: r.eventTitle ?? `이벤트 #${r.sched.eventId}`,
@@ -158,7 +167,28 @@ router.get("/admin/calendar", async (req, res) => {
     endDate: r.sched.endDate,
     status: r.sched.status,
     notes: r.sched.notes ?? null,
-  })));
+    itemType: "schedule" as const,
+  }));
+
+  const eventItems = approvedEvents
+    .filter(ev => !scheduleItems.some(s => s.eventId === ev.id))
+    .map(ev => ({
+      id: -(ev.id),
+      eventId: ev.id,
+      eventTitle: ev.title,
+      eventStatus: ev.status,
+      zoneId: null,
+      zoneName: null,
+      zoneType: null,
+      zoneColor: null,
+      startDate: ev.startDate,
+      endDate: ev.endDate,
+      status: ev.status,
+      notes: null,
+      itemType: "event" as const,
+    }));
+
+  return res.json([...scheduleItems, ...eventItems]);
 });
 
 router.get("/admin/settings", async (req, res) => {

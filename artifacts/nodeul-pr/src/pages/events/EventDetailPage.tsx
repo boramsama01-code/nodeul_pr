@@ -92,6 +92,8 @@ export default function EventDetailPage() {
   const [pendingZoneUpload, setPendingZoneUpload] = useState<string | null>(null);
 
   const [emailSending, setEmailSending] = useState(false);
+  const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+  const [revisionNote, setRevisionNote] = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
   React.useEffect(() => {
@@ -142,9 +144,19 @@ export default function EventDetailPage() {
     refetch();
   };
 
-  const handleAdminStatus = async (status: string) => {
-    await updateEvent.mutateAsync({ id: Number(id), data: { status } });
+  const handleAdminStatus = async (status: string, adminNote?: string) => {
+    await updateEvent.mutateAsync({ id: Number(id), data: { status, ...(adminNote !== undefined ? { adminNote } : {}) } });
     refetch();
+  };
+
+  const handleRevisionSubmit = async () => {
+    if (!revisionNote.trim()) return;
+    await handleAdminStatus("revision_requested", revisionNote.trim());
+    try {
+      await createComment.mutateAsync({ eventId: Number(id), data: { content: `[수정 요청] ${revisionNote.trim()}`, isAdminOnly: false } });
+    } catch {}
+    setShowRevisionDialog(false);
+    setRevisionNote("");
   };
 
   const handleZoneUpload = (zoneName: string, openFileDialog = false) => {
@@ -325,6 +337,36 @@ export default function EventDetailPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
+
+      {/* 수정 요청 다이얼로그 */}
+      {showRevisionDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowRevisionDialog(false)}>
+          <div className="bg-white rounded-xl shadow-2xl border border-black/10 w-full max-w-md p-6 mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-sm font-bold text-foreground" style={KR}>수정 요청 사유 입력</h2>
+            <p className="text-xs text-muted-foreground" style={KR}>신청자에게 전달할 수정 사유를 입력해 주세요. 입력 내용은 코멘트 및 알림 배너에 표시됩니다.</p>
+            <textarea
+              rows={4}
+              className="w-full border border-black/15 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-amber-400 resize-none"
+              style={KR}
+              placeholder="예: 홍보물 해상도가 낮습니다. 300dpi 이상으로 재업로드해 주세요."
+              value={revisionNote}
+              onChange={e => setRevisionNote(e.target.value)}
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => { setShowRevisionDialog(false); setRevisionNote(""); }}
+                className="h-8 px-3 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                취소
+              </button>
+              <button onClick={handleRevisionSubmit} disabled={!revisionNote.trim() || updateEvent.isPending}
+                className="h-8 px-4 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors disabled:opacity-50" style={KR}>
+                수정 요청 전송
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 수정 요청 배너 */}
       {event.status === "revision_requested" && !isAdmin && (
         <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -411,8 +453,7 @@ export default function EventDetailPage() {
           {isAdmin && event.status === "submitted" && (
             <>
               <button onClick={() => handleAdminStatus("approved")} className="h-8 px-3 text-xs font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors" style={KR}>승인</button>
-              <button onClick={() => handleAdminStatus("revision_requested")} className="h-8 px-3 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors" style={KR}>수정 요청</button>
-              <button onClick={() => handleAdminStatus("rejected")} className="h-8 px-3 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 transition-colors" style={KR}>반려</button>
+              <button onClick={() => setShowRevisionDialog(true)} className="h-8 px-3 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors" style={KR}>수정 요청</button>
             </>
           )}
           {isAdmin && event.status === "approved" && event.contactEmail && (
