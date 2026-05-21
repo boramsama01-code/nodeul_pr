@@ -128,7 +128,7 @@ export default function AdminDashboardPage() {
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>신청 기관</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>상태</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>기간</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>액션</th>
+                  <th className="px-4 py-2.5"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">

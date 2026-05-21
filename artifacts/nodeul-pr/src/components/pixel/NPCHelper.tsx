@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "wouter";
 import { useUIStore } from "@/store/useUIStore";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -44,17 +45,36 @@ async function sendToNPC(message: string, history: ChatMsg[]): Promise<string> {
   return data.reply;
 }
 
+const NAV_LINKS: { pattern: RegExp; label: string; href: string }[] = [
+  { pattern: /대시보드|신청 목록|행사 목록/i, label: "📋 내 행사 목록", href: "/dashboard" },
+  { pattern: /홍보물|파일 업로드|재제출/i, label: "📁 홍보물 관리", href: "/assets" },
+  { pattern: /새 행사|행사 신청|행사 등록/i, label: "✏️ 새 행사 신청", href: "/events/new" },
+  { pattern: /캘린더|일정/i, label: "📅 일정 캘린더", href: "/calendar" },
+];
+
 function MessageContent({ content }: { content: string }) {
   const lines = content.split("\n");
+  const relevantLinks = NAV_LINKS.filter(l => l.pattern.test(content));
   return (
-    <>
+    <div style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
       {lines.map((line, idx) => (
         <React.Fragment key={idx}>
           {line}
           {idx < lines.length - 1 && <br />}
         </React.Fragment>
       ))}
-    </>
+      {relevantLinks.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-black/8">
+          {relevantLinks.map(l => (
+            <Link key={l.href} href={l.href}>
+              <span className="inline-flex items-center text-[11px] font-medium text-primary hover:underline cursor-pointer bg-primary/8 px-2 py-0.5 rounded-full">
+                {l.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

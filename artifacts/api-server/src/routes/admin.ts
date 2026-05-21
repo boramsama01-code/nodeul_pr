@@ -17,11 +17,14 @@ router.get("/admin/dashboard", async (req, res) => {
   const user = await requireAdmin(req, res);
   if (!user) return;
 
-  const [pendingRequests, allEvents, todaySchedRows, allComments] = await Promise.all([
-    db.select().from(promotionRequestsTable).where(eq(promotionRequestsTable.status, "pending")),
-    db.select().from(eventsTable).orderBy(desc(eventsTable.updatedAt)).limit(10),
+  const today = new Date().toISOString().split("T")[0];
+  const [allEventsForStats, recentEventSlice, todaySchedRows, allComments] = await Promise.all([
+    db.select({ id: eventsTable.id, status: eventsTable.status }).from(eventsTable),
+    db.select({ ev: eventsTable, orgName: organizationsTable.name })
+      .from(eventsTable)
+      .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.id))
+      .orderBy(desc(eventsTable.updatedAt)).limit(5),
     (async () => {
-      const today = new Date().toISOString().split("T")[0];
       const rows = await db.select({ sched: schedulesTable, eventTitle: eventsTable.title, zoneName: promotionZonesTable.name, zoneType: promotionZonesTable.type, zoneColor: promotionZonesTable.color })
         .from(schedulesTable)
         .leftJoin(eventsTable, eq(schedulesTable.eventId, eventsTable.id))
@@ -31,38 +34,31 @@ router.get("/admin/dashboard", async (req, res) => {
     db.select().from(commentsTable),
   ]);
 
-  const revisionRequests = await db.select().from(promotionRequestsTable).where(eq(promotionRequestsTable.status, "revision_requested"));
-  const newSubmissions = allEvents.filter(e => e.status === "submitted");
-
   const statusBreakdown = { draft: 0, submitted: 0, approved: 0, revision_requested: 0, rejected: 0, completed: 0 };
-  for (const ev of allEvents) {
+  for (const ev of allEventsForStats) {
     const s = ev.status as keyof typeof statusBreakdown;
     if (s in statusBreakdown) statusBreakdown[s]++;
   }
 
-  const recentEventSlice = allEvents.slice(0, 5);
-  const orgIds = recentEventSlice.map(e => e.organizationId).filter(Boolean) as number[];
-  const orgs = orgIds.length > 0
-    ? await db.select({ id: organizationsTable.id, name: organizationsTable.name }).from(organizationsTable).where(inArray(organizationsTable.id, orgIds))
-    : [];
-  const orgMap = Object.fromEntries(orgs.map(o => [o.id, o.name]));
+  const pendingApprovalCount = statusBreakdown.submitted;
+  const revisionRequestCount = statusBreakdown.revision_requested;
 
   return res.json({
-    pendingApprovalCount: newSubmissions.length,
-    revisionRequestCount: revisionRequests.length,
+    pendingApprovalCount,
+    revisionRequestCount,
     todayScheduleCount: todaySchedRows.length,
     conflictCount: 0,
-    newSubmissionsCount: newSubmissions.length,
-    recentlyUpdatedCount: allEvents.length,
+    newSubmissionsCount: pendingApprovalCount,
+    recentlyUpdatedCount: allEventsForStats.length,
     unreadCommentsCount: allComments.length,
     statusBreakdown,
-    recentEvents: recentEventSlice.map(ev => ({
+    recentEvents: recentEventSlice.map(({ ev, orgName }) => ({
       id: ev.id,
       title: ev.title,
       description: ev.description ?? null,
       status: ev.status,
       organizationId: ev.organizationId,
-      organizationName: ev.organizationId ? (orgMap[ev.organizationId] ?? null) : null,
+      organizationName: orgName ?? null,
       contactName: ev.contactName ?? null,
       contactEmail: ev.contactEmail ?? null,
       startDate: ev.startDate,

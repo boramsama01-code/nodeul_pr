@@ -522,8 +522,9 @@ export default function EventCreatePage() {
           <Section title="3. 홍보 신청" desc="승인된 항목은 캘린더에 자동 반영됩니다">
             {pdfGuideUrl && (
               <a href={pdfGuideUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline" style={KR}>
-                📄 홍보 구역 안내 가이드 PDF 보기
+                className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors shadow-sm" style={KR}>
+                <span className="text-base">📥</span>
+                홍보 구역 안내 및 제작 사양 안내
               </a>
             )}
             {/* A. 홈페이지/SNS — 필수 */}

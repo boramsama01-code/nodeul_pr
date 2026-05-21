@@ -78,8 +78,9 @@ export default function DashboardPage() {
 
   const revisionCount = events.filter(e => e.status === "revision_requested").length;
   const approvedCount = events.filter(e => e.status === "approved" || e.status === "completed").length;
-  const questStep = events.length === 0 ? 1 : 2;
-  const completedQuestSteps = events.length > 0 ? [1] : [];
+  const hasApproved = events.some(e => e.status === "approved" || e.status === "completed");
+  const hasSubmitted = events.some(e => ["submitted", "approved", "completed", "revision_requested"].includes(e.status));
+  const questStep = events.length === 0 ? 1 : !hasSubmitted ? 2 : !hasApproved ? 3 : 4;
 
   const froggMsg = events.length === 0
     ? "아직 행사 신청이 없어요! 아래 버튼으로 첫 번째 퀘스트를 시작해 보세요 🐸"
@@ -148,7 +149,7 @@ export default function DashboardPage() {
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>상태</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden sm:table-cell" style={KR}>기간</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground hidden md:table-cell" style={KR}>장소</th>
-                  <th className="px-4 py-2.5 text-xs font-semibold text-muted-foreground text-right" style={KR}>상세</th>
+                  <th className="px-4 py-2.5"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">

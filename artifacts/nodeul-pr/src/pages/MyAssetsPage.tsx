@@ -217,10 +217,10 @@ export default function MyAssetsPage() {
           </p>
         </div>
         {guideUrl && (
-          <a href={guideUrl} target="_blank" rel="noopener noreferrer">
-            <button className="h-8 px-3 text-xs font-medium bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors" style={KR}>
-              📄 가이드 PDF
-            </button>
+          <a href={guideUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors shadow-sm" style={KR}>
+            <span className="text-base">📥</span>
+            홍보 구역 안내 및 제작 사양 안내
           </a>
         )}
       </div>

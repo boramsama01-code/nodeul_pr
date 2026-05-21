@@ -8,6 +8,7 @@ import {
   useSendEventEmail,
   useGetMe,
   getGetMeQueryKey,
+  useListPromotionZones,
 } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import { useUIStore } from "@/store/useUIStore";
@@ -74,7 +75,6 @@ export default function EventDetailPage() {
   const [comment, setComment] = useState("");
   const [isAdminOnly, setIsAdminOnly] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
-  const [prForm, setPRForm] = useState({ zoneName: "", notes: "" });
   const [prSubmitting, setPrSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "assets" | "pr" | "schedule" | "comments">("overview");
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
@@ -86,29 +86,30 @@ export default function EventDetailPage() {
   const [uploadMemo, setUploadMemo] = useState("");
   const [uploadName, setUploadName] = useState("");
   const [uploadZoneId, setUploadZoneId] = useState("");
-  const [showUploadForm, setShowUploadForm] = useState(false);
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [pendingZoneUpload, setPendingZoneUpload] = useState<string | null>(null);
 
   const [emailSending, setEmailSending] = useState(false);
   const [showRevisionDialog, setShowRevisionDialog] = useState(false);
   const [revisionNote, setRevisionNote] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [prZoneId, setPrZoneId] = useState("");
+  const [prStartDate, setPrStartDate] = useState("");
+  const [prEndDate, setPrEndDate] = useState("");
+  const [prNotes, setPrNotes] = useState("");
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [schedZoneId, setSchedZoneId] = useState("");
+  const [schedStart, setSchedStart] = useState("");
+  const [schedEnd, setSchedEnd] = useState("");
+  const [schedNotes, setSchedNotes] = useState("");
+  const [schedSubmitting, setSchedSubmitting] = useState(false);
+  const { data: zones } = useListPromotionZones();
 
   React.useEffect(() => {
     if (event) setNPCMessage(`"${event.title}" 행사 상세페이지에요. 상태: ${STATUS_LABELS[event.status] || event.status} 🐸`);
   }, [event]);
 
-  React.useEffect(() => {
-    if (pendingZoneUpload !== null && showUploadForm && activeTab === "assets") {
-      const timer = setTimeout(() => {
-        fileInputRef.current?.click();
-        setPendingZoneUpload(null);
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [pendingZoneUpload, showUploadForm, activeTab]);
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (isLoading) return (
@@ -159,19 +160,14 @@ export default function EventDetailPage() {
     setRevisionNote("");
   };
 
-  const handleZoneUpload = (zoneName: string, openFileDialog = false) => {
+  const handleZoneUpload = (zoneName: string, _openFileDialog = false) => {
     setUploadName(zoneName);
     setUploadZoneId("");
     setUploadAssetId(null);
     setUploadMemo("");
     setUploadError("");
-    setShowUploadForm(true);
-    setActiveTab("assets");
-    if (openFileDialog) {
-      setPendingZoneUpload(zoneName);
-    } else {
-      setTimeout(() => document.getElementById("uploadFormAnchor")?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
+    setShowUploadModal(true);
+    setPendingZoneUpload(null);
   };
 
   const handleReply = async (parentId: number) => {
@@ -232,18 +228,45 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleScheduleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schedZoneId || !schedStart || !schedEnd) return;
+    setSchedSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${BASE_URL}/api/schedules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ eventId: Number(id), zoneId: Number(schedZoneId), startDate: schedStart, endDate: schedEnd, notes: schedNotes || null }),
+      });
+      if (!res.ok) throw new Error("일정 추가 실패");
+      setShowScheduleForm(false);
+      setSchedZoneId(""); setSchedStart(""); setSchedEnd(""); setSchedNotes("");
+      refetch();
+    } catch (err: any) {
+      alert(err.message || "일정 추가에 실패했습니다.");
+    } finally {
+      setSchedSubmitting(false);
+    }
+  };
+
   const handlePRSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!prZoneId || !prStartDate || !prEndDate) return;
     setPrSubmitting(true);
     try {
-      const content = `[추가 구역 신청]\n구역: ${prForm.zoneName}\n메모: ${prForm.notes || "(없음)"}`;
-      await createComment.mutateAsync({
-        eventId: Number(id),
-        data: { content, isAdminOnly: false },
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${BASE_URL}/api/promotion-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ eventId: Number(id), zoneId: Number(prZoneId), requestedStartDate: prStartDate, requestedEndDate: prEndDate, notes: prNotes || null }),
       });
+      if (!res.ok) throw new Error("구역 신청에 실패했습니다.");
       setShowPRForm(false);
-      setPRForm({ zoneName: "", notes: "" });
+      setPrZoneId(""); setPrStartDate(""); setPrEndDate(""); setPrNotes("");
       refetch();
+    } catch (err: any) {
+      alert(err.message || "구역 신청에 실패했습니다.");
     } finally {
       setPrSubmitting(false);
     }
@@ -297,6 +320,7 @@ export default function EventDetailPage() {
       }
       refetch();
       setShowUploadForm(false);
+      setShowUploadModal(false);
       setUploadMemo("");
       setUploadName("");
       setUploadZoneId("");
@@ -323,7 +347,7 @@ export default function EventDetailPage() {
     { id: "overview", label: "개요" },
     { id: "pr", label: `홍보신청 ${allRequestedZones.length > 0 ? allRequestedZones.length : (event.promotionRequests?.length ?? 0)}` },
     { id: "assets", label: `홍보물 ${event.assets?.length ?? 0}` },
-    { id: "schedule", label: `일정 ${event.schedules?.length ?? 0}` },
+    { id: "schedule", label: "홍보승인 현황" },
     { id: "comments", label: `코멘트 ${event.comments?.length ?? 0}` },
   ];
 
@@ -367,6 +391,56 @@ export default function EventDetailPage() {
         </div>
       )}
 
+      {/* 플로팅 업로드 모달 */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowUploadModal(false); setUploadError(""); }}>
+          <div className="bg-white rounded-xl shadow-2xl border border-black/10 w-full max-w-lg p-6 mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold" style={KR}>{uploadAssetId ? "📎 파일 추가" : "📁 홍보물 업로드"}</h2>
+              <button onClick={() => { setShowUploadModal(false); setUploadError(""); }} className="text-zinc-400 hover:text-zinc-700 text-lg leading-none">✕</button>
+            </div>
+            {!uploadAssetId && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보물 이름 *</label>
+                  <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                    value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="예: 인스타그램 배너" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역</label>
+                  <select className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                    value={uploadZoneId} onChange={e => setUploadZoneId(e.target.value)}>
+                    <option value="">구역 미지정</option>
+                    {zones?.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>변경 내용 메모 (선택)</label>
+              <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                value={uploadMemo} onChange={e => setUploadMemo(e.target.value)} placeholder="어떤 부분을 수정했는지 간단히 적어주세요" />
+            </div>
+            <div className="border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
+              onClick={() => fileInputRef.current?.click()}>
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*,.pdf,.psd,.ai,.zip,.pptx,.mp4,.mov" />
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-zinc-300 border-t-primary rounded-full animate-spin" />
+                  <span className="text-sm text-muted-foreground" style={KR}>업로드 중...</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm font-medium" style={KR}>클릭하여 파일 선택</p>
+                  <p className="text-xs text-muted-foreground mt-1" style={KR}>이미지, PDF, PSD, AI, ZIP, PPTX, MP4, MOV · 최대 5MB</p>
+                </>
+              )}
+            </div>
+            {uploadError && <p className="text-xs text-destructive" style={KR}>{uploadError}</p>}
+          </div>
+        </div>
+      )}
+
       {/* 수정 요청 배너 */}
       {event.status === "revision_requested" && !isAdmin && (
         <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -384,7 +458,7 @@ export default function EventDetailPage() {
             )}
           </div>
           <button
-            onClick={() => { setActiveTab("assets"); setShowUploadForm(true); setUploadAssetId(null); }}
+            onClick={() => { setUploadAssetId(null); setUploadName(""); setUploadZoneId(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
             className="h-8 px-4 text-xs font-medium bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors flex-shrink-0"
             style={KR}
           >
@@ -645,17 +719,32 @@ export default function EventDetailPage() {
           {showPRForm && (
             <form onSubmit={handlePRSubmit} className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>추가 신청 구역 *</label>
-                <input required type="text" placeholder="예: 현수막 A구역, 가로등 배너 3번 등" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                  value={prForm.zoneName} onChange={e => setPRForm(f => ({ ...f, zoneName: e.target.value }))} />
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 *</label>
+                <select required className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                  value={prZoneId} onChange={e => setPrZoneId(e.target.value)}>
+                  <option value="">구역을 선택하세요</option>
+                  {zones?.map(z => <option key={z.id} value={z.id}>{z.name} ({z.type})</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>희망 시작일 *</label>
+                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                    value={prStartDate} onChange={e => setPrStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>희망 종료일 *</label>
+                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                    value={prEndDate} onChange={e => setPrEndDate(e.target.value)} />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>요청 메모</label>
-                <textarea rows={3} placeholder="추가 요청 사항을 자유롭게 입력해주세요." className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
-                  value={prForm.notes} onChange={e => setPRForm(f => ({ ...f, notes: e.target.value }))} />
+                <textarea rows={2} placeholder="추가 요청 사항을 자유롭게 입력해주세요." className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
+                  value={prNotes} onChange={e => setPrNotes(e.target.value)} />
               </div>
-              <button type="submit" disabled={prSubmitting}
-                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors" style={KR}>
+              <button type="submit" disabled={prSubmitting || !prZoneId || !prStartDate || !prEndDate}
+                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
                 {prSubmitting ? "신청 중..." : "신청"}
               </button>
             </form>
@@ -717,12 +806,12 @@ export default function EventDetailPage() {
                       </td>
                       <td className="px-4 py-2.5 text-sm" style={KR}>홈페이지 / SNS 게시</td>
                       <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>{meta.snsSiteDate}</td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground" style={KR}>
+                      <td className="px-4 py-2.5 text-xs" style={KR}>
                         {(() => {
-                          const a = event.assets?.find(a => a.name?.includes("SNS") || a.name?.includes("홈페이지") || a.zoneName?.includes("SNS") || a.zoneName?.includes("홈페이지"));
-                          return a
-                            ? <span className="font-medium text-foreground">{a.name}</span>
-                            : <button onClick={() => handleZoneUpload("홈페이지 / SNS 게시", true)} className="text-primary underline hover:text-primary/80 cursor-pointer">미업로드</button>;
+                          const matched = event.assets?.filter(a => a.name?.includes("SNS") || a.name?.includes("홈페이지") || a.zoneName?.includes("SNS") || a.zoneName?.includes("홈페이지")) ?? [];
+                          return matched.length > 0
+                            ? <div className="flex flex-col gap-0.5">{matched.map(a => <a key={a.id} href={a.latestVersionUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 truncate max-w-[140px]" title={a.name ?? ""}>📎 {a.name}</a>)}</div>
+                            : <button onClick={() => handleZoneUpload("홈페이지 / SNS 게시")} className="text-zinc-400 hover:text-primary transition-colors cursor-pointer">미업로드</button>;
                         })()}
                       </td>
                       <td className="px-4 py-2.5">
@@ -746,9 +835,12 @@ export default function EventDetailPage() {
                               🔧 설치 예정
                             </span>
                           ) : matchedAsset ? (
-                            <span className="font-medium text-foreground">{matchedAsset.name}</span>
+                            <a href={matchedAsset.latestVersionUrl ?? "#"} target="_blank" rel="noopener noreferrer"
+                              className="text-primary underline hover:text-primary/80 truncate max-w-[140px] inline-block" title={matchedAsset.name ?? ""}>
+                              📎 {matchedAsset.name}
+                            </a>
                           ) : (
-                            <button onClick={() => handleZoneUpload(z.label, true)} className="text-primary underline hover:text-primary/80 cursor-pointer" style={KR}>
+                            <button onClick={() => handleZoneUpload(z.label)} className="text-zinc-400 hover:text-primary transition-colors cursor-pointer" style={KR}>
                               미업로드
                             </button>
                           )}
@@ -772,59 +864,31 @@ export default function EventDetailPage() {
 
           <div id="uploadFormAnchor" className="flex items-center justify-between">
             <h3 className="text-sm font-semibold" style={KR}>홍보물 관리</h3>
-            <button onClick={() => { setUploadName(""); setUploadZoneId(""); setUploadAssetId(null); setShowUploadForm(!showUploadForm); }}
+            <button onClick={() => { setUploadName(""); setUploadZoneId(""); setUploadAssetId(null); setShowUploadModal(true); }}
               className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
-              {showUploadForm ? "취소" : "+ 홍보물 업로드"}
+              + 홍보물 업로드
             </button>
           </div>
 
-          {showUploadForm && (
-            <div className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground" style={KR}>
-                {uploadAssetId ? `버전 추가 (Asset #${uploadAssetId})` : "새 홍보물 업로드"}
-              </h4>
-              {!uploadAssetId && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보물 이름 *</label>
-                    <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                      value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="예: 인스타그램 배너" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 (신청한 구역)</label>
-                    <select className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                      value={uploadZoneId} onChange={e => setUploadZoneId(e.target.value)}>
-                      <option value="">구역 미지정</option>
-                      {allRequestedZones.length > 0
-                        ? allRequestedZones.map((z, i) => <option key={i} value={String(i + 1)}>{z.label}</option>)
-                        : zones?.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>변경 내용 메모</label>
-                <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                  value={uploadMemo} onChange={e => setUploadMemo(e.target.value)} placeholder="어떤 부분을 수정했는지 간단히 적어주세요" />
+          {/* 관리자용 최종 파일 목록 */}
+          {isAdmin && event.assets && event.assets.length > 0 && event.assets.some(a => a.selectedVersionId || a.latestVersionUrl) && (
+            <div className="border border-emerald-200 rounded-lg bg-emerald-50/40 p-4">
+              <h4 className="text-xs font-semibold text-emerald-800 mb-2" style={KR}>📥 최종 파일 목록 (관리자)</h4>
+              <div className="flex flex-col gap-1.5">
+                {event.assets.map(asset => {
+                  const url = asset.latestVersionUrl;
+                  if (!url) return null;
+                  return (
+                    <a key={asset.id} href={url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-emerald-700 hover:text-emerald-900 hover:underline transition-colors">
+                      <span>📎</span>
+                      <span className="font-medium" style={KR}>{asset.name}</span>
+                      {asset.zoneName && <span className="text-emerald-600/70" style={KR}>({asset.zoneName})</span>}
+                      <span className="text-emerald-500 ml-auto">v{asset.totalVersions} 다운로드 →</span>
+                    </a>
+                  );
+                })}
               </div>
-              <div
-                className="border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
-                onClick={() => fileInputRef.current?.click()}>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload}
-                  accept="image/*,.pdf,.psd,.ai,.zip,.pptx" />
-                {uploading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-zinc-300 border-t-primary rounded-full animate-spin" />
-                    <span className="text-sm text-muted-foreground" style={KR}>업로드 중...</span>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium" style={KR}>파일을 클릭하여 선택</p>
-                    <p className="text-xs text-muted-foreground mt-1" style={KR}>이미지, PDF, PSD, AI, ZIP, PPTX 지원 · 최대 5MB</p>
-                  </>
-                )}
-              </div>
-              {uploadError && <p className="text-xs text-destructive" style={KR}>{uploadError}</p>}
             </div>
           )}
 
@@ -843,9 +907,9 @@ export default function EventDetailPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground" style={KR}>v{asset.totalVersions}</span>
                       <button
-                        onClick={() => { setUploadAssetId(asset.id); setShowUploadForm(true); setUploadName(""); setUploadZoneId(""); }}
+                        onClick={() => { setUploadAssetId(asset.id); setUploadName(""); setUploadZoneId(""); setUploadMemo(""); setUploadError(""); setShowUploadModal(true); }}
                         className="h-6 px-2 text-xs border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
-                        + 버전 추가
+                        📎 파일 추가
                       </button>
                     </div>
                   </div>
@@ -857,45 +921,135 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      {/* ── 일정 탭 ── */}
+      {/* ── 홍보승인 현황 탭 ── */}
       {activeTab === "schedule" && (
-        <div className="space-y-3">
-          <BaekroSpeech mood="thinking">
-            여기에 표시되는 일정은 <strong>관리자가 승인한 실제 홍보 게시 일정</strong>입니다. 신청 시 입력한 희망 날짜와 다를 수 있으니 참고해 주세요 🗓️
-          </BaekroSpeech>
-          <h3 className="text-sm font-semibold" style={KR}>승인된 게시 일정</h3>
-          {event.schedules?.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground" style={KR}>
-              <p>아직 승인된 일정이 없습니다.</p>
-              <p className="text-xs text-muted-foreground mt-1" style={KR}>행사 승인 후 관리자가 게시 일정을 등록합니다.</p>
+        <div className="space-y-4">
+          {/* 구역별 신청·승인 현황 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold" style={KR}>구역별 홍보 신청 현황</h3>
             </div>
-          ) : (
-            <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-black/8 bg-zinc-50/60">
-                    {["구역", "승인된 게시 기간", "상태", "메모"].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/5">
-                  {event.schedules?.map(s => (
-                    <tr key={s.id} className="hover:bg-muted/20">
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          {s.zoneColor && <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: s.zoneColor }} />}
-                          <span style={KR}>{s.zoneName || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{s.startDate} ~ {s.endDate}</td>
-                      <td className="px-4 py-2.5"><StatusPill status={s.status} /></td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[160px] truncate" style={KR}>{s.notes || "-"}</td>
+            {(!event.promotionRequests || event.promotionRequests.length === 0) ? (
+              <div className="border border-black/10 rounded-lg bg-white text-center py-8 text-sm text-muted-foreground" style={KR}>
+                <p>신청된 홍보 구역이 없습니다.</p>
+                <p className="text-xs mt-1" style={KR}>홍보신청 탭에서 구역을 신청하세요.</p>
+              </div>
+            ) : (
+              <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-zinc-50/40">
+                      {["홍보 구역", "구분", "희망 기간", "승인 상태", "관리자 코멘트"].map(h => (
+                        <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {event.promotionRequests?.map(pr => (
+                      <tr key={pr.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5">
+                          <span className="text-sm font-medium" style={KR}>{pr.zoneName}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 border border-zinc-200" style={KR}>{pr.zoneType}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{pr.requestedStartDate} ~ {pr.requestedEndDate}</td>
+                        <td className="px-4 py-2.5"><StatusPill status={pr.status} /></td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[180px] truncate" style={KR}>{pr.adminComment || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* 확정 게시 일정 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold" style={KR}>확정 게시 일정</h3>
+              {isAdmin && (
+                <button onClick={() => setShowScheduleForm(!showScheduleForm)}
+                  className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
+                  {showScheduleForm ? "취소" : "+ 일정 추가"}
+                </button>
+              )}
             </div>
+
+            {isAdmin && showScheduleForm && (
+              <form onSubmit={handleScheduleAdd} className="border border-black/10 rounded-lg p-4 bg-white space-y-3 mb-3">
+                <h4 className="text-xs font-semibold text-muted-foreground" style={KR}>새 게시 일정 추가</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 *</label>
+                    <select required className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={schedZoneId} onChange={e => setSchedZoneId(e.target.value)}>
+                      <option value="">구역 선택</option>
+                      {zones?.map(z => <option key={z.id} value={z.id}>{z.name} ({z.type})</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>게시 시작일 *</label>
+                    <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={schedStart} onChange={e => setSchedStart(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>게시 종료일 *</label>
+                    <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={schedEnd} onChange={e => setSchedEnd(e.target.value)} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>메모</label>
+                    <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                      value={schedNotes} onChange={e => setSchedNotes(e.target.value)} placeholder="게시 관련 메모 (선택)" />
+                  </div>
+                </div>
+                <button type="submit" disabled={schedSubmitting || !schedZoneId || !schedStart || !schedEnd}
+                  className="h-8 px-4 text-xs font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors disabled:opacity-50" style={KR}>
+                  {schedSubmitting ? "추가 중..." : "일정 추가"}
+                </button>
+              </form>
+            )}
+
+            {event.schedules?.length === 0 ? (
+              <div className="border border-black/10 rounded-lg bg-white text-center py-8 text-sm text-muted-foreground" style={KR}>
+                <p>아직 확정된 게시 일정이 없습니다.</p>
+                {!isAdmin && <p className="text-xs mt-1">행사 승인 후 관리자가 게시 일정을 등록합니다.</p>}
+              </div>
+            ) : (
+              <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-zinc-50/60">
+                      {["구역", "확정 게시 기간", "상태", "메모"].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground" style={KR}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {event.schedules?.map(s => (
+                      <tr key={s.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            {s.zoneColor && <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: s.zoneColor }} />}
+                            <span className="text-sm" style={KR}>{s.zoneName || "-"}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap" style={KR}>{s.startDate} ~ {s.endDate}</td>
+                        <td className="px-4 py-2.5"><StatusPill status={s.status} /></td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[160px] truncate" style={KR}>{s.notes || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {!isAdmin && (
+            <BaekroSpeech mood="thinking">
+              여기에 표시되는 일정은 <strong>관리자가 확정한 실제 홍보 게시 일정</strong>입니다. 신청 시 입력한 희망 날짜와 다를 수 있으니 참고해 주세요 🗓️
+            </BaekroSpeech>
           )}
         </div>
       )}
@@ -912,6 +1066,7 @@ export default function EventDetailPage() {
                   <div className={`border rounded-lg p-3 ${c.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/10 bg-white"}`}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
+                        <span className="text-base leading-none" title={c.authorRole === "admin" || c.authorRole === "super_admin" ? "맹꽁이 (관리자)" : "백로 (대관사)"}>{c.authorRole === "admin" || c.authorRole === "super_admin" ? "🐸" : "🦢"}</span>
                         <span className="text-xs font-semibold" style={KR}>{c.authorName}</span>
                         <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-zinc-100 rounded" style={KR}>{c.authorRole}</span>
                         {c.isAdminOnly && <span className="text-[10px] text-amber-700 px-1.5 py-0.5 bg-amber-100 rounded" style={KR}>관리자 전용</span>}
@@ -940,6 +1095,7 @@ export default function EventDetailPage() {
                         <div key={r.id} className={`border rounded-md p-2.5 ${r.isAdminOnly ? "border-amber-200 bg-amber-50/50" : "border-black/8 bg-zinc-50/60"}`}>
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1.5">
+                              <span className="text-sm leading-none">{r.authorRole === "admin" || r.authorRole === "super_admin" ? "🐸" : "🦢"}</span>
                               <span className="text-[11px] font-semibold" style={KR}>{r.authorName}</span>
                               <span className="text-[10px] text-muted-foreground px-1 py-0.5 bg-zinc-100 rounded" style={KR}>{r.authorRole}</span>
                             </div>

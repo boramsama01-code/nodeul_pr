@@ -203,6 +203,20 @@ router.post("/assets/:id/versions", async (req, res) => {
   return res.status(201).json(formatVersion(version));
 });
 
+// Update changeMemo on a version
+router.patch("/assets/versions/:versionId/memo", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const versionId = Number(req.params.versionId);
+  const { changeMemo } = req.body;
+  const [updated] = await db.update(assetVersionsTable)
+    .set({ changeMemo: changeMemo ?? null })
+    .where(eq(assetVersionsTable.id, versionId))
+    .returning();
+  if (!updated) return res.status(404).json({ error: "Not found" });
+  return res.json(formatVersion(updated));
+});
+
 // Select final version (admin only)
 router.patch("/assets/:id/versions/:versionId/select", async (req, res) => {
   const { userId } = getAuth(req);
