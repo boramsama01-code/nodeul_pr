@@ -48,8 +48,13 @@ async function sendAdminNotificationEmail(eventId: number, eventTitle: string, s
   const subject = `[노들섬] 새 홍보 신청이 접수되었습니다: "${eventTitle}"`;
   const body = `안녕하세요,\n\n${submitterName ? `"${submitterName}"님이 ` : ""}새 행사 홍보 신청을 제출했습니다.\n\n행사명: ${eventTitle}\n\n아래 링크에서 신청 내용을 검토해 주세요:\n${appUrl}/admin/events/${eventId}`;
 
+  // RESEND_TO_OVERRIDE: Resend 무료 계정은 계정 이메일로만 발송 가능
+  // 도메인 인증 전까지 RESEND_TO_OVERRIDE 환경변수로 수신 이메일을 지정하세요
+  const toOverride = process.env.RESEND_TO_OVERRIDE;
+
   for (const admin of admins) {
     if (!admin.email) continue;
+    const toAddress = toOverride || admin.email;
     let status = "failed";
     try {
       const resp = await fetch("https://api.resend.com/emails", {
@@ -57,7 +62,7 @@ async function sendAdminNotificationEmail(eventId: number, eventTitle: string, s
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
         body: JSON.stringify({
           from: "노들섬 홍보팀 <onboarding@resend.dev>",
-          to: [admin.email],
+          to: [toAddress],
           subject,
           html: `<div style="font-family:monospace;max-width:600px;margin:0 auto;padding:24px;border:2px solid #000;">
             <h2 style="font-family:'Courier New';color:#0a6b00;">🏝️ 노들섬 홍보 통합 시스템</h2>
@@ -69,7 +74,7 @@ async function sendAdminNotificationEmail(eventId: number, eventTitle: string, s
       });
       if (resp.ok) {
         status = "sent";
-        console.log(`[email] Admin notification sent to ${admin.email} for event #${eventId}`);
+        console.log(`[email] Admin notification sent to ${toAddress} for event #${eventId}`);
       } else {
         const errBody = await resp.json().catch(() => ({}));
         console.error("[email] Resend API error in sendAdminNotificationEmail:", resp.status, errBody);
@@ -105,12 +110,14 @@ async function sendStatusChangeEmail(eventId: number, newStatus: string, created
   let status = "pending";
   try {
     if (RESEND_API_KEY) {
+      const toOverride2 = process.env.RESEND_TO_OVERRIDE;
+      const toAddress2 = toOverride2 || creator.email;
       const resp = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
         body: JSON.stringify({
           from: "노들섬 홍보팀 <onboarding@resend.dev>",
-          to: [creator.email],
+          to: [toAddress2],
           subject,
           html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:8px"><h2 style="color:#0a6b00">🏝️ 노들섬 홍보 통합 시스템</h2><div style="background:#f8f9fa;border-left:4px solid #0a6b00;padding:16px;margin:16px 0;white-space:pre-wrap">${body.replace(/\n/g,"<br>")}</div><p style="font-size:12px;color:#666">문의: <a href="mailto:nodeul@sfac.or.kr">nodeul@sfac.or.kr</a></p></div>`,
         }),

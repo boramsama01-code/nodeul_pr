@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useGetMe, getGetMeQueryKey, useGetAdminCalendar, getGetAdminCalendarQueryKey } from "@workspace/api-client-react";
 import { supabase } from "@/lib/supabase";
 import FullCalendar from "@fullcalendar/react";
@@ -40,6 +40,7 @@ function getZoneColor(zoneType?: string | null, zoneColor?: string | null) {
 
 export default function AdminCalendarPage() {
   const { isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
   const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
 
   const calendarRef = useRef<FullCalendar>(null);
@@ -205,19 +206,19 @@ export default function AdminCalendarPage() {
 
       {/* Schedule list */}
       {schedules.length > 0 && (
-        <div className="border border-zinc-800 rounded-lg bg-zinc-950 overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-400" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{month}월 전체 일정</span>
-            <span className="text-xs text-zinc-600">{schedules.length}건</span>
+        <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{month}월 전체 일정</span>
+            <span className="text-xs text-muted-foreground">{schedules.length}건</span>
           </div>
-          <div className="divide-y divide-zinc-800/60">
+          <div className="divide-y divide-black/5">
             {schedules.map(s => (
-              <a key={s.id} href={`/events/${s.eventId}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-900 transition-colors">
+              <button key={s.id} onClick={() => setLocation(`/events/${s.eventId}`)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 transition-colors text-left">
                 <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: getZoneColor(s.zoneType, s.zoneColor) }} />
-                <span className="text-sm text-zinc-300 flex-1 truncate" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{s.eventTitle}</span>
-                <span className="text-xs text-zinc-500 hidden sm:block" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{ZONE_KR[s.zoneType!] || s.zoneName}</span>
-                <span className="text-xs text-zinc-600 whitespace-nowrap">{s.startDate} ~ {s.endDate}</span>
-              </a>
+                <span className="text-sm text-foreground flex-1 truncate" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{s.eventTitle}</span>
+                <span className="text-xs text-muted-foreground hidden sm:block" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>{ZONE_KR[s.zoneType!] || s.zoneName}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{s.startDate} ~ {s.endDate}</span>
+              </button>
             ))}
           </div>
         </div>

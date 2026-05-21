@@ -534,7 +534,7 @@ export default function EventCreatePage() {
                 <span className="ml-1.5 text-[10px] font-semibold text-white bg-blue-500 px-1.5 py-0.5 rounded">필수</span>
               </p>
               <div>
-                <label className={labelCls} style={KR}>게시 희망일 * <span className="text-zinc-400 font-normal">— 홈페이지: 수령일 1주 이내, SNS: 진행일 2주 이내 게시</span></label>
+                <label className={labelCls} style={KR}>게시 희망일 *</label>
                 <input required type="date" className={inputCls} value={meta.snsSiteDate}
                   onChange={e => setM("snsSiteDate", e.target.value)} />
               </div>
@@ -546,7 +546,7 @@ export default function EventCreatePage() {
                 📍 희망 홍보 구역
                 <span className="ml-1.5 text-xs font-normal text-zinc-400">선택</span>
               </p>
-              <p className="text-xs text-zinc-400 -mt-1" style={KR}>참고: 통상 진행일 2주 전 게시, 매주 월요일 교체 진행</p>
+              <p className="text-xs text-zinc-400 -mt-1" style={KR}>통상 진행일 2주 전 게시, 매주 월요일 교체 진행 / 별도 희망일자가 없는 경우 게시 희망일 빈칸 제출</p>
               {PROMO_STANDARD.map(item => (
                 <div key={item}>
                   <label className="flex items-start gap-2 cursor-pointer">
@@ -577,7 +577,7 @@ export default function EventCreatePage() {
                 <span className="ml-1.5 text-xs font-normal text-zinc-400">선택</span>
               </p>
               <p className="text-xs text-zinc-400 -mt-1" style={KR}>
-                대관일 기준 최대 1일 전후~당일 사용. 라이브하우스 로비·입구는 당일 별도 신청 없이 사용 가능.
+                대관일 기준 최대 1일 전후~당일 사용.
               </p>
               <div className="space-y-1.5">
                 {BANNER_ZONES.map(zone => (
@@ -600,7 +600,7 @@ export default function EventCreatePage() {
               </p>
               <div className="border border-black/10 rounded-lg overflow-hidden">
                 <img
-                  src={`${BASE}/light-pole-map.png`}
+                  src={`${BASE}/banner_area.png`}
                   alt="가로등 배너 구역 안내"
                   className="w-full h-auto block"
                   style={{ objectFit: "contain", background: "#fafafa" }}
@@ -668,7 +668,7 @@ export default function EventCreatePage() {
               취소
             </button>
             <button type="submit" disabled={submitting || createEvent.isPending || updateEvent.isPending}
-              className="h-8 px-5 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 disabled:opacity-50" style={KR}>
+              className="h-8 px-5 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50" style={KR}>
               {submitting || createEvent.isPending || updateEvent.isPending
                 ? (editId ? "저장 중..." : "신청 중...")
                 : (editId ? "수정 저장 →" : "홍보 신청 완료 →")}

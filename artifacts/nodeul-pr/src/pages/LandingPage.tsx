@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { useGetSystemSettings, getGetSystemSettingsQueryKey } from "@workspace/api-client-react";
+import { useGetSystemSettings, getGetSystemSettingsQueryKey, useGetMe, getGetMeQueryKey, useGetAdminDashboard, getGetAdminDashboardQueryKey, useListEvents, getListEventsQueryKey } from "@workspace/api-client-react";
+import { Redirect } from "wouter";
 import { useUIStore } from "@/store/useUIStore";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -470,6 +471,21 @@ export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [season, setSeason] = useState<Season>(getSeason);
 
+  const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const role = me?.role;
+  const isAdmin = role === "admin" || role === "super_admin";
+
+  const { data: myEvents } = useListEvents(
+    { status: "revision_requested" },
+    { query: { enabled: !!isSignedIn && !isAdmin, queryKey: [...getListEventsQueryKey(), "revision_requested_landing"] } }
+  );
+  const revisionCount = (myEvents as any)?.total ?? (Array.isArray(myEvents) ? myEvents.length : 0);
+
+  const { data: adminDash } = useGetAdminDashboard({
+    query: { enabled: !!isSignedIn && isAdmin, queryKey: getGetAdminDashboardQueryKey() },
+  });
+  const pendingCount = (adminDash as any)?.pendingReviewCount ?? (adminDash as any)?.newSubmissionsCount ?? 0;
+
   const setShowLandingBubble = useUIStore(s => s.setShowLandingBubble);
 
   useEffect(() => {
@@ -479,6 +495,8 @@ export default function LandingPage() {
     const timer = setTimeout(() => setShowLandingBubble(false), 5000);
     return () => clearTimeout(timer);
   }, [settings, setNPCMessage, setShowLandingBubble]);
+
+  if (isSignedIn && isAdmin) return <Redirect to="/admin" />;
 
   const handleStepClick = (href: string) => {
     if (!isSignedIn) { setLocation("/sign-in"); return; }
@@ -513,6 +531,13 @@ export default function LandingPage() {
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed" style={KR}>
                 행사 등록부터 홍보물 제출·버전관리·게시 완료까지 한 곳에서 처리하세요.
               </p>
+              {/* 알림 배너 */}
+              {isSignedIn && revisionCount > 0 && (
+                <div className="mt-2 flex items-center gap-2 bg-amber-50 border border-amber-300 rounded px-3 py-2 cursor-pointer" onClick={() => setLocation("/dashboard")} style={KR}>
+                  <span className="text-sm">⚠️</span>
+                  <span className="text-xs font-semibold text-amber-800">수정 요청된 행사가 {revisionCount}건 있습니다. 확인해 주세요 →</span>
+                </div>
+              )}
               <div className="mt-3 flex gap-2 flex-wrap">
                 {isSignedIn ? (
                   <button onClick={() => setLocation("/dashboard")}
