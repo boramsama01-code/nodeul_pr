@@ -78,6 +78,11 @@ export function MaengkongiCharacter({
           </>
         )}
 
+        {/* ── 등 무늬 (몸통 위, 머리 아래 — 머리보다 먼저 그려서 머리에 가려짐) ── */}
+        <ellipse cx="50" cy="67" rx="5" ry="7" fill="#3A9450" opacity="0.3"/>
+        <ellipse cx="37" cy="72" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
+        <ellipse cx="63" cy="72" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
+
         {/* ═══════════════════════════════════════════════════════
             머리 — 몸통보다 나중에 그려서 몸통 앞(위)에 보임
         ═══════════════════════════════════════════════════════ */}
@@ -130,11 +135,6 @@ export function MaengkongiCharacter({
             <ellipse cx="50" cy="64" rx="8" ry="2.5" fill="#1A5C2A" opacity="0.1"/>
           </>
         )}
-
-        {/* ── 등 무늬 (맹꽁이 등 패턴 암시) ── */}
-        <ellipse cx="50" cy="67" rx="5" ry="7" fill="#3A9450" opacity="0.3"/>
-        <ellipse cx="37" cy="72" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
-        <ellipse cx="63" cy="72" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
       </svg>
     </div>
   );
