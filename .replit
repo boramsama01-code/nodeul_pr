@@ -53,7 +53,7 @@ outputType = "webview"
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
-integrations = ["javascript_anthropic_ai_integrations:2.0.0"]
+integrations = ["javascript_anthropic_ai_integrations:2.0.0", "javascript_gemini_ai_integrations:2.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
