@@ -82,6 +82,7 @@ export default function EventDetailPage() {
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   const [showBaekroHint, setShowBaekroHint] = useState(true);
 
+  const [assetRefreshKey, setAssetRefreshKey] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadAssetId, setUploadAssetId] = useState<number | null>(null);
@@ -335,6 +336,7 @@ export default function EventDetailPage() {
         });
       }
       refetch();
+      setAssetRefreshKey(k => k + 1);
       setShowUploadModal(false);
       setUploadMemo("");
       setUploadName("");
@@ -357,11 +359,14 @@ export default function EventDetailPage() {
     refetch();
   };
 
+  const adminCommentCount = event.comments?.filter((c: any) => c.authorRole === "admin" && !c.isAdminOnly).length ?? 0;
+  const commentBadge = (!isAdmin && (event.status === "revision_requested" || adminCommentCount > 0)) ? adminCommentCount || 1 : 0;
+
   const tabs = [
     { id: "overview", label: "개요" },
     { id: "pr", label: `홍보신청·현황 ${allRequestedZones.length > 0 ? allRequestedZones.length : (event.promotionRequests?.length ?? 0)}` },
     { id: "assets", label: `홍보물 ${event.assets?.length ?? 0}` },
-    { id: "comments", label: `코멘트 ${event.comments?.length ?? 0}` },
+    { id: "comments", label: `코멘트 ${event.comments?.length ?? 0}`, badge: commentBadge },
   ];
 
   const KR = { fontFamily: "'Noto Sans KR', sans-serif" };
@@ -419,11 +424,13 @@ export default function EventDetailPage() {
                   value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="예: 인스타그램 배너" />
               </div>
             )}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>변경 내용 메모 (선택)</label>
-              <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                value={uploadMemo} onChange={e => setUploadMemo(e.target.value)} placeholder="어떤 부분을 수정했는지 간단히 적어주세요" />
-            </div>
+            {uploadAssetId && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>변경 내용 메모 (선택)</label>
+                <input className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
+                  value={uploadMemo} onChange={e => setUploadMemo(e.target.value)} placeholder="어떤 부분을 수정했는지 간단히 적어주세요" />
+              </div>
+            )}
             <div className="border-2 border-dashed border-black/15 rounded-lg p-6 text-center cursor-pointer hover:border-primary/40 transition-colors"
               onClick={() => fileInputRef.current?.click()}>
               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*,.pdf,.psd,.ai,.zip,.pptx,.mp4,.mov" />
@@ -546,10 +553,16 @@ export default function EventDetailPage() {
       <div className="flex gap-0 border-b border-black/10 overflow-x-auto">
         {tabs.map(tab => (
           <button key={tab.id}
-            className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`relative px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             style={KR}
             onClick={() => setActiveTab(tab.id as any)}>
             {tab.label}
+            {(tab as any).badge > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-1 leading-none"
+                title="관리자 코멘트 또는 수정 요청이 있습니다">
+                {(tab as any).badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -711,47 +724,6 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {/* 추가 구역 신청 */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={KR}>추가 구역 신청</h3>
-            <button onClick={() => setShowPRForm(!showPRForm)}
-              className="h-7 px-3 text-xs font-medium border border-black/15 rounded bg-white hover:bg-muted/60 transition-colors" style={KR}>
-              {showPRForm ? "취소" : "+ 구역 신청"}
-            </button>
-          </div>
-          {showPRForm && (
-            <form onSubmit={handlePRSubmit} className="border border-black/10 rounded-lg p-4 bg-white space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>홍보 구역 *</label>
-                <select required className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                  value={prZoneId} onChange={e => setPrZoneId(e.target.value)}>
-                  <option value="">구역을 선택하세요</option>
-                  {zones?.map(z => <option key={z.id} value={z.id}>{z.name} ({z.type})</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>희망 시작일 *</label>
-                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                    value={prStartDate} onChange={e => setPrStartDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>희망 종료일 *</label>
-                  <input required type="date" className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary" style={KR}
-                    value={prEndDate} onChange={e => setPrEndDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1" style={KR}>요청 메모</label>
-                <textarea rows={2} placeholder="추가 요청 사항을 자유롭게 입력해주세요." className="w-full border border-black/15 rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-primary resize-none" style={KR}
-                  value={prNotes} onChange={e => setPrNotes(e.target.value)} />
-              </div>
-              <button type="submit" disabled={prSubmitting || !prZoneId || !prStartDate || !prEndDate}
-                className="h-8 px-4 text-xs font-medium bg-primary text-white rounded hover:bg-primary/85 transition-colors disabled:opacity-50" style={KR}>
-                {prSubmitting ? "신청 중..." : "신청"}
-              </button>
-            </form>
-          )}
           {event.promotionRequests && event.promotionRequests.length > 0 && (
             <div className="border border-black/10 rounded-lg bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-black/8 bg-zinc-50/60">
@@ -1037,7 +1009,7 @@ export default function EventDetailPage() {
                       </button>
                     </div>
                   </div>
-                  <AssetVersionTable assetId={asset.id} isAdmin={isAdmin} onSelect={handleSelectVersion} selectedVersionId={asset.selectedVersionId} />
+                  <AssetVersionTable assetId={asset.id} isAdmin={isAdmin} onSelect={handleSelectVersion} selectedVersionId={asset.selectedVersionId} refreshKey={assetRefreshKey} />
                 </div>
               ))}
             </div>
@@ -1145,11 +1117,12 @@ export default function EventDetailPage() {
   );
 }
 
-function AssetVersionTable({ assetId, isAdmin, onSelect, selectedVersionId }: {
+function AssetVersionTable({ assetId, isAdmin, onSelect, selectedVersionId, refreshKey }: {
   assetId: number;
   isAdmin: boolean;
   onSelect: (assetId: number, versionId: number) => void;
   selectedVersionId: number | null | undefined;
+  refreshKey?: number;
 }) {
   const [versions, setVersions] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -1194,7 +1167,7 @@ function AssetVersionTable({ assetId, isAdmin, onSelect, selectedVersionId }: {
         setLoading(false);
       }
     })();
-  }, [assetId, selectedVersionId]);
+  }, [assetId, selectedVersionId, refreshKey]);
 
   if (loading) return (
     <div className="flex items-center justify-center p-6">

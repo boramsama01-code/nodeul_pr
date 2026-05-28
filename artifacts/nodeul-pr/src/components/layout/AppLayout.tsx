@@ -155,7 +155,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     { status: "revision_requested" },
     { query: { enabled: !!isSignedIn && !isAdmin, queryKey: [...getListEventsQueryKey(), "revision_requested"] } }
   );
-  const revisionCount = (myEvents as any)?.total ?? (Array.isArray(myEvents) ? myEvents.length : 0);
+  const revisionCount = (myEvents as any)?.events?.length ?? (Array.isArray(myEvents) ? myEvents.length : 0);
 
   const { data: adminDashboard } = useGetAdminDashboard({
     query: {

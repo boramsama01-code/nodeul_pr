@@ -187,8 +187,6 @@ export default function EventCreatePage() {
     notes: "",
     websiteDate: "",
     snsDate: "",
-    websiteAltText: "",
-    websiteBodyText: "",
     posterSubmitted: false,
     promoItems: [] as string[],
     promoItemDates: {} as Record<string, string>,
@@ -297,8 +295,6 @@ export default function EventCreatePage() {
         notes: meta.notes || null,
         websiteDate: meta.websiteDate || null,
         snsDate: meta.snsDate || null,
-        websiteAltText: meta.websiteAltText || null,
-        websiteBodyText: meta.websiteBodyText || null,
         posterSubmitted: meta.posterSubmitted,
         promoItems: meta.promoItems,
         promoItemDates: meta.promoItemDates,
@@ -410,6 +406,19 @@ export default function EventCreatePage() {
 
       {step === "event" && (
         <form onSubmit={handleEventSubmit} className="space-y-5">
+          {pdfGuideUrl && (
+            <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3">
+              <span className="text-xl">📥</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-white" style={KR}>홍보 구역 안내 및 제작 사양 확인 (필독)</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5" style={KR}>홍보물 제출 전 반드시 가이드를 확인하세요.</p>
+              </div>
+              <a href={pdfGuideUrl} target="_blank" rel="noopener noreferrer"
+                className="flex-shrink-0 h-8 px-3 text-xs font-semibold bg-white text-zinc-900 rounded hover:bg-zinc-100 transition-colors" style={KR}>
+                가이드 열기 →
+              </a>
+            </div>
+          )}
           <Section title="1. 행사 기본 정보">
             <div>
               <label className={labelCls} style={KR}>행사명 *</label>
@@ -532,13 +541,6 @@ export default function EventCreatePage() {
           </Section>
 
           <Section title="3. 홍보 신청" desc="승인된 항목은 캘린더에 자동 반영됩니다">
-            {pdfGuideUrl && (
-              <a href={pdfGuideUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors shadow-sm" style={KR}>
-                <span className="text-base">📥</span>
-                홍보 구역 안내 및 제작 사양 안내
-              </a>
-            )}
             {/* A. 홈페이지 게시 — 필수 */}
             <div className="bg-blue-50/70 border border-blue-200 rounded-md px-4 py-3 space-y-2">
               <p className="text-xs font-bold text-blue-800 mb-1" style={KR}>
@@ -549,18 +551,6 @@ export default function EventCreatePage() {
                 <label className={labelCls} style={KR}>게시 희망일 *</label>
                 <input required type="date" className={inputCls} value={meta.websiteDate}
                   onChange={e => setM("websiteDate", e.target.value)} />
-              </div>
-              <div>
-                <label className={labelCls} style={KR}>홈페이지 게시용 대표 문구 <span className="text-zinc-400">(선택)</span></label>
-                <input className={inputCls} style={KR} value={meta.websiteAltText}
-                  onChange={e => setM("websiteAltText", e.target.value)}
-                  placeholder="예: 2026 노들섬 여름 페스티벌" />
-              </div>
-              <div>
-                <label className={labelCls} style={KR}>홈페이지 본문 내용 <span className="text-zinc-400">(선택)</span></label>
-                <textarea rows={2} className={`${inputCls} resize-none`} style={KR} value={meta.websiteBodyText}
-                  onChange={e => setM("websiteBodyText", e.target.value)}
-                  placeholder="홈페이지에 게재될 행사 소개 내용" />
               </div>
             </div>
 
