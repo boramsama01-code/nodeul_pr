@@ -81,36 +81,40 @@ router.post("/npc/chat", async (req, res) => {
   }
 
   const apiKey =
-    process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ||
-    process.env.ANTHROPIC_API_KEY;
+    process.env.AI_INTEGRATIONS_GEMINI_API_KEY ||
+    process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     return res.json({ reply: "AI 도우미가 현재 준비 중이에요. 잠시 후 다시 시도해 주세요! 🐸" });
   }
 
-  const baseUrl = process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL;
+  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
 
   try {
-    const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const anthropic = new Anthropic({
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({
       apiKey,
-      ...(baseUrl ? { baseURL: baseUrl } : {}),
+      ...(baseUrl ? { httpOptions: { baseUrl, apiVersion: "" } } : {}),
     });
 
-    const messages = [
-      ...history.slice(-8).map((h) => ({ role: h.role as "user" | "assistant", content: h.content })),
-      { role: "user" as const, content: message.trim() },
+    const contents = [
+      ...history.slice(-8).map((h) => ({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.content }],
+      })),
+      { role: "user" as const, parts: [{ text: message.trim() }] },
     ];
 
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages,
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        maxOutputTokens: 1024,
+      },
     });
 
-    const raw = response.content[0]?.type === "text" ? response.content[0].text : null;
-    const reply = raw?.trim() || "죄송해요, 잠시 후 다시 질문해 주세요! 🐸";
+    const reply = response.text?.trim() || "죄송해요, 잠시 후 다시 질문해 주세요! 🐸";
     return res.json({ reply });
   } catch (err: any) {
     req.log?.error({ err }, "NPC chat error");
