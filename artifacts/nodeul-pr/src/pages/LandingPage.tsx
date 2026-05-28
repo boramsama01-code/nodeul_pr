@@ -291,14 +291,22 @@ function NodeulScene({ season }: { season: Season }) {
       <rect x="199" y="142" width="3"  height="4" fill="#181818"/>
       <rect x="188" y="142" width="1"  height="1" fill="white"/>
       <rect x="199" y="142" width="1"  height="1" fill="white"/>
-      <rect x="184" y="147" width="22" height="8" fill="#4CB85C"/>
-      <rect x="186" y="148" width="18" height="6" fill="#8CD888"/>
-      <rect x="186" y="152" width="14" height="2" fill="#2A7232"/>
-      <rect x="184" y="150" width="3"  height="3" fill="#2A7232"/>
-      <rect x="202" y="150" width="3"  height="3" fill="#2A7232"/>
-      {/* 맹꽁이 몸통 타원 */}
-      <ellipse cx="193" cy="158" rx="14" ry="9" fill="#4CB85C"/>
-      <ellipse cx="193" cy="158" rx="11" ry="7" fill="#6CD870"/>
+      <rect x="184" y="147" width="22" height="10" fill="#4CB85C"/>
+      <rect x="186" y="148" width="20" height="7"  fill="#6CD870"/>
+      <rect x="186" y="152" width="14" height="2"  fill="#2A7232"/>
+      <rect x="184" y="150" width="3"  height="3"  fill="#2A7232"/>
+      <rect x="202" y="150" width="3"  height="3"  fill="#2A7232"/>
+      <rect x="186" y="157" width="20" height="6"  fill="#4CB85C"/>
+      <rect x="188" y="158" width="16" height="4"  fill="#6CD870"/>
+      <rect x="190" y="159" width="12" height="2"  fill="#A8E8A0"/>
+      <rect x="182" y="160" width="5"  height="3"  fill="#3A9450"/>
+      <rect x="205" y="160" width="5"  height="3"  fill="#3A9450"/>
+      <rect x="180" y="162" width="4"  height="2"  fill="#3A9450"/>
+      <rect x="208" y="162" width="4"  height="2"  fill="#3A9450"/>
+      <rect x="180" y="164" width="2"  height="2"  fill="#3A9450"/>
+      <rect x="183" y="165" width="2"  height="2"  fill="#3A9450"/>
+      <rect x="208" y="164" width="2"  height="2"  fill="#3A9450"/>
+      <rect x="210" y="165" width="2"  height="2"  fill="#3A9450"/>
 
       {/* 백로 1 */}
       <g filter="url(#egretShadow)">
