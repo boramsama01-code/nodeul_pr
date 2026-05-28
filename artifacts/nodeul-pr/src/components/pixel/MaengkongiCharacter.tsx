@@ -61,9 +61,6 @@ export function MaengkongiCharacter({
         {/* ── 머리 (이게 전부 — 몸통 없음) ── */}
         <ellipse cx="50" cy="54" rx="34" ry="30" fill="#4DB86B" stroke="#1A5C2A" strokeWidth="2.5"/>
 
-        {/* 배 (머리 하단 밝은 부분) */}
-        <ellipse cx="50" cy="64" rx="20" ry="14" fill="#CCE9BB"/>
-
         {/* ── 눈 흰자 ── */}
         <circle cx="31" cy="38" r="11" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
         <circle cx="69" cy="38" r="11" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
