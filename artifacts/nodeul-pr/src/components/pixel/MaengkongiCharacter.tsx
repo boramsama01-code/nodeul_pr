@@ -10,6 +10,11 @@ interface MaengkongiProps {
   className?: string;
 }
 
+/**
+ * 맹꽁이 캐릭터
+ * 레이어 순서: 뒷발 → 몸통 → 배 → 앞발 → 머리(얼굴+눈+코+입)
+ * 머리(cy=32)를 몸통(cy=76)보다 훨씬 위에 배치해 얼굴이 가려지지 않게 함
+ */
 export function MaengkongiCharacter({
   size = 80,
   variant = "normal",
@@ -26,42 +31,42 @@ export function MaengkongiCharacter({
   return (
     <div
       className={`inline-block select-none ${animClass} ${className}`}
-      style={{ width: size, height: size * 1.05 }}
+      style={{ width: size, height: size * 1.1 }}
     >
       <svg
-        viewBox="0 0 100 105"
+        viewBox="0 0 100 110"
         xmlns="http://www.w3.org/2000/svg"
         width={size}
-        height={size * 1.05}
+        height={size * 1.1}
         style={{ imageRendering: "pixelated", overflow: "visible" }}
       >
         {/* ── 뒷발 ── */}
-        <ellipse cx="18" cy="93" rx="15" ry="8" fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"/>
-        <ellipse cx="82" cy="93" rx="15" ry="8" fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"/>
+        <ellipse cx="18" cy="95" rx="15" ry="8" fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"/>
+        <ellipse cx="82" cy="95" rx="15" ry="8" fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"/>
         {/* 왼 발가락 */}
-        <line x1="6"  y1="93" x2="3"  y2="100" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="13" y1="99" x2="11" y2="104" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="21" y1="99" x2="21" y2="104" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="6"  y1="95" x2="3"  y2="102" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="13" y1="101" x2="11" y2="107" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="21" y1="101" x2="21" y2="107" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
         {/* 오른 발가락 */}
-        <line x1="79" y1="99" x2="79" y2="104" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="87" y1="99" x2="89" y2="104" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="94" y1="93" x2="97" y2="100" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="79" y1="101" x2="79" y2="107" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="87" y1="101" x2="89" y2="107" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="94" y1="95" x2="97" y2="102" stroke="#1A5C2A" strokeWidth="2" strokeLinecap="round"/>
 
-        {/* ── 몸통 — 크고 둥글게 ── */}
-        <ellipse cx="50" cy="73" rx="37" ry="28" fill="#4DB86B" stroke="#1A5C2A" strokeWidth="2.5"/>
+        {/* ── 몸통 — cy=76으로 낮게 ── */}
+        <ellipse cx="50" cy="76" rx="36" ry="26" fill="#4DB86B" stroke="#1A5C2A" strokeWidth="2.5"/>
 
         {/* ── 배 ── */}
-        <ellipse cx="50" cy="78" rx="23" ry="18" fill="#CCE9BB"/>
+        <ellipse cx="50" cy="81" rx="22" ry="17" fill="#CCE9BB"/>
 
         {/* ── 앞발 ── */}
         {variant === "waving" ? (
           <>
             <ellipse cx="9"  cy="80" rx="9" ry="6" fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"/>
             <ellipse
-              cx="92" cy="59"
+              cx="92" cy="58"
               rx="7" ry="10"
               fill="#3A9450" stroke="#1A5C2A" strokeWidth="2"
-              transform="rotate(-35, 92, 59)"
+              transform="rotate(-35, 92, 58)"
             />
           </>
         ) : (
@@ -71,61 +76,61 @@ export function MaengkongiCharacter({
           </>
         )}
 
-        {/* ── 등 무늬 (머리보다 먼저 그려서 머리에 가려짐) ── */}
-        <ellipse cx="50" cy="66" rx="5" ry="7" fill="#3A9450" opacity="0.3"/>
-        <ellipse cx="37" cy="71" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
-        <ellipse cx="63" cy="71" rx="3.5" ry="4.5" fill="#3A9450" opacity="0.2"/>
+        {/* ── 머리 — cy=32, 몸통(top≈y50)보다 훨씬 위에 위치 ── */}
+        {/* 머리 바닥쪽 목 연결부 (몸통과 자연스럽게 이어짐) */}
+        <ellipse cx="50" cy="58" rx="18" ry="10" fill="#4DB86B"/>
 
-        {/* ── 머리 — rx/ry를 키워서 눈이 안에 들어오게 ── */}
-        <ellipse cx="50" cy="47" rx="32" ry="27" fill="#4DB86B" stroke="#1A5C2A" strokeWidth="2.5"/>
+        {/* 머리 본체 */}
+        <ellipse cx="50" cy="36" rx="28" ry="24" fill="#4DB86B" stroke="#1A5C2A" strokeWidth="2.5"/>
 
         {/* ── 볼 하이라이트 ── */}
-        <ellipse cx="34" cy="56" rx="7" ry="4" fill="#5DC87A" opacity="0.35"/>
-        <ellipse cx="66" cy="56" rx="7" ry="4" fill="#5DC87A" opacity="0.35"/>
+        <ellipse cx="33" cy="48" rx="7" ry="4" fill="#5DC87A" opacity="0.35"/>
+        <ellipse cx="67" cy="48" rx="7" ry="4" fill="#5DC87A" opacity="0.35"/>
 
-        {/* ── 눈 흰자 — 머리 상단에 위치, 크기 줄임 ── */}
-        <circle cx="32" cy="35" r="9" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
-        <circle cx="68" cy="35" r="9" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
+        {/* ── 눈 — 머리 상단, cx=34/66 r=9으로 머리 안에 딱 맞게 ── */}
+        {/* 눈 흰자 */}
+        <circle cx="34" cy="25" r="9" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
+        <circle cx="66" cy="25" r="9" fill="white" stroke="#1A5C2A" strokeWidth="2"/>
 
-        {/* ── 홍채 ── */}
-        <circle cx="32" cy="36" r="6" fill="#2A5820"/>
-        <circle cx="68" cy="36" r="6" fill="#2A5820"/>
+        {/* 홍채 */}
+        <circle cx="34" cy="26" r="6" fill="#2A5820"/>
+        <circle cx="66" cy="26" r="6" fill="#2A5820"/>
 
-        {/* ── 동공 ── */}
-        <circle cx="32" cy="37" r="3.5" fill="#080E08"/>
-        <circle cx="68" cy="37" r="3.5" fill="#080E08"/>
+        {/* 동공 */}
+        <circle cx="34" cy="27" r="3.5" fill="#080E08"/>
+        <circle cx="66" cy="27" r="3.5" fill="#080E08"/>
 
-        {/* ── 눈 반짝이 ── */}
-        <circle cx="28" cy="31" r="2" fill="white"/>
-        <circle cx="64" cy="31" r="2" fill="white"/>
-        <circle cx="35" cy="41" r="1" fill="white"/>
-        <circle cx="71" cy="41" r="1" fill="white"/>
+        {/* 눈 반짝이 */}
+        <circle cx="30" cy="21" r="2" fill="white"/>
+        <circle cx="62" cy="21" r="2" fill="white"/>
+        <circle cx="37" cy="31" r="1" fill="white"/>
+        <circle cx="69" cy="31" r="1" fill="white"/>
 
         {/* ── 코 ── */}
-        <circle cx="45" cy="54" r="2.2" fill="#1A5C2A" opacity="0.45"/>
-        <circle cx="55" cy="54" r="2.2" fill="#1A5C2A" opacity="0.45"/>
+        <circle cx="45" cy="44" r="2.2" fill="#1A5C2A" opacity="0.45"/>
+        <circle cx="55" cy="44" r="2.2" fill="#1A5C2A" opacity="0.45"/>
 
-        {/* ── 입 (맹꽁이 = 좁은 입) ── */}
+        {/* ── 입 ── */}
         {variant === "happy" ? (
           <>
             <path
-              d="M 36 62 Q 50 73 64 62"
+              d="M 36 52 Q 50 63 64 52"
               stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"
             />
-            <path d="M 37 62 Q 50 70 63 62" fill="#1A5C2A" opacity="0.12"/>
+            <path d="M 37 52 Q 50 60 63 52" fill="#1A5C2A" opacity="0.12"/>
           </>
         ) : variant === "shy" ? (
           <path
-            d="M 43 63 Q 50 67 57 63"
+            d="M 43 52 Q 50 57 57 52"
             stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"
           />
         ) : (
           <>
             <path
-              d="M 39 62 Q 50 70 61 62"
+              d="M 38 52 Q 50 60 62 52"
               stroke="#1A5C2A" strokeWidth="2.5" fill="none" strokeLinecap="round"
             />
-            <ellipse cx="50" cy="64" rx="8" ry="2.5" fill="#1A5C2A" opacity="0.1"/>
+            <ellipse cx="50" cy="54" rx="8" ry="2.5" fill="#1A5C2A" opacity="0.1"/>
           </>
         )}
       </svg>
