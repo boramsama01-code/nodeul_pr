@@ -355,13 +355,75 @@ function NodeulScene({ season }: { season: Season }) {
 
       {/* 물고기 (겨울엔 얼음 아래라 숨김) */}
       {!isWinter && <>
-        <rect x="108" y="170" width="14" height="7"  fill="#E8834A"/>
-        <rect x="104" y="172" width="6"  height="4"  fill="#E8834A"/>
-        <rect x="121" y="171" width="3"  height="2"  fill="white"/>
-        <rect x="340" y="176" width="13" height="6"  fill="#D06880"/>
-        <rect x="351" y="178" width="6"  height="3"  fill="#D06880"/>
-        <rect x="126" y="158" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
-        <rect x="336" y="164" width="8"  height="2" fill="#8CCCE8" opacity="0.50"/>
+        {/* 주황 물고기 — 오른쪽 향함, 왼쪽 강 구간 */}
+        <g>
+          <animateTransform attributeName="transform" type="translate"
+            values="0,0; -18,1; -32,0; -18,-1; 0,0"
+            dur="9s" repeatCount="indefinite"/>
+          {/* 등지느러미 */}
+          <rect x="115" y="163" width="7" height="4" fill="#C86020"/>
+          {/* 꼬리 (위 갈래) */}
+          <rect x="106" y="165" width="7" height="4" fill="#C86020"/>
+          {/* 꼬리 (아래 갈래) */}
+          <rect x="106" y="173" width="7" height="4" fill="#C86020"/>
+          {/* 꼬리 가운데 투명 (갈라진 표현) */}
+          <rect x="107" y="169" width="5" height="4" fill="#5ABCD8" opacity="0.55"/>
+          {/* 몸통 */}
+          <rect x="111" y="166" width="17" height="11" fill="#E8834A"/>
+          {/* 머리 (앞쪽 좁아지는 부분) */}
+          <rect x="126" y="168" width="3"  height="7"  fill="#E8834A"/>
+          {/* 배 (밝은 부분) */}
+          <rect x="112" y="172" width="13" height="4" fill="#F8B070" opacity="0.55"/>
+          {/* 가슴지느러미 */}
+          <rect x="116" y="174" width="6"  height="3"  fill="#C86020" opacity="0.75"/>
+          {/* 비늘 무늬 */}
+          <rect x="116" y="168" width="2"  height="2"  fill="#A04818" opacity="0.35"/>
+          <rect x="120" y="168" width="2"  height="2"  fill="#A04818" opacity="0.35"/>
+          {/* 눈 흰자 */}
+          <rect x="125" y="168" width="3"  height="3"  fill="white"/>
+          {/* 눈동자 */}
+          <rect x="126" y="169" width="2"  height="2"  fill="#181818"/>
+          {/* 눈 반짝이 */}
+          <rect x="125" y="168" width="1"  height="1"  fill="white" opacity="0.8"/>
+          {/* 물방울 */}
+          <rect x="129" y="160" width="2"  height="2"  fill="white" opacity="0.30"/>
+          <rect x="132" y="156" width="2"  height="2"  fill="white" opacity="0.22"/>
+        </g>
+
+        {/* 분홍 물고기 — 왼쪽 향함, 오른쪽 강 구간 */}
+        <g>
+          <animateTransform attributeName="transform" type="translate"
+            values="0,0; 16,-1; 28,0; 16,1; 0,0"
+            dur="11s" repeatCount="indefinite"/>
+          {/* 등지느러미 */}
+          <rect x="336" y="169" width="7" height="4" fill="#904058"/>
+          {/* 꼬리 (위 갈래) */}
+          <rect x="349" y="171" width="7" height="4" fill="#904058"/>
+          {/* 꼬리 (아래 갈래) */}
+          <rect x="349" y="179" width="7" height="4" fill="#904058"/>
+          {/* 꼬리 가운데 투명 */}
+          <rect x="350" y="175" width="5" height="4" fill="#5ABCD8" opacity="0.55"/>
+          {/* 몸통 */}
+          <rect x="333" y="172" width="17" height="11" fill="#D06880"/>
+          {/* 머리 (왼쪽 좁아지는 부분) */}
+          <rect x="331" y="174" width="3"  height="7"  fill="#D06880"/>
+          {/* 배 (밝은 부분) */}
+          <rect x="334" y="178" width="13" height="4" fill="#F0A8C0" opacity="0.55"/>
+          {/* 가슴지느러미 */}
+          <rect x="339" y="180" width="6"  height="3"  fill="#904058" opacity="0.75"/>
+          {/* 비늘 무늬 */}
+          <rect x="339" y="174" width="2"  height="2"  fill="#703048" opacity="0.35"/>
+          <rect x="343" y="174" width="2"  height="2"  fill="#703048" opacity="0.35"/>
+          {/* 눈 흰자 */}
+          <rect x="332" y="174" width="3"  height="3"  fill="white"/>
+          {/* 눈동자 */}
+          <rect x="332" y="175" width="2"  height="2"  fill="#181818"/>
+          {/* 눈 반짝이 */}
+          <rect x="334" y="174" width="1"  height="1"  fill="white" opacity="0.8"/>
+          {/* 물방울 */}
+          <rect x="329" y="166" width="2"  height="2"  fill="white" opacity="0.30"/>
+          <rect x="326" y="162" width="2"  height="2"  fill="white" opacity="0.22"/>
+        </g>
       </>}
 
       {/* 겨울: 얼어있는 강 표면 + 고양이 */}
