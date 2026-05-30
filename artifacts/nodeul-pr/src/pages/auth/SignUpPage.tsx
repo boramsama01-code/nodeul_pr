@@ -133,7 +133,7 @@ export default function SignUpPage() {
             )}
             <div className="text-[10px] text-zinc-400 bg-zinc-50 border border-zinc-200 rounded px-3 py-2 leading-relaxed" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
               <strong className="text-zinc-600">개인정보 수집 안내</strong><br />
-              수집 항목: 이름·이메일·연락처 | 수집 목적: 홍보 신청 및 승인 안내<br />
+              수집 항목: 이름·이메일·연락처 | 수집 목적: 홍보 신청 관리<br />
               보유 기간: 행사 종료 후 1년 | 삭제 요청: 02-2105-2414
             </div>
             <PixelButton type="submit" variant="primary" size="md" disabled={loading} className="w-full">

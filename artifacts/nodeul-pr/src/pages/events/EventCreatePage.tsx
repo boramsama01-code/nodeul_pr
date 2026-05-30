@@ -389,7 +389,7 @@ export default function EventCreatePage() {
               </div>
             </div>
             <div>
-              <label className={labelCls} style={KR}>담당자 이메일 * <span className="text-zinc-400">— 승인 완료 메일이 발송됩니다</span></label>
+              <label className={labelCls} style={KR}>담당자 이메일 *</label>
               <input required type="email" className={inputCls} style={KR} value={orgForm.contactEmail}
                 onChange={e => setOrgForm(f => ({ ...f, contactEmail: e.target.value }))} placeholder="example@org.com" />
             </div>
